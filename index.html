@@ -192,6 +192,12 @@
     .status-Verified { color: var(--accent); font-weight: 700; }
     .status-Not-verified { color: var(--danger); font-weight: 700; }
     .status-Pending { color: #8a6d00; font-weight: 700; }
+    /* Autosave + stay logged in (2026-10-24) */
+    .autosave-status { font-size: 12.5px; color: var(--muted); margin: -4px 0 10px; min-height: 18px; }
+    .autosave-status.saved { color: var(--accent); }
+    .autosave-status.problem { color: var(--danger); }
+    .remember-row { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; font-size: 13px; margin: 14px 0 0; }
+    .remember-row input { width: auto; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -213,10 +219,16 @@
       <h1>Welcome</h1>
       <p class="sub">Register a new account or log in to continue your submission.</p>
       <div class="banner hidden" id="reg-closed-banner"></div>
+      <div class="msg" id="landing-msg"></div>
       <div class="landing-buttons">
         <button class="btn-primary" onclick="showView('view-register')">Register</button>
         <button class="btn-secondary" onclick="showView('view-login')">Login</button>
       </div>
+    </div>
+
+    <!-- RESTORING A LOGIN AFTER A PAGE RELOAD -->
+    <div class="view" id="view-restoring">
+      <p class="sub" style="margin-top:40px;text-align:center;"><span class="spinner"></span> Loading your registration…</p>
     </div>
 
     <!-- REGISTER -->
@@ -255,6 +267,8 @@
           </label>
         </div>
 
+        <label class="remember-row"><input type="checkbox" id="reg-remember" checked> <span>Stay logged in on this computer (untick on a shared or public computer)</span></label>
+
         <div class="btn-row">
           <button class="btn-primary" id="reg-submit-btn" onclick="doRegister()">Register</button>
           <button class="btn-secondary" onclick="showView('view-landing')">Back</button>
@@ -272,6 +286,7 @@
         <input type="email" id="login-email">
         <label>Password</label>
         <input type="password" id="login-password">
+        <label class="remember-row"><input type="checkbox" id="login-remember" checked> <span>Stay logged in on this computer (untick on a shared or public computer)</span></label>
         <div class="btn-row">
           <button class="btn-primary" id="login-submit-btn" onclick="doLogin()">Login</button>
           <button class="btn-secondary" onclick="showView('view-landing')">Back</button>
@@ -314,8 +329,9 @@
         <div class="msg" id="teams-msg"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="info-fields-card">
         <h2 style="margin-top:0;">Personal Information</h2>
+        <p class="autosave-status" id="autosave-status" aria-live="polite"></p>
         <div class="row2">
           <div><label>Name</label><input type="text" id="info-name"></div>
           <div><label>Middle name</label><input type="text" id="info-middleName"></div>
@@ -456,7 +472,7 @@
         <button class="btn-primary" id="info-save-btn" onclick="savePersonalInfo()">Save info</button>
         <button class="btn-secondary hidden" id="info-viewTeamBtn" onclick="openTeamStat()">View team</button>
       </div>
-      <p class="action-hint" id="save-hint">Remember to click Save info after filling in or changing your information — it is not saved automatically. (Documents are saved when you click Upload.)</p>
+      <p class="action-hint" id="save-hint">Your information saves by itself a few seconds after you stop typing (you can also click Save info). Documents are saved when you click Upload.</p>
       <div class="msg" id="info-msg"></div>
     </div>
 
@@ -515,7 +531,7 @@
 
   <script>
     var currentUser = null;       // { email, position, teamName, roleInTeam }
-    var sessionToken = null;      // random login token from the server; kept in memory only
+    var sessionToken = null;      // random login token from the server (also kept in this browser, see SESSION_KEY)
     // Bumped whenever someone logs in, registers or logs out. A server reply
     // that comes back after the account on screen changed is ignored, so a
     // slow upload from the previous account can't show up on the next one.
@@ -539,6 +555,7 @@
     var MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB safety cap
 
     function showView(id) {
+      if (id !== 'view-info' && autosaveTimer) autoSaveNow(); // leaving the form: save what is waiting
       document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
       document.getElementById(id).classList.add('active');
       window.scrollTo(0, 0);
@@ -579,11 +596,13 @@
     function enc(v) { return encodeURIComponent(String(v === undefined || v === null ? '' : v)); }
     var API_ROUTES = {
       getPublicConfig: function () { return ['GET', '/api/config']; },
-      registerUser: function (a) { return ['POST', '/api/register', { email: a[0], password: a[1], position: a[2], teamName: a[3], tos: a[4], pdpa: a[5], observerLevel: a[6] }]; },
-      loginUser: function (a) { return ['POST', '/api/login', { email: a[0], password: a[1] }]; },
+      registerUser: function (a) { return ['POST', '/api/register', { email: a[0], password: a[1], position: a[2], teamName: a[3], tos: a[4], pdpa: a[5], observerLevel: a[6], remember: !!a[7] }]; },
+      loginUser: function (a) { return ['POST', '/api/login', { email: a[0], password: a[1], remember: !!a[2] }]; },
+      getMe: function (a) { return ['GET', '/api/me', null, a[0]]; },
+      getLiveStamp: function (a) { return ['GET', '/api/me/live', null, a[0]]; },
       requestPasswordReset: function (a) { return ['POST', '/api/password-reset', { email: a[0] }]; },
       logoutUser: function (a) { return ['POST', '/api/logout', {}, a[0]]; },
-      changePassword: function (a) { return ['POST', '/api/password', { currentPassword: a[1], newPassword: a[2] }, a[0]]; },
+      changePassword: function (a) { return ['POST', '/api/password', { currentPassword: a[1], newPassword: a[2], remember: !!a[3] }, a[0]]; },
       getPaymentStatus: function (a) { return ['GET', '/api/payments/status', null, a[0]]; },
       submitPayment: function (a) { return ['POST', '/api/payments', a[1], a[0]]; },
       addPaymentSlip: function (a) { return ['POST', '/api/payments/' + enc(a[1]) + '/slips', { data: a[2], fileName: a[3] }, a[0]]; },
@@ -603,14 +622,14 @@
     };
 
     /** Resolves with the server's JSON answer; rejects only when the server can't be reached. */
-    function apiFetch(fnName, args) {
+    function apiFetch(fnName, args, extra) {
       var route = API_ROUTES[fnName];
       if (!route) return Promise.reject(new Error('Unknown server call: ' + fnName));
       var r = route(args || []);
       var headers = {};
       if (r[2]) headers['Content-Type'] = 'application/json';
       if (r[3]) headers.Authorization = 'Bearer ' + r[3];
-      return fetch(API_BASE + r[1], { method: r[0], headers: headers, body: r[2] ? JSON.stringify(r[2]) : undefined, credentials: 'omit' })
+      return fetch(API_BASE + r[1], { method: r[0], headers: headers, body: r[2] ? JSON.stringify(r[2]) : undefined, credentials: 'omit', keepalive: !!(extra && extra.keepalive) })
         .then(function (resp) {
           return resp.json().catch(function () {
             throw new Error(resp.status === 413 ? 'That upload is too large (max 10 MB per file).' : 'The server answered with an error (' + resp.status + '). Please try again.');
@@ -663,7 +682,9 @@
      *
      * @param {string} fnName   name of the server function (see API_ROUTES)
      * @param {Array} args      arguments to pass to it
-     * @param {Object} opts     { buttonIds: [...], disableOnly, msgElId, onSuccess(res), onFailure(err) }
+     * @param {Object} opts     { buttonIds: [...], disableOnly, msgElId, quiet, onSuccess(res), onFailure(err) }
+     *   quiet: background call (live updates, autosave checks) — no loading
+     *   pill and no "still waiting" message.
      *   disableOnly: skip swapping the button's label for a spinner — just
      *   disable/dim it. Used where buttonIds names several buttons at once
      *   that each show their own meaningful label (e.g. the 3 trip-option
@@ -683,12 +704,12 @@
         b.dataset.loadingRestore = b.innerHTML;
         b.innerHTML = '<span class="spinner"></span> Please wait…';
       });
-      showGlobalLoading();
+      if (!opts.quiet) showGlobalLoading();
 
       var finished = false;
       var genAtCall = sessionGen;
       function stale() { return genAtCall !== sessionGen; }
-      var timer = setTimeout(function () {
+      var timer = opts.quiet ? null : setTimeout(function () {
         if (finished || stale()) return;
         if (opts.onTimeout) opts.onTimeout();
         else if (opts.msgElId) setMsg(opts.msgElId, COOKIE_HINT, true);
@@ -698,7 +719,7 @@
         finished = true;
         clearTimeout(timer);
         if (opts.onFinish) { try { opts.onFinish(); } catch (e) { /* ignore */ } }
-        hideGlobalLoading();
+        if (!opts.quiet) hideGlobalLoading();
         buttonIds.forEach(function (id) {
           var b = document.getElementById(id);
           if (!b) return;
@@ -761,7 +782,8 @@
         return;
       }
 
-      callServer('registerUser', [email, password, position, teamName, tos, pdpa], {
+      var remember = document.getElementById('reg-remember').checked;
+      callServer('registerUser', [email, password, position, teamName, tos, pdpa, undefined, remember], {
         buttonIds: ['reg-submit-btn'],
         msgElId: 'reg-msg',
         onSuccess: function (res) {
@@ -770,6 +792,7 @@
           sessionGen++;
           currentUser = res.user;
           sessionToken = res.token;
+          storeToken(res.token, remember);
           currentPersonalInfo = null;
           showModal(position === 'observer'
             ? "You've successfully registered! Next, fill in your personal information: choose your study level and upload your proof of enrolment so the organizers can confirm your registration fee."
@@ -804,7 +827,8 @@
       var password = document.getElementById('login-password').value;
       if (!email || !password) { setMsg('login-msg', 'Please enter email and password.', true); return; }
 
-      callServer('loginUser', [email, password], {
+      var remember = document.getElementById('login-remember').checked;
+      callServer('loginUser', [email, password, remember], {
         buttonIds: ['login-submit-btn'],
         msgElId: 'login-msg',
         onSuccess: function (res) {
@@ -813,6 +837,7 @@
           sessionGen++;
           currentUser = res.user;
           sessionToken = res.token;
+          storeToken(res.token, remember);
           currentPersonalInfo = res.personalInfo;
           enterSession();
           routeToInfoForm();
@@ -847,6 +872,8 @@
       document.getElementById('sessionBar').classList.remove('hidden');
       document.getElementById('sessionEmail').textContent = currentUser.email;
       updateTeamNav();
+      clearMsg('landing-msg');
+      startLive();
     }
 
     // "View team" buttons: delegates, and advisors once they have a team
@@ -865,6 +892,9 @@
     }
 
     function resetClientState() {
+      forgetToken();
+      stopLive();
+      resetAutosave();
       sessionToken = null;
       currentUser = null;
       currentPersonalInfo = null;
@@ -934,14 +964,14 @@
         return;
       }
 
-      callServer('changePassword', [sessionToken, current, next], {
+      callServer('changePassword', [sessionToken, current, next, rememberedHere()], {
         buttonIds: ['changepw-submit-btn'],
         msgElId: 'changepw-msg',
         onSuccess: function (res) {
           if (!checkRes(res, 'changepw-msg')) return;
           setMsg('changepw-msg', res.message, !res.success);
           if (res.success) {
-            if (res.token) sessionToken = res.token; // the old token was just invalidated
+            if (res.token) { storeToken(res.token, rememberedHere()); sessionToken = res.token; } // the old token was just invalidated
             ['changepw-current', 'changepw-new', 'changepw-confirm'].forEach(function (id) {
               document.getElementById(id).value = '';
             });
@@ -982,6 +1012,7 @@
       document.getElementById('info-email').value = currentUser.email;
       fillInfoForm(currentPersonalInfo || {});
       clearMsg('info-msg');
+      livePaymentPending = false; // loaded fresh just below
       showView('view-info');
       refreshUniversityList();
 
@@ -1034,6 +1065,10 @@
         var status = url ? String(d[checkCol] || '').trim() : '';
         setUploadStatus(key, url, status);
       });
+      // What is on the server now: autosave only sends changes from here on.
+      resetAutosave();
+      infoFormReady = true;
+      lastSavedInfo = JSON.stringify(collectInfoFields(autosaveUniversity()));
     }
 
     var UPLOAD_COLUMN_MAP = { passport: 'PassportFileUrl', enrollment: 'ProofOfEnrollmentFileUrl', ifmsaCert: 'IfmsaCertFileUrl' };
@@ -1079,10 +1114,13 @@
       return el('span', 'status-' + String(status).replace(/\s+/g, '-'), status);
     }
 
-    function refreshPaymentStatus() {
+    function refreshPaymentStatus(quiet) {
+      quiet = quiet === true;
       callServer('getPaymentStatus', [sessionToken], {
+        quiet: quiet,
         onSuccess: function (res) {
           if (!res || !res.success) {
+            if (quiet) return; // background refresh: keep what is on screen
             document.getElementById('payment-section').classList.remove('hidden');
             setMsg('payment-msg', (res && res.message) || 'Could not load the payment details. Please reload the page.', true);
             return;
@@ -1094,6 +1132,7 @@
           renderLevelControl(res);
         },
         onFailure: function (err) {
+          if (quiet) return;
           document.getElementById('payment-section').classList.remove('hidden');
           setMsg('payment-msg', 'Could not load the payment details: ' + err.message, true);
         }
@@ -1115,6 +1154,7 @@
       var section = document.getElementById('payment-section');
       section.classList.remove('hidden');
       clearMsg('payment-msg');
+      paymentDirtyAt = 0; // freshly drawn: nothing typed or chosen here yet
 
       // Once the payment is Verified the price line and the payment-detail
       // image are no longer needed (2026-10-21); the "paid" status stays.
@@ -1600,10 +1640,13 @@
 
     var TRIP_OPTIONS = ['A', 'B', 'C'];
 
-    function refreshTripDisplay() {
+    function refreshTripDisplay(quiet) {
+      quiet = quiet === true;
       callServer('getTripStatus', [sessionToken], {
+        quiet: quiet,
         onSuccess: function (res) {
           var section = document.getElementById('trip-section');
+          if (quiet && (!res || !res.success)) return; // background refresh: keep what is on screen
           // Stays hidden until the person's proof of payment has been
           // verified by an organizer — same "live server round-trip,
           // never assumed client-side" pattern as the fee section.
@@ -1614,7 +1657,7 @@
           section.classList.remove('hidden');
           renderTripOptions(res);
         },
-        onFailure: function () { document.getElementById('trip-section').classList.add('hidden'); }
+        onFailure: function () { if (!quiet) document.getElementById('trip-section').classList.add('hidden'); }
       });
     }
 
@@ -1727,12 +1770,14 @@
       document.getElementById('uni-suggest').classList.add('hidden');
     }
     function acceptUniSuggestion() {
+      setAutosaveStatus('');
       var name = uniSuggestion;
       if (!name) return;
       renderUniversityOptions(name);
       submitPersonalInfo(name);
     }
     function rejectUniSuggestion() {
+      setAutosaveStatus('');
       var typed = document.getElementById('info-universityOther').value.trim();
       uniDismissedKey = uniKeyClient(typed);
       hideUniSuggestion();
@@ -1740,6 +1785,7 @@
     }
 
     function savePersonalInfo() {
+      cancelAutosaveTimer();
       clearMsg('info-msg');
       if (currentUser.position === 'observer' && !document.getElementById('info-observerLevel').value) {
         setMsg('info-msg', 'Please choose your study level (undergraduate or postgraduate).', true);
@@ -1765,8 +1811,11 @@
       });
     }
 
-    function submitPersonalInfo(university) {
-      clearMsg('info-msg');
+    /**
+     * The form as the server's field names. university === undefined leaves
+     * University out (= unchanged on the server).
+     */
+    function collectInfoFields(university) {
       var fields = {
         Name: document.getElementById('info-name').value.trim(),
         MiddleName: document.getElementById('info-middleName').value.trim(),
@@ -1784,6 +1833,7 @@
         ShirtSize: document.getElementById('info-shirtSize').value,
         'Special requirement': document.getElementById('info-specialRequirement').value.trim()
       };
+      if (university === undefined) delete fields.University;
       // Delegates: educational year. Advisors and observers: highest level
       // of education (observers since 2026-10-21).
       if (currentUser.position === 'delegate') {
@@ -1794,6 +1844,13 @@
       if (currentUser.position === 'observer') {
         fields.ObserverLevel = document.getElementById('info-observerLevel').value;
       }
+      return fields;
+    }
+
+    function submitPersonalInfo(university) {
+      clearMsg('info-msg');
+      cancelAutosaveTimer();
+      var fields = collectInfoFields(university);
 
       callServer('savePersonalInfo', [sessionToken, fields], {
         buttonIds: ['info-save-btn'],
@@ -1806,6 +1863,9 @@
           currentPersonalInfo = Object.assign({}, currentPersonalInfo, fields);
           if (fields.University && universityList.indexOf(fields.University) === -1) universityList.push(fields.University);
           renderUniversityOptions(fields.University || '');
+          var saved = JSON.parse(JSON.stringify(fields));
+          lastSavedInfo = JSON.stringify(saved);
+          if (!autosaveTimer && !autosaveInFlight) setAutosaveStatus('saved');
           setMsg('info-msg', res.note ? 'Saved. ' + res.note : 'Saved.', !!res.note);
           refreshPaymentStatus();
         }
@@ -1992,6 +2052,340 @@
       }
     }
 
+    // ---------------- STAY LOGGED IN (2026-10-24) ----------------
+    // The login token is kept in this browser so reloading the page does not
+    // log the person out: localStorage when "Stay logged in on this computer"
+    // is ticked (survives closing the browser; the server ends it after 7
+    // days without use), otherwise sessionStorage (this tab only, gone when
+    // the tab is closed; the server ends it after 6 hours without use).
+    // Logging out, an expired session or a password change clears it.
+    var SESSION_KEY = 'icemkku.session';
+
+    function storeToken(token, remember) {
+      try {
+        if (remember) { sessionStorage.removeItem(SESSION_KEY); localStorage.setItem(SESSION_KEY, token); }
+        else { localStorage.removeItem(SESSION_KEY); sessionStorage.setItem(SESSION_KEY, token); }
+      } catch (e) { /* storage blocked (private mode): the login still works until the page is reloaded */ }
+    }
+    function storedToken() {
+      try { return sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; }
+    }
+    function rememberedHere() {
+      try { return !!sessionToken && localStorage.getItem(SESSION_KEY) === sessionToken; } catch (e) { return false; }
+    }
+    function forgetToken() {
+      try { sessionStorage.removeItem(SESSION_KEY); localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+    }
+
+    /** After a page reload: log back in with the stored token. */
+    function restoreSession() {
+      var token = storedToken();
+      if (!token) return;
+      showView('view-restoring');
+      sessionToken = token;
+      callServer('getMe', [token], {
+        quiet: true,
+        onSuccess: function (res) {
+          if (res && res.success) {
+            sessionGen++;
+            currentUser = res.user;
+            sessionToken = token;
+            currentPersonalInfo = res.personalInfo;
+            enterSession();
+            routeToInfoForm();
+            return;
+          }
+          sessionToken = null;
+          if (!(res && res.maintenance)) forgetToken();
+          showView('view-landing');
+          if (res && res.message) setMsg('landing-msg', res.message, true);
+        },
+        onFailure: function (err) {
+          sessionToken = null; // the token stays stored: reloading tries again
+          showView('view-landing');
+          setMsg('landing-msg', err.message + ' Your login is kept — reload the page to try again.', true);
+        }
+      });
+    }
+
+    // ---------------- LIVE UPDATES (2026-10-24) ----------------
+    // While the page is open and visible it asks the server every 45 s
+    // (every 5 min after 20 min without any click or key press) for a short
+    // fingerprint of what this page shows from the server. When it changes —
+    // an organizer verified a document or a payment, a teammate paid for the
+    // team, the team leader changed — the document statuses, the payment
+    // section and the trip section are reloaded. Nothing the person is typing
+    // or has chosen is overwritten: the payment section waits while a slip is
+    // chosen or something in it is being filled in.
+    var LIVE_MS = 45 * 1000, LIVE_IDLE_MS = 5 * 60 * 1000, IDLE_AFTER_MS = 20 * 60 * 1000, PAYMENT_EDIT_HOLD_MS = 3 * 60 * 1000;
+    var liveTimer = null, liveBusyGen = -1, liveStamp = null;
+    var liveRefreshPending = false, livePaymentPending = false;
+    var lastInteraction = Date.now(), paymentDirtyAt = 0;
+
+    function startLive() {
+      stopLive();
+      liveStamp = null; liveRefreshPending = false; livePaymentPending = false;
+      liveCheck(); // the first answer is the starting point
+    }
+    function stopLive() {
+      if (liveTimer) clearTimeout(liveTimer);
+      liveTimer = null;
+    }
+    function scheduleLive() {
+      stopLive();
+      if (!sessionToken) return;
+      liveTimer = setTimeout(liveCheck, Date.now() - lastInteraction > IDLE_AFTER_MS ? LIVE_IDLE_MS : LIVE_MS);
+    }
+
+    function liveCheck() {
+      liveTimer = null;
+      if (!sessionToken || liveBusyGen === sessionGen) return;
+      if (document.hidden) return; // starts again when the tab is shown
+      var gen = sessionGen;
+      liveBusyGen = gen;
+      apiFetch('getLiveStamp', [sessionToken]).then(function (res) {
+        if (liveBusyGen === gen) liveBusyGen = -1;
+        if (gen !== sessionGen) return;
+        if (res && res.sessionExpired) { handleSessionExpired(res.message); return; }
+        if (res && res.success) {
+          if (liveStamp !== null && res.stamp !== liveStamp) liveRefreshPending = true;
+          liveStamp = res.stamp;
+        }
+        if (liveRefreshPending) applyLiveRefresh(); else tryLivePayment();
+        scheduleLive();
+      }, function () {
+        if (liveBusyGen === gen) liveBusyGen = -1;
+        if (gen === sessionGen) scheduleLive(); // offline for a moment: try again later
+      });
+    }
+
+    function applyLiveRefresh() {
+      var gen = sessionGen;
+      liveRefreshPending = false;
+      apiFetch('getMe', [sessionToken]).then(function (res) {
+        if (gen !== sessionGen) return;
+        if (res && res.sessionExpired) { handleSessionExpired(res.message); return; }
+        if (!res || !res.success) { liveRefreshPending = true; return; }
+        applyAccountUpdate(res.user, res.personalInfo);
+        livePaymentPending = true;
+        tryLivePayment();
+      }, function () { if (gen === sessionGen) liveRefreshPending = true; });
+    }
+
+    /** New team / role and document checks from the server. The form fields themselves are left alone. */
+    function applyAccountUpdate(user, info) {
+      if (user && currentUser && user.email === currentUser.email) {
+        var changed = user.teamName !== currentUser.teamName || user.roleInTeam !== currentUser.roleInTeam;
+        currentUser = user;
+        if (changed) { updateTeamNav(); updateTeamBanner(); }
+      }
+      if (!info) return;
+      currentPersonalInfo = currentPersonalInfo || {};
+      Object.keys(UPLOAD_COLUMN_MAP).forEach(function (key) {
+        var col = UPLOAD_COLUMN_MAP[key], chk = UPLOAD_CHECK_MAP[key];
+        if (document.getElementById('status-' + key).querySelector('.spinner')) return; // uploading / deleting right now
+        if ((currentPersonalInfo[col] || '') === (info[col] || '') && (currentPersonalInfo[chk] || '') === (info[chk] || '')) return;
+        currentPersonalInfo[col] = info[col] || '';
+        currentPersonalInfo[chk] = info[chk] || '';
+        var url = info[col] || null;
+        setUploadStatus(key, url, url ? String(info[chk] || '').trim() : '');
+      });
+    }
+
+    function updateTeamBanner() {
+      var banner = document.getElementById('info-team-banner');
+      if (currentUser.position === 'delegate') {
+        banner.classList.remove('hidden');
+        banner.textContent = 'You are a team leader/member of ' + currentUser.teamName;
+      } else if (currentUser.position === 'advisor') {
+        banner.classList.remove('hidden');
+        banner.textContent = currentUser.teamName ? 'Advisor of team ' + currentUser.teamName : 'Advisor — you have not added a team yet. Add it in "My teams" below.';
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function paymentAreaBusy() {
+      if (Object.keys(busyActions).length) return true;
+      if (Date.now() - paymentDirtyAt < PAYMENT_EDIT_HOLD_MS) return true;
+      var areas = [document.getElementById('payment-section'), document.getElementById('teams-card')];
+      var a = document.activeElement;
+      if (a && a.tagName !== 'BUTTON' && a !== document.body && areas.some(function (x) { return x.contains(a); })) return true;
+      return areas.some(function (x) {
+        return Array.prototype.some.call(x.querySelectorAll('input[type=file]'), function (i) { return i.files && i.files.length > 0; });
+      });
+    }
+
+    /** Reloads the payment (and trip) section once nothing in it is being filled in. */
+    function tryLivePayment() {
+      if (!livePaymentPending || !sessionToken || !currentUser) return;
+      if (!document.getElementById('view-info').classList.contains('active')) return; // done when they come back
+      if (paymentAreaBusy()) return; // next check tries again
+      livePaymentPending = false;
+      refreshPaymentStatus(true);
+      if (currentUser.position === 'delegate') refreshTripDisplay(true);
+    }
+
+    // ---------------- AUTOSAVE (2026-10-24) ----------------
+    // Personal information is saved a moment after the person stops typing
+    // (2.5 s), or right after a dropdown / tick box changes or a field is
+    // left. Only changes are sent. A university typed under "Other" is
+    // checked ("Did you mean …?") when the person leaves that box, and saved
+    // once it is confirmed; until then the rest of the form still saves.
+    var AUTOSAVE_DELAY_MS = 2500, AUTOSAVE_QUICK_MS = 600, AUTOSAVE_RETRY_MS = 15000;
+    var autosaveTimer = null, autosaveInFlight = false, autosaveAgain = false;
+    var lastSavedInfo = '', infoFormReady = false;
+    var PRICE_FIELDS = ['ObserverLevel', 'University', 'Name', 'MiddleName', 'Surname'];
+
+    function setAutosaveStatus(state, detail) {
+      var el = document.getElementById('autosave-status');
+      if (!el) return;
+      var text = {
+        '': '',
+        dirty: 'Unsaved changes…',
+        saving: 'Saving…',
+        saved: 'All changes saved ✓',
+        uni: 'Please answer the university question below — your other changes are saved.',
+        offline: 'Not saved yet — no connection. Trying again…',
+        error: 'Not saved: ' + (detail || 'please click Save info.')
+      }[state];
+      el.textContent = text || '';
+      el.className = 'autosave-status' + (state === 'saved' ? ' saved' : (state === 'offline' || state === 'error' ? ' problem' : ''));
+    }
+
+    function cancelAutosaveTimer() {
+      if (autosaveTimer) clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+    function resetAutosave() {
+      cancelAutosaveTimer();
+      autosaveAgain = false;
+      infoFormReady = false;
+      lastSavedInfo = '';
+      setAutosaveStatus('');
+    }
+    function scheduleAutosave(ms) {
+      cancelAutosaveTimer();
+      autosaveTimer = setTimeout(function () { autosaveTimer = null; autoSaveNow(); }, ms);
+    }
+
+    /** University for autosave: a list choice, or an "Other" name that has been confirmed; otherwise left out. */
+    function autosaveUniversity() {
+      var sel = document.getElementById('info-university').value;
+      if (sel !== '__other__') return sel;
+      var typed = document.getElementById('info-universityOther').value.trim();
+      return typed && uniKeyClient(typed) === uniDismissedKey ? typed : undefined;
+    }
+
+    function autoSaveNow(keepalive) {
+      cancelAutosaveTimer();
+      if (!sessionToken || !currentUser || !infoFormReady) return;
+      if (autosaveInFlight) { autosaveAgain = true; return; }
+      var fields = collectInfoFields(autosaveUniversity());
+      var json = JSON.stringify(fields);
+      if (json === lastSavedInfo) { setAutosaveStatus(uniSuggestion ? 'uni' : 'saved'); return; }
+      var before = lastSavedInfo ? JSON.parse(lastSavedInfo) : {};
+      var gen = sessionGen;
+      autosaveInFlight = true;
+      setAutosaveStatus('saving');
+      currentPersonalInfo = Object.assign({}, currentPersonalInfo, fields); // so going to another page and back shows it
+      apiFetch('savePersonalInfo', [sessionToken, fields], { keepalive: !!keepalive }).then(function (res) {
+        autosaveInFlight = false;
+        if (gen !== sessionGen) return;
+        if (res && res.sessionExpired) { handleSessionExpired(res.message); return; }
+        if (!res || !res.success) { setAutosaveStatus('error', res && res.message); return; }
+        var saved = JSON.parse(json);
+        if (saved.University !== undefined) {
+          // The server may have swapped in the spelling already used by others.
+          if (res.university !== undefined && res.university !== null) saved.University = res.university;
+          currentPersonalInfo.University = saved.University;
+          if (saved.University && universityList.indexOf(saved.University) === -1) universityList.push(saved.University);
+          var a = document.activeElement;
+          var sel = document.getElementById('info-university');
+          if (saved.University && sel.value !== saved.University && !(a && (a.id === 'info-university' || a.id === 'info-universityOther'))) {
+            renderUniversityOptions(saved.University);
+          }
+        }
+        lastSavedInfo = JSON.stringify(saved);
+        if (res.note) setMsg('info-msg', res.note, true);
+        if (autosaveAgain) { autosaveAgain = false; autoSaveNow(); return; }
+        setAutosaveStatus(autosaveTimer ? 'dirty' : (uniSuggestion ? 'uni' : 'saved'));
+        var priceChanged = PRICE_FIELDS.some(function (k) { return saved[k] !== undefined && saved[k] !== before[k]; });
+        if (priceChanged) { livePaymentPending = true; tryLivePayment(); }
+      }, function () {
+        autosaveInFlight = false;
+        if (gen !== sessionGen) return;
+        setAutosaveStatus('offline');
+        if (!autosaveTimer) scheduleAutosave(AUTOSAVE_RETRY_MS);
+      });
+    }
+
+    /** "Other" university box left: same check as Save info, without the loading pill. */
+    function checkOtherUniversityQuietly() {
+      var typed = document.getElementById('info-universityOther').value.trim();
+      if (!typed || uniKeyClient(typed) === uniDismissedKey) { scheduleAutosave(AUTOSAVE_QUICK_MS); return; }
+      callServer('checkUniversity', [sessionToken, typed], {
+        quiet: true,
+        onSuccess: function (res) {
+          if (!res || !res.success) return;
+          var box = document.getElementById('info-universityOther');
+          if (document.getElementById('info-university').value !== '__other__' || box.value.trim() !== typed) return; // changed meanwhile
+          if (res.exact) { renderUniversityOptions(res.exact); scheduleAutosave(AUTOSAVE_QUICK_MS); return; }
+          if (res.suggestion) { showUniSuggestion(res.suggestion); scheduleAutosave(AUTOSAVE_QUICK_MS); return; }
+          uniDismissedKey = uniKeyClient(typed); // nothing similar: their spelling is fine
+          scheduleAutosave(AUTOSAVE_QUICK_MS);
+        },
+        onFailure: function () { scheduleAutosave(AUTOSAVE_QUICK_MS); }
+      });
+    }
+
+    function onInfoEdited(ev) {
+      if (!sessionToken || !currentUser || !infoFormReady) return;
+      var t = ev.target || {};
+      if (t.type === 'file' || t.disabled) return;
+      if (t.id === 'info-universityOther' && ev.type === 'change') { setAutosaveStatus('dirty'); checkOtherUniversityQuietly(); return; }
+      setAutosaveStatus('dirty');
+      scheduleAutosave(ev.type === 'change' ? AUTOSAVE_QUICK_MS : AUTOSAVE_DELAY_MS);
+    }
+
+    function initLiveAndAutosave() {
+      var card = document.getElementById('info-fields-card');
+      card.addEventListener('input', onInfoEdited);
+      card.addEventListener('change', onInfoEdited);
+      ['payment-section', 'teams-card'].forEach(function (id) {
+        var x = document.getElementById(id);
+        var mark = function (ev) { if (ev.target && ev.target.tagName !== 'BUTTON') paymentDirtyAt = Date.now(); };
+        x.addEventListener('input', mark);
+        x.addEventListener('change', mark);
+      });
+      ['pointerdown', 'keydown'].forEach(function (name) {
+        document.addEventListener(name, function () {
+          var wasIdle = Date.now() - lastInteraction > IDLE_AFTER_MS;
+          lastInteraction = Date.now();
+          if (wasIdle && sessionToken) liveCheck();
+        }, true);
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { if (autosaveTimer) autoSaveNow(); return; }
+        if (sessionToken) liveCheck(); // back on the tab: catch up at once
+      });
+      // Reload / close while a change is still waiting: send it now and ask
+      // the browser to wait (the "Leave site?" box gives it time to arrive).
+      window.addEventListener('beforeunload', function (ev) {
+        if (!autosaveTimer && !autosaveInFlight) return;
+        if (autosaveTimer) autoSaveNow(true);
+        ev.preventDefault();
+        ev.returnValue = '';
+      });
+      // Logged out in another tab of this browser: log out here too.
+      window.addEventListener('storage', function (ev) {
+        if (ev.key !== SESSION_KEY || ev.newValue || !sessionToken || ev.oldValue !== sessionToken) return;
+        resetClientState();
+        showView('view-landing');
+      });
+    }
+
+
     // Shows "Registration opens on …" on the landing page when the organizers
     // have set a RegistrationOpens time that hasn't arrived yet.
     function loadPublicConfig() {
@@ -2019,6 +2413,9 @@
         }
       });
     }
+
+    initLiveAndAutosave();
+    restoreSession();
   </script>
 </body>
 </html>
