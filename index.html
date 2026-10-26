@@ -317,6 +317,7 @@
     <div class="view" id="view-info">
       <h1>Personal information</h1>
       <div class="banner hidden" id="info-team-banner"></div>
+      <div class="banner hidden" id="info-lock-banner"></div>
 
       <div class="card hidden" id="teams-card">
         <h2 style="margin-top:0;">My teams</h2>
@@ -352,7 +353,7 @@
               <option value="__other__">Other (type it)</option>
             </select>
             <input type="text" id="info-universityOther" class="hidden" maxlength="200" placeholder="Type your university name" style="margin-top:8px;">
-            <div class="banner hidden" id="uni-suggest" style="margin-top:8px;margin-bottom:0;">
+            <div class="banner hidden" id="uni-suggest" style="margin-top:8px;margin-bottom:12px;">
               <span id="uni-suggest-text"></span>
               <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="button" class="btn-primary btn-small" onclick="acceptUniSuggestion()">Yes, use that</button>
@@ -465,6 +466,7 @@
           <button type="button" class="btn-secondary trip-btn" id="trip-btn-B" onclick="selectTrip('B')">Option B<span class="trip-seats" id="trip-seats-B">…</span></button>
           <button type="button" class="btn-secondary trip-btn" id="trip-btn-C" onclick="selectTrip('C')">Option C<span class="trip-seats" id="trip-seats-C">…</span></button>
         </div>
+        <p class="muted hidden" id="trip-lock-note" style="margin:10px 0 0;"></p>
         <div class="msg" id="trip-msg"></div>
       </div>
 
@@ -834,11 +836,13 @@
         onSuccess: function (res) {
           if (!checkRes(res, 'login-msg')) return;
           if (!res.success) { setMsg('login-msg', res.message, true); return; }
+          if (res.organizer) { openOrganizerPage(res.token); return; }
           sessionGen++;
           currentUser = res.user;
           sessionToken = res.token;
           storeToken(res.token, remember);
           currentPersonalInfo = res.personalInfo;
+          currentLocks = res.locks || {};
           enterSession();
           routeToInfoForm();
         }
@@ -892,6 +896,7 @@
     }
 
     function resetClientState() {
+      currentLocks = {};
       forgetToken();
       stopLive();
       resetAutosave();
@@ -1011,6 +1016,7 @@
 
       document.getElementById('info-email').value = currentUser.email;
       fillInfoForm(currentPersonalInfo || {});
+      applyLocks(currentLocks);
       clearMsg('info-msg');
       livePaymentPending = false; // loaded fresh just below
       showView('view-info');
@@ -1656,6 +1662,7 @@
           }
           section.classList.remove('hidden');
           renderTripOptions(res);
+          applyTripLock(res);
         },
         onFailure: function () { if (!quiet) document.getElementById('trip-section').classList.add('hidden'); }
       });
@@ -2052,6 +2059,57 @@
       }
     }
 
+
+    // ---------------- ORGANIZERS AND EDIT LOCKS (2026-10-26) ----------------
+    // An organizer account (a username, no "@") logs in on this same page and
+    // is sent to organizer.html. Its login is kept for this tab only.
+    function openOrganizerPage(orgToken) {
+      try { sessionStorage.setItem('icemkku.organizer', orgToken); } catch (e) { /* the organizer page will ask to log in again */ }
+      location.href = 'organizer.html';
+    }
+
+    // After the organizers' "InfoEditDeadline" the information form and the
+    // documents are read-only (payments still work); after
+    // "TripSelectionDeadline" the trip choice is.
+    var currentLocks = {};
+    var INFO_LOCK_DOCS = ['passport', 'enrollment', 'ifmsaCert'];
+    function applyLocks(locks) {
+      currentLocks = locks || {};
+      var on = !!currentLocks.infoLocked;
+      document.querySelectorAll('#info-fields-card input, #info-fields-card select, #info-fields-card textarea, #info-fields-card button').forEach(function (el) {
+        if (el.id === 'info-email') return;
+        if (on) { el.disabled = true; return; }
+        if (el.id === 'info-observerLevel') return; // its own lock comes with the payment details
+        el.disabled = false;
+      });
+      if (!on && paymentStatus) renderLevelControl(paymentStatus);
+      INFO_LOCK_DOCS.forEach(function (k) {
+        ['upload-btn-', 'delete-', 'file-'].forEach(function (pre) { var el = document.getElementById(pre + k); if (el) el.disabled = on; });
+      });
+      document.getElementById('info-save-btn').classList.toggle('hidden', on);
+      var banner = document.getElementById('info-lock-banner');
+      if (on) {
+        banner.textContent = 'Your personal information and documents were locked on ' + currentLocks.infoLockAt + ' (Thailand time), so they can no longer be changed. Please contact the organizers if something needs to change. Payments still work.';
+        cancelAutosaveTimer();
+        setAutosaveStatus('');
+      } else if (currentLocks.infoLockAt) {
+        banner.textContent = 'You can add or change your information and documents until ' + currentLocks.infoLockAt + ' (Thailand time).';
+      }
+      banner.classList.toggle('hidden', !currentLocks.infoLockAt);
+      document.getElementById('save-hint').classList.toggle('hidden', on);
+      document.querySelectorAll('#info-fields-card ~ .card .action-hint').forEach(function (x) { x.classList.toggle('hidden', on); });
+    }
+    function applyTripLock(res) {
+      var note = document.getElementById('trip-lock-note');
+      if (res.tripLocked) {
+        ['A', 'B', 'C'].forEach(function (o) { document.getElementById('trip-btn-' + o).disabled = true; });
+        note.textContent = 'Trip selection closed on ' + res.tripLockAt + ' (Thailand time). Please contact the organizers if you need to change it.';
+      } else {
+        note.textContent = res.tripLockAt ? 'You can choose or change your trip until ' + res.tripLockAt + ' (Thailand time).' : '';
+      }
+      note.classList.toggle('hidden', !note.textContent);
+    }
+
     // ---------------- STAY LOGGED IN (2026-10-24) ----------------
     // The login token is kept in this browser so reloading the page does not
     // log the person out: localStorage when "Stay logged in on this computer"
@@ -2091,6 +2149,7 @@
             currentUser = res.user;
             sessionToken = token;
             currentPersonalInfo = res.personalInfo;
+            currentLocks = res.locks || {};
             enterSession();
             routeToInfoForm();
             return;
@@ -2167,6 +2226,7 @@
         if (res && res.sessionExpired) { handleSessionExpired(res.message); return; }
         if (!res || !res.success) { liveRefreshPending = true; return; }
         applyAccountUpdate(res.user, res.personalInfo);
+        if (res.locks) applyLocks(res.locks);
         livePaymentPending = true;
         tryLivePayment();
       }, function () { if (gen === sessionGen) liveRefreshPending = true; });
@@ -2340,7 +2400,7 @@
     }
 
     function onInfoEdited(ev) {
-      if (!sessionToken || !currentUser || !infoFormReady) return;
+      if (!sessionToken || !currentUser || !infoFormReady || currentLocks.infoLocked) return;
       var t = ev.target || {};
       if (t.type === 'file' || t.disabled) return;
       if (t.id === 'info-universityOther' && ev.type === 'change') { setAutosaveStatus('dirty'); checkOtherUniversityQuietly(); return; }
