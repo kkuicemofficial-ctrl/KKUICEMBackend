@@ -10,15 +10,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ICEMKKU Registration</title>
   <style>
+    /* Colours from the ICEM 2027 "Ramayana" theme (PANTONE page):
+       cream paper, steel blue, navy, sage, rose, gold, dark brown text. */
     :root {
-      --bg: #fafaf9;
-      --surface: #ffffff;
-      --border: #e2e2df;
-      --text: #1f1f1d;
-      --muted: #6b6b66;
-      --accent: #2f6f5e;
-      --accent-hover: #24564a;
-      --danger: #b3432b;
+      --bg: #fcf6ee;
+      --surface: #fffdf9;
+      --border: #e6dccd;
+      --text: #302b20;
+      --muted: #6c6352;
+      --accent: #225589;          /* navy */
+      --accent-hover: #14416f;
+      --accent-soft: #e4edf5;
+      --steel: #528196;
+      --sky: #80acc0;
+      --ok: #3f6b37;              /* sage, dark enough for text */
+      --ok-soft: #e7efe2;
+      --danger: #ad4d4d;          /* rose */
+      --danger-soft: #f7e2df;
+      --warn: #7d5a12;            /* gold */
+      --warn-soft: #fbf0d6;
+      --gold: #e5b663;
+      --sage: #b2cbaa;
+      --rose: #cf7070;
+      --sand: #f3ede7;
       --radius: 10px;
     }
     * { box-sizing: border-box; }
@@ -57,8 +71,8 @@
       margin-bottom: 18px;
     }
     .banner {
-      background: #f1f6f4;
-      border: 1px solid #d7e6e0;
+      background: var(--accent-soft);
+      border: 1px solid #c8d9e8;
       border-radius: var(--radius);
       padding: 12px 16px;
       font-size: 14px;
@@ -72,7 +86,7 @@
       margin-top: 14px;
     }
     label:first-of-type { margin-top: 0; }
-    input[type=text], input[type=email], input[type=password], select, textarea {
+    input[type=text], input[type=email], input[type=password], input[type=tel], select, textarea {
       width: 100%;
       padding: 9px 10px;
       border: 1px solid var(--border);
@@ -82,7 +96,7 @@
       color: var(--text);
       font-family: inherit;
     }
-    input:disabled { background: #f2f2f0; color: var(--muted); }
+    input:disabled, select:disabled, textarea:disabled { background: var(--sand); color: var(--muted); }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
     @media (max-width: 560px) { .row2, .row4 { grid-template-columns: 1fr; } }
@@ -98,39 +112,38 @@
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary { background: transparent; border-color: var(--border); color: var(--text); }
-    .btn-secondary:hover { background: #f1f1ef; }
+    .btn-secondary:hover { background: var(--sand); }
     .btn-link { background: none; border: none; color: var(--accent); padding: 0; font-weight: 600; text-decoration: underline; cursor: pointer; }
     .btn-small { padding: 6px 12px; font-size: 12px; }
     .btn-row { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
     .landing-buttons { display: flex; flex-direction: column; gap: 12px; max-width: 280px; margin: 40px auto 0; }
     .landing-buttons button { padding: 14px; font-size: 15px; }
     .msg { font-size: 13px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; display: none; }
-    .msg.error { display: block; background: #fbe9e5; color: var(--danger); }
-    .msg.success { display: block; background: #e9f3ee; color: var(--accent); }
+    .msg.error { display: block; background: var(--danger-soft); color: var(--danger); }
+    .msg.success { display: block; background: var(--ok-soft); color: var(--ok); }
     .upload-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
     .upload-status { font-size: 12px; color: var(--muted); }
-    .upload-status.done { color: var(--accent); font-weight: 600; }
+    .upload-status.done { color: var(--ok); font-weight: 600; }
     .upload-status a { color: inherit; }
-    .verified-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
+    .verified-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--ok); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
     .rejected-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
     .upload-status.rejected { color: var(--danger); font-weight: 600; }
     .btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
-    .btn-danger:hover { background: #fbe9e5; }
-    .discount-note { font-size: 13px; color: var(--muted); background: #f6f5ef; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+    .btn-danger:hover { background: var(--danger-soft); }
+    .discount-note { font-size: 13px; color: var(--muted); background: var(--sand); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
     .fee-section { margin: 14px 0; }
     .fee-section img { display: block; max-width: 420px; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); }
     .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 560px) { .team-grid { grid-template-columns: 1fr; } }
     .team-panel h3 { margin: 0 0 8px; font-size: 14px; }
-    .team-panel .badge { font-size: 11px; font-weight: 600; color: var(--accent); background: #e9f3ee; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+    .team-panel .badge { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
     .team-panel dl { margin: 0; font-size: 13px; }
     .team-panel dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 8px; }
     .team-panel dd { margin: 0; }
-    /* Team Stat panel colors — leader = pastel orange, advisor = pastel
-       purple (placeholder hex values until the official color theme is
-       ready; easy to swap later). */
-    #panel-leader { background: #FFF1E0; border-color: #F6C89F; }
-    #panel-advisor { background: #F3ECFB; border-color: #D9C2F0; }
+    /* Team Stat panel colors — leader = pastel orange, advisor = pastel purple,
+       softened to sit with the Ramayana cream. */
+    #panel-leader { background: #fdf0de; border-color: #edc893; }
+    #panel-advisor { background: #f4effa; border-color: #d9cdee; }
     .empty-slot { color: var(--muted); font-size: 13px; font-style: italic; }
     .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -164,15 +177,15 @@
     .trip-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; justify-content: center; }
     .trip-btn { min-width: 120px; text-align: center; line-height: 1.3; }
     .trip-seats { display: block; font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.85; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(31, 31, 29, 0.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(48, 43, 32, 0.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
     .modal-box { background: var(--surface); border-radius: var(--radius); padding: 24px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25); }
     .modal-box p { margin: 0 0 18px; font-size: 14px; line-height: 1.5; color: var(--text); }
     .modal-box button { width: 100%; }
     /* Payment section (2026-10-18) */
-    .card.overdue { background: #fde2dc; border-color: var(--danger); }
+    .card.overdue { background: var(--danger-soft); border-color: var(--danger); }
     .fee-line { font-size: 18px; font-weight: 700; margin: 4px 0 2px; }
     .muted { color: var(--muted); font-size: 13px; }
-    .action-hint { font-size: 12.5px; color: #8a5a00; margin: 6px 0 0; }
+    .action-hint { font-size: 12.5px; color: var(--warn); margin: 6px 0 0; }
     .action-hint::before { content: '\2192  '; }
     .payment-image { display: block; max-width: 420px; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px; }
     .pay-option { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; background: var(--surface); }
@@ -189,15 +202,72 @@
     .inline-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
     .inline-row input[type=text] { width: auto; flex: 1; min-width: 160px; }
     .team-line { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-    .status-Verified { color: var(--accent); font-weight: 700; }
+    .status-Verified { color: var(--ok); font-weight: 700; }
     .status-Not-verified { color: var(--danger); font-weight: 700; }
-    .status-Pending { color: #8a6d00; font-weight: 700; }
+    .status-Pending { color: var(--warn); font-weight: 700; }
     /* Autosave + stay logged in (2026-10-24) */
     .autosave-status { font-size: 12.5px; color: var(--muted); margin: -4px 0 10px; min-height: 18px; }
-    .autosave-status.saved { color: var(--accent); }
+    .autosave-status.saved { color: var(--ok); }
     .autosave-status.problem { color: var(--danger); }
     .remember-row { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; font-size: 13px; margin: 14px 0 0; }
     .remember-row input { width: auto; margin-top: 2px; }
+    /* 2026-10-31 */
+    .topbar { position: relative; }
+    .brand-stripe { display: flex; height: 4px; max-width: 760px; margin: 10px auto 0; padding: 0 20px; gap: 0; }
+    .brand-stripe i { flex: 1; }
+    .brand-stripe i:nth-child(1) { background: var(--sky); } .brand-stripe i:nth-child(2) { background: var(--accent); }
+    .brand-stripe i:nth-child(3) { background: var(--rose); } .brand-stripe i:nth-child(4) { background: var(--sage); }
+    .brand-stripe i:nth-child(5) { background: var(--gold); }
+    .linklike { background: none; border: none; padding: 0; font: inherit; font-weight: 600; color: var(--accent); text-decoration: underline; cursor: pointer; }
+    .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 2px; background: var(--sand); }
+    .seg button { background: none; border: none; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+    .seg button.on { background: var(--accent); color: #fff; }
+    .tos-box { max-width: 620px; text-align: left; max-height: calc(100vh - 40px); overflow-y: auto; }
+    .tos-box h2 { margin: 0; }
+    .tos-box ol { padding-left: 20px; margin: 14px 0 18px; font-size: 14px; line-height: 1.55; }
+    .tos-box li { margin-bottom: 10px; }
+    .tos-box li b { display: block; }
+    .tos-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .phone-row { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 8px; }
+    .phone-row.other { grid-template-columns: minmax(150px, 210px) 1fr; }
+    @media (max-width: 560px) { .phone-row { grid-template-columns: 1fr; } }
+    .field-error { font-size: 12px; color: var(--danger); margin: 4px 0 0; }
+    .emergency-box { background: #fff1de; border: 1px solid #f0c98e; border-radius: 8px; padding: 10px 12px 12px; margin-top: 14px; }
+    .emergency-box label { margin-top: 0; }
+    .req { color: var(--danger); font-weight: 600; font-size: 12px; margin-left: 4px; }
+    .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 14px 0 5px; }
+    .label-row label { margin: 0; }
+    .none-cb { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--muted); margin: 0 !important; cursor: pointer; }
+    .none-cb input { width: auto; margin: 0; }
+    .health-hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+    .required-notice { background: var(--warn-soft); color: var(--warn); border: 1px solid #efd8a3; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin: 0 0 12px; }
+    .size-chart { margin-top: 8px; }
+    .size-chart summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+    .size-chart table { border-collapse: collapse; margin-top: 8px; font-size: 13px; min-width: 260px; }
+    .size-chart th, .size-chart td { padding: 5px 12px; border-bottom: 1px solid var(--border); text-align: center; font-variant-numeric: tabular-nums; }
+    .size-chart th { background: var(--sand); }
+    .size-chart td:first-child, .size-chart th:first-child { text-align: left; font-weight: 600; }
+    .paydetails { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+    .paydetails-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; background: var(--accent-soft); }
+    .paydetails-head b { font-size: 14px; }
+    .pd-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .pd-table th, .pd-table td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
+    .pd-table th { width: 38%; color: var(--muted); font-weight: 600; }
+    .pd-table .mono { font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 0.04em; }
+    .copy-btn { margin-left: 8px; padding: 3px 10px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--accent); }
+    .copy-btn.done { color: var(--ok); border-color: var(--sage); }
+    .inv-confirmed { background: var(--ok-soft); color: var(--ok); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 8px; }
+    .inv-confirmed dl { display: grid; grid-template-columns: 140px 1fr; gap: 2px 10px; margin: 8px 0 0; color: var(--text); }
+    .inv-confirmed dt { color: var(--muted); }
+    .inv-confirmed dd { margin: 0; overflow-wrap: anywhere; }
+    .combined-card { border: 1px solid var(--border); border-left: 4px solid var(--steel); border-radius: 8px; padding: 14px; margin-top: 14px; background: var(--surface); }
+    .combined-card h3 { margin: 0 0 6px; font-size: 15px; }
+    .inv-names { margin-top: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); padding: 6px 10px; }
+    .inv-names label { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 13.5px; margin: 4px 0; }
+    .inv-names input { width: auto; margin: 0; }
+    .inv-names .role { color: var(--muted); font-size: 12.5px; }
+    .inv-kku-note { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+    .inv-req { color: var(--danger); font-weight: 600; font-size: 12px; margin-left: 4px; }
   </style>
 </head>
 <body>
@@ -211,6 +281,7 @@
       <button class="btn-link" onclick="logout()">Log out</button>
     </div>
   </div>
+  <div class="brand-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
   <div class="wrap">
 
@@ -259,7 +330,7 @@
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:18px;">
           <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; font-size:13px; margin:0;">
             <input type="checkbox" id="reg-tos" style="margin-top:2px;">
-            <span>I've read and agreed with the terms of service</span>
+            <span>I've read and agreed with the <button type="button" class="linklike" id="tos-open" onclick="openTos(event)">terms of service</button></span>
           </label>
           <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; font-size:13px; margin:0;">
             <input type="checkbox" id="reg-pdpa" style="margin-top:2px;">
@@ -378,8 +449,23 @@
         </div>
         <label>Email</label>
         <input type="email" id="info-email" disabled>
-        <label>Contact information</label>
-        <input type="text" id="info-contact" placeholder="Phone / LINE / WhatsApp, etc.">
+        <div class="required-notice hidden" id="info-required" role="status"></div>
+        <label for="phone-number">Telephone<span class="req">required</span></label>
+        <div class="phone-row" data-phone="phone">
+          <select id="phone-cc" aria-label="Country code"></select>
+          <input type="tel" id="phone-number" autocomplete="tel-national" inputmode="tel" placeholder="e.g. 081 234 5678">
+        </div>
+        <p class="field-error hidden" id="phone-error"></p>
+        <label for="info-otherContact">Other contact</label>
+        <input type="text" id="info-otherContact" maxlength="300" placeholder="e.g. Line, Facebook, Instagram, What's App, etc.">
+        <div class="emergency-box">
+          <label for="emergency-number">Emergency contact telephone<span class="req">required</span></label>
+          <div class="phone-row" data-phone="emergency">
+            <select id="emergency-cc" aria-label="Country code"></select>
+            <input type="tel" id="emergency-number" inputmode="tel" placeholder="Someone we can call in an emergency">
+          </div>
+          <p class="field-error hidden" id="emergency-error"></p>
+        </div>
 
         <div class="row2">
           <div>
@@ -395,18 +481,46 @@
             <p style="font-size:12px; color:var(--muted); margin:6px 0 0;">Select all that apply — e.g. Halal and Not spicy.</p>
             <input type="text" id="info-foodPrefOther" class="hidden" placeholder="Please specify" style="margin-top:8px;">
           </div>
-          <div><label>Food and drug allergy</label><input type="text" id="info-allergy"></div>
+          <div>
+            <div class="label-row"><label for="info-allergy">Food and drug allergy</label><label class="none-cb"><input type="checkbox" id="none-allergy" data-none-for="info-allergy"> None</label></div>
+            <input type="text" id="info-allergy" placeholder="Leave blank or tick None if you have none">
+          </div>
         </div>
         <div class="row2">
-          <div><label>Underlying disease</label><input type="text" id="info-disease"></div>
-          <div><label>Current medication</label><input type="text" id="info-medication"></div>
+          <div>
+            <div class="label-row"><label for="info-disease">Underlying disease</label><label class="none-cb"><input type="checkbox" id="none-disease" data-none-for="info-disease"> None</label></div>
+            <input type="text" id="info-disease" placeholder="Leave blank or tick None if you have none">
+          </div>
+          <div>
+            <div class="label-row"><label for="info-medication">Current medication</label><label class="none-cb"><input type="checkbox" id="none-medication" data-none-for="info-medication"> None</label></div>
+            <input type="text" id="info-medication" placeholder="Leave blank or tick None if you have none">
+          </div>
         </div>
+        <p class="health-hint">If you have no allergy, disease or medication, tick <b>None</b> — please don't type "no", "nothing" or "-". The organizers use these answers to prepare food and medical care.</p>
 
-        <label>Shirt size</label>
+        <label for="info-shirtSize">Shirt size<span class="req">required</span></label>
         <select id="info-shirtSize">
-          <option>XXS</option><option>XS</option><option>S</option><option>M</option>
-          <option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+          <option value="">Select your size…</option>
+          <option>S</option><option>M</option><option>L</option><option>XL</option>
+          <option>2XL</option><option>3XL</option><option>4XL</option><option>5XL</option>
         </select>
+        <p class="field-error hidden" id="shirt-old-note"></p>
+        <details class="size-chart" open>
+          <summary>Size chart (inches)</summary>
+          <table>
+            <thead><tr><th>Size</th><th>Chest (in)</th><th>Length (in)</th></tr></thead>
+            <tbody>
+              <tr><td>S</td><td>32</td><td>25</td></tr>
+              <tr><td>M</td><td>36</td><td>27</td></tr>
+              <tr><td>L</td><td>40</td><td>28</td></tr>
+              <tr><td>XL</td><td>44</td><td>29</td></tr>
+              <tr><td>2XL</td><td>48</td><td>30</td></tr>
+              <tr><td>3XL</td><td>50</td><td>32</td></tr>
+              <tr><td>4XL</td><td>56</td><td>34</td></tr>
+              <tr><td>5XL</td><td>60</td><td>35</td></tr>
+            </tbody>
+          </table>
+        </details>
 
         <label>Special requirement</label>
         <textarea id="info-specialRequirement" rows="3" placeholder="Anything else the organizers should know about your needs that isn't covered above (optional)"></textarea>
@@ -415,7 +529,7 @@
       <div class="card">
         <h2 style="margin-top:0;">Documents</h2>
 
-        <label>Passport information</label>
+        <label>Passport information/Thai ID card</label>
         <div class="upload-row">
           <input type="file" id="file-passport" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
           <button class="btn-secondary btn-small" id="upload-btn-passport" onclick="uploadDoc('passport')">Upload</button>
@@ -451,10 +565,33 @@
         <h2 style="margin-top:0;">Registration fee and payment</h2>
         <div class="fee-line" id="fee-line"></div>
         <div class="muted" id="fee-note"></div>
-        <img class="payment-image" id="payment-image" alt="Payment details (bank account / QR code)">
+        <div class="paydetails" id="payment-image">
+          <div class="paydetails-head">
+            <b>Payment details</b>
+            <div class="seg" role="group" aria-label="Transfer from">
+              <button type="button" id="pd-btn-th" class="on" onclick="setPayDetails('th')">Thai bank transfer</button>
+              <button type="button" id="pd-btn-intl" onclick="setPayDetails('intl')">International</button>
+            </div>
+          </div>
+          <table class="pd-table" id="pd-th" lang="th">
+            <tr><th>ธนาคาร</th><td>ธนาคารกสิกรไทย (KBank)</td></tr>
+            <tr><th>เลขที่บัญชี</th><td><span class="mono" id="pd-th-account">2301875048</span><button type="button" class="copy-btn" onclick="copyText('2301875048', this)">Copy</button></td></tr>
+            <tr><th>ชื่อบัญชี</th><td>สโมสรนักศึกษาคณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น (MDKKU Student Union)</td></tr>
+          </table>
+          <table class="pd-table hidden" id="pd-intl">
+            <tr><th>Account name</th><td>MDKKU Student Union</td></tr>
+            <tr><th>Account no.</th><td class="mono">2301875048</td></tr>
+            <tr><th>Bank name</th><td>Kasikornbank (KBank)</td></tr>
+            <tr><th>Branch name</th><td>Central Khon Kaen</td></tr>
+            <tr><th>Swift code</th><td><span class="mono">KASITHBK</span><button type="button" class="copy-btn" onclick="copyText('KASITHBK', this)">Copy</button></td></tr>
+            <tr><th>Bank code</th><td class="mono">004</td></tr>
+            <tr><th>Branch code</th><td class="mono">0871</td></tr>
+          </table>
+        </div>
         <div class="msg" id="payment-covered"></div>
         <div id="payment-options"></div>
         <div id="my-payments"></div>
+        <div id="combined-invoice" class="hidden"></div>
         <div class="msg" id="payment-msg"></div>
       </div>
 
@@ -524,6 +661,34 @@
     <div class="modal-box">
       <p id="modal-message"></p>
       <button class="btn-primary" id="modal-ok-btn" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
+  <!-- Terms of service (2026-10-31), English / Thai -->
+  <div class="modal-overlay hidden" id="tos-overlay" role="dialog" aria-modal="true" aria-labelledby="tos-title" onclick="if (event.target === this) closeTos()">
+    <div class="modal-box tos-box">
+      <div class="tos-head">
+        <h2 id="tos-title">Terms of service</h2>
+        <div class="seg" role="group" aria-label="Language">
+          <button type="button" id="tos-en" class="on" onclick="setTosLang('en')">English</button>
+          <button type="button" id="tos-th" onclick="setTosLang('th')">ไทย</button>
+        </div>
+      </div>
+      <ol id="tos-list-en">
+        <li><b>Team Registration</b>Each university or medical center may register a maximum of two teams, with three members per team.</li>
+        <li><b>Team Adviser</b>Each team must have one adviser. However, if two teams are from the same university or medical center, they may share one adviser.</li>
+        <li><b>Observer Registration</b>There is no limit to the number of observers from each university or medical center. Observers may be medical students and/or faculty members. The registration fee for each observer will be based on their status, equivalent to the applicable fee for either a medical student or a faculty member.</li>
+        <li><b>Early Bird Registration and Payment Deadline</b>For the Early Bird registration period, payment must be completed by 30 November 2026 at 11:59 PM (GMT+7, Thailand Time).</li>
+        <li><b>Regular Registration and Payment Deadline</b>For the Regular registration period, payment must be completed within 72 hours of registration. All payments must be received no later than 31 December 2026 at 11:59 PM (GMT+7, Thailand Time), regardless of the registration date.</li>
+      </ol>
+      <ol id="tos-list-th" class="hidden" lang="th">
+        <li><b>การสมัครเข้าร่วมการแข่งขัน</b>แต่ละมหาวิทยาลัยหรือศูนย์แพทย์สามารถส่งทีมเข้าร่วมการแข่งขันได้ไม่เกิน 2 ทีม โดยแต่ละทีมต้องมีสมาชิกจำนวน 3 คน</li>
+        <li><b>อาจารย์ที่ปรึกษาประจำทีม (Adviser)</b>แต่ละทีมต้องมีอาจารย์ที่ปรึกษาประจำทีมจำนวน 1 คน อย่างไรก็ตาม หากทั้ง 2 ทีมมาจากมหาวิทยาลัยหรือศูนย์แพทย์เดียวกัน สามารถใช้อาจารย์ที่ปรึกษาร่วมกันได้ 1 คน</li>
+        <li><b>การสมัครเข้าร่วมในฐานะผู้สังเกตการณ์ (Observer)</b>แต่ละมหาวิทยาลัยหรือศูนย์แพทย์สามารถส่งผู้สังเกตการณ์เข้าร่วมได้โดยไม่จำกัดจำนวน โดยผู้สังเกตการณ์สามารถเป็นนักศึกษาแพทย์และ/หรืออาจารย์ได้ ทั้งนี้ อัตราค่าสมัครสำหรับผู้สังเกตการณ์จะขึ้นอยู่กับสถานะของผู้สมัคร โดยใช้อัตราเดียวกับค่าสมัครของนักศึกษาแพทย์หรืออาจารย์ตามลำดับ</li>
+        <li><b>การชำระค่าสมัครในรอบ Early Bird</b>ผู้สมัครในรอบ Early Bird ต้องชำระค่าสมัครให้เสร็จสิ้นภายในวันที่ 30 พฤศจิกายน พ.ศ. 2569 เวลา 23.59 น. (GMT+7 หรือเวลาประเทศไทย)</li>
+        <li><b>การชำระค่าสมัครในรอบ Regular</b>ผู้สมัครในรอบ Regular ต้องชำระค่าสมัครให้เสร็จสิ้นภายใน 72 ชั่วโมงนับจากเวลาที่ลงทะเบียนสมัคร และต้องชำระค่าสมัครให้เสร็จสิ้นภายในวันที่ 31 ธันวาคม พ.ศ. 2569 เวลา 23.59 น. (GMT+7 หรือเวลาประเทศไทย) ทั้งนี้ หากกำหนดเวลาชำระเงินภายใน 72 ชั่วโมงเกินกว่าวันและเวลาสิ้นสุดที่กำหนด ผู้สมัครจะต้องชำระเงินภายในวันที่ 31 ธันวาคม พ.ศ. 2569 เวลา 23.59 น. เป็นอย่างช้า</li>
+      </ol>
+      <button class="btn-primary" type="button" id="tos-close" onclick="closeTos()" style="width:100%;">Close</button>
     </div>
   </div>
 
@@ -609,6 +774,7 @@
       submitPayment: function (a) { return ['POST', '/api/payments', a[1], a[0]]; },
       addPaymentSlip: function (a) { return ['POST', '/api/payments/' + enc(a[1]) + '/slips', { data: a[2], fileName: a[3] }, a[0]]; },
       updatePaymentInvoice: function (a) { return ['PUT', '/api/payments/' + enc(a[1]) + '/invoice', { invoice: a[2] }, a[0]]; },
+      saveCombinedInvoice: function (a) { return ['PUT', '/api/me/combined-invoice', { invoice: a[1] }, a[0]]; },
       addAdvisorTeam: function (a) { return ['POST', '/api/teams', { name: a[1] }, a[0]]; },
       renameAdvisorTeam: function (a) { return ['PATCH', '/api/teams/' + enc(a[1]), { newName: a[2] }, a[0]]; },
       removeAdvisorTeam: function (a) { return ['DELETE', '/api/teams/' + enc(a[1]), null, a[0]]; },
@@ -1045,11 +1211,21 @@
       renderUniversityOptions(d.University || '');
       document.getElementById('info-country').value = d.Country || '';
       document.getElementById('info-religion').value = d.Religion || '';
-      document.getElementById('info-contact').value = d.ContactInformation || '';
+      setPhone('phone', d.Phone || '');
+      setPhone('emergency', d.EmergencyPhone || '');
+      // Before 2026-10-31 there was one "Contact information" box: it shows here until changed.
+      document.getElementById('info-otherContact').value = d.OtherContact || d.ContactInformation || '';
       document.getElementById('info-allergy').value = d.FoodAndDrugAllergy || '';
       document.getElementById('info-disease').value = d.UnderlyingDisease || '';
       document.getElementById('info-medication').value = d.CurrentMedication || '';
-      document.getElementById('info-shirtSize').value = d.ShirtSize || 'M';
+      document.getElementById('none-allergy').checked = !!d.AllergyNone;
+      document.getElementById('none-disease').checked = !!d.DiseaseNone;
+      document.getElementById('none-medication').checked = !!d.MedicationNone;
+      applyNoneBoxes();
+      document.getElementById('info-shirtSize').value = d.ShirtSize || '';
+      var oldNote = document.getElementById('shirt-old-note');
+      oldNote.textContent = d.ShirtSizeOld ? 'Size ' + d.ShirtSizeOld + ' is no longer available — please choose a size from the chart.' : '';
+      oldNote.classList.toggle('hidden', !d.ShirtSizeOld);
       document.getElementById('info-specialRequirement').value = d['Special requirement'] || '';
 
       var selectedPrefs = String(d.FoodPreference || 'Regular').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
@@ -1075,11 +1251,12 @@
       resetAutosave();
       infoFormReady = true;
       lastSavedInfo = JSON.stringify(collectInfoFields(autosaveUniversity()));
+      updateRequiredNotice();
     }
 
     var UPLOAD_COLUMN_MAP = { passport: 'PassportFileUrl', enrollment: 'ProofOfEnrollmentFileUrl', ifmsaCert: 'IfmsaCertFileUrl' };
     var UPLOAD_CHECK_MAP = { passport: 'Passport check', enrollment: 'Proof of enrolment check', ifmsaCert: 'IFMSA/AMSA certificate check' };
-    var UPLOAD_LABEL_MAP = { passport: 'passport', enrollment: 'proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
+    var UPLOAD_LABEL_MAP = { passport: 'passport / Thai ID card', enrollment: 'proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
 
     // ---------------- REGISTRATION FEE + PAYMENT (2026-10-18) ----------------
     // Everything here comes from getPaymentStatus on the server: the price,
@@ -1092,15 +1269,6 @@
     var countdownTimer = null;
     var serverOffsetMs = 0;
     var invoiceSavedFor = null;
-
-    // PLACEHOLDER — replace with the real payment-detail image (bank account / QR).
-    var PAYMENT_IMAGE_SRC = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="200" viewBox="0 0 420 200">' +
-      '<rect width="420" height="200" fill="#f1f1ef"/>' +
-      '<rect x="10" y="10" width="400" height="180" fill="none" stroke="#c9c9c3" stroke-dasharray="6 5"/>' +
-      '<text x="210" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#55554f">Payment details</text>' +
-      '<text x="210" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#77776f">Bank account / QR code image coming soon</text>' +
-      '</svg>');
 
     function thb(n) {
       if (n === null || n === undefined) return '—';
@@ -1165,6 +1333,8 @@
       // Once the payment is Verified the price line and the payment-detail
       // image are no longer needed (2026-10-21); the "paid" status stays.
       var paidDone = !!(s.paymentVerified || (s.covered && s.covered.status === 'Verified'));
+      // The IFMSA/AMSA certificate only lowers the price: not needed once paid (2026-11-01).
+      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone);
       ['fee-line', 'fee-note', 'payment-image'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone); });
       document.getElementById('fee-line').textContent = 'Final price: ' + thb(s.price);
       var note;
@@ -1173,7 +1343,6 @@
       else note = s.priceBasis + '. ' + (s.earlyBird ? 'Early-bird price for payments submitted until ' + s.earlyBirdEnds + ' (Thailand time).' : 'The early-bird period has ended.') +
         (s.priceProvisional ? ' This price is confirmed once the organizers verify your proof of enrolment.' : '');
       document.getElementById('fee-note').textContent = note;
-      document.getElementById('payment-image').src = PAYMENT_IMAGE_SRC;
 
       // The payment this person is in.
       var cov = document.getElementById('payment-covered');
@@ -1203,6 +1372,7 @@
         if (p.id === invoiceSavedFor) setMsg('inv-msg-p' + idx, 'Invoice request saved.', false);
       });
       invoiceSavedFor = null;
+      renderCombinedInvoice(s);
 
       section.classList.toggle('overdue', !!s.overdue);
       startCountdowns();
@@ -1265,29 +1435,61 @@
       var btn = el('button', 'btn-primary', 'Submit payment');
       btn.id = 'pay-btn-' + idx;
       btn.onclick = function () { submitPaymentOption(idx); };
+      if (o.needsObserver) btn.disabled = true; // enabled once an observer is ticked
       row.appendChild(btn);
+      if (o.needsObserver) row.appendChild(el('span', 'muted', 'Tick at least one observer above.'));
       d.appendChild(row);
       var msg = el('div', 'msg'); msg.id = 'pay-msg-' + idx;
       d.appendChild(msg);
-      d.appendChild(buildInvoiceBox('o' + idx, null,
-        'Optional. Fill it in now and it is sent with your payment, or add / change it later under "Your payment".'));
+      var comb = paymentStatus && paymentStatus.combinedInvoice;
+      if (comb && comb.needed && !comb.confirmed) {
+        var cw = el('div', 'inv-section');
+        cw.appendChild(el('h4', '', 'Invoice request'));
+        cw.appendChild(el('p', 'muted', 'You asked for one invoice for all your payments, so this payment will be added to it.'));
+        d.appendChild(cw);
+      } else {
+        d.appendChild(buildInvoiceBox('o' + idx, null,
+          'Optional. Fill it in now and it is sent with your payment, or add / change it later under "Your payment".', { people: optionPeople(o, idx) }));
+      }
       return d;
     }
 
     // ---- Invoice request (below the submit button; can be changed after paying) ----
     var FILE_ACCEPT = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
 
-    function buildInvoiceBox(prefix, cur, hint) {
-      cur = cur || {};
+    /** A confirmed invoice: shown, not editable. */
+    function confirmedInvoiceBox(cur, title) {
       var wrap = el('div', 'inv-section');
-      wrap.appendChild(el('h4', '', 'Invoice request'));
+      wrap.appendChild(el('h4', '', title || 'Invoice request'));
+      var box = el('div', 'inv-confirmed');
+      box.appendChild(el('b', '', '✓ Invoice confirmed by the organizers' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + '.'));
+      box.appendChild(document.createTextNode(' It can no longer be changed here — please contact the organizers if something is wrong.'));
+      var dl = el('dl');
+      var onList = (cur.people || []).filter(function (x) { return (cur.names || []).indexOf(x.key) !== -1; })
+        .map(function (x) { return x.name + ' (' + cap(x.role) + ')'; }).join(', ');
+      [['Template', cur.option === 'Custom' ? 'Your own template' : "Organizers' KKU template"], ['Bill to', cur.billTo], ['Address', cur.address], ['Tax ID', cur.taxId],
+        ['Names on the invoice', onList], ['Telephone', cur.phone], ['Other information', cur.note]].forEach(function (r) {
+        if (!r[1]) return;
+        dl.appendChild(el('dt', '', r[0])); dl.appendChild(el('dd', '', r[1]));
+      });
+      box.appendChild(dl);
+      wrap.appendChild(box);
+      return wrap;
+    }
+
+    function buildInvoiceBox(prefix, cur, hint, opts) {
+      cur = cur || {};
+      opts = opts || {};
+      if (cur.confirmed) return confirmedInvoiceBox(cur, opts.title);
+      var wrap = el('div', 'inv-section');
+      wrap.appendChild(el('h4', '', opts.title || 'Invoice request'));
       if (hint) wrap.appendChild(el('p', 'muted', hint));
 
       var invLabel = el('label');
       invLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;';
       var invCb = el('input'); invCb.type = 'checkbox'; invCb.id = 'inv-needed-' + prefix; invCb.checked = !!cur.needed;
       invLabel.appendChild(invCb);
-      invLabel.appendChild(document.createTextNode('I need an invoice'));
+      invLabel.appendChild(document.createTextNode(opts.label || 'I need an invoice'));
       wrap.appendChild(invLabel);
 
       var inv = el('div', 'inv-box' + (cur.needed ? '' : ' hidden')); inv.id = 'inv-box-' + prefix;
@@ -1295,8 +1497,11 @@
         var l = el('label');
         l.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;margin-top:4px;';
         var r = el('input'); r.type = 'radio'; r.name = 'inv-opt-' + prefix; r.value = pair[0];
-        r.checked = cur.option === pair[0];
-        r.onchange = function () { document.getElementById('inv-tpl-wrap-' + prefix).classList.toggle('hidden', pair[0] !== 'Custom'); };
+        r.checked = (cur.option || 'Default') === pair[0];
+        r.onchange = function () {
+          document.getElementById('inv-tpl-wrap-' + prefix).classList.toggle('hidden', pair[0] !== 'Custom');
+          showInvoiceRequired(prefix, pair[0] === 'Default');
+        };
         l.appendChild(r); l.appendChild(document.createTextNode(pair[1]));
         inv.appendChild(l);
       });
@@ -1306,19 +1511,74 @@
       var tpl = el('input'); tpl.type = 'file'; tpl.id = 'inv-tpl-' + prefix; tpl.accept = FILE_ACCEPT;
       tplWrap.appendChild(tpl);
       inv.appendChild(tplWrap);
-      [['name', 'Name on the invoice'], ['place', 'Place (institution / address)'], ['phone', 'Telephone']].forEach(function (f) {
-        inv.appendChild(el('label', '', f[1]));
-        var i = el('input'); i.type = 'text'; i.id = 'inv-' + f[0] + '-' + prefix; i.maxLength = 200; i.value = cur[f[0]] || '';
+      inv.appendChild(el('p', 'inv-kku-note' + ((cur.option || 'Default') === 'Default' ? '' : ' hidden'), 'The KKU template needs Bill to, Address, Tax ID and the names to print.'));
+      inv.lastChild.id = 'inv-kku-note-' + prefix;
+      var field = function (key, label, required, multi, max) {
+        var l = el('label', '', label);
+        if (required) { var rq = el('span', 'inv-req inv-req-' + prefix, 'required'); l.appendChild(rq); }
+        inv.appendChild(l);
+        var i = el(multi ? 'textarea' : 'input');
+        if (multi) i.rows = 2; else i.type = 'text';
+        i.id = 'inv-' + key + '-' + prefix; i.maxLength = max || 200; i.value = cur[key] || '';
         inv.appendChild(i);
-      });
+        return i;
+      };
+      field('billTo', 'Bill to', true).placeholder = 'Who the invoice is made out to, e.g. Faculty of Medicine, Khon Kaen University';
+      field('address', 'Address', true, true, 500);
+      field('taxId', 'Tax ID', true, false, 50);
+      var nl = el('label', '', 'Names on the invoice'); nl.appendChild(el('span', 'inv-req inv-req-' + prefix, 'required'));
+      inv.appendChild(nl);
+      var names = el('div', 'inv-names'); names.id = 'inv-names-' + prefix;
+      inv.appendChild(names);
+      fillInvoiceNames(names, prefix, opts.people || cur.people || [], cur.people && cur.needed ? cur.names : null);
+      field('phone', 'Telephone (optional)');
+      var note = field('note', 'Other information for the invoice (optional)', false, true, 1000);
+      note.rows = 3;
+      note.placeholder = 'Anything not asked above, or instructions for the finance team — e.g. "I need it as a PDF / picture".';
       wrap.appendChild(inv);
       invCb.onchange = function () { inv.classList.toggle('hidden', !invCb.checked); };
+      setTimeout(function () { showInvoiceRequired(prefix, (cur.option || 'Default') === 'Default'); }, 0);
       return wrap;
     }
 
+    /** "required" marks: only the KKU template needs the fields. */
+    function showInvoiceRequired(prefix, kku) {
+      document.querySelectorAll('.inv-req-' + prefix).forEach(function (x) { x.classList.toggle('hidden', !kku); });
+      var n = document.getElementById('inv-kku-note-' + prefix);
+      if (n) n.classList.toggle('hidden', !kku);
+    }
+
+    /**
+     * Tick boxes for the names to print: everyone the payment covers, with
+     * their position, ticked unless the person unticked them. checkedKeys =
+     * null ticks everyone; ticks already on the page are kept when redrawn.
+     */
+    function renderInvoiceNames(prefix, people, checkedKeys) {
+      var box = document.getElementById('inv-names-' + prefix);
+      if (box) fillInvoiceNames(box, prefix, people, checkedKeys);
+    }
+    function fillInvoiceNames(box, prefix, people, checkedKeys) {
+      var before = {};
+      box.querySelectorAll('input[data-key]').forEach(function (cb) { before[cb.getAttribute('data-key')] = cb.checked; });
+      box.textContent = '';
+      if (!people.length) { box.appendChild(el('span', 'muted', 'Nobody yet.')); return; }
+      people.forEach(function (p, i) {
+        var l = el('label');
+        var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-name-' + prefix + '-' + i; cb.setAttribute('data-key', p.key);
+        cb.checked = p.key in before ? before[p.key] : (checkedKeys ? checkedKeys.indexOf(p.key) !== -1 : true);
+        l.appendChild(cb);
+        l.appendChild(document.createTextNode(p.name + ' '));
+        l.appendChild(el('span', 'role', '(' + cap(p.role) + ')'));
+        box.appendChild(l);
+      });
+    }
+
+
     /** Reads an invoice box. Returns { error } or { invoice, tplFile } (invoice without the file). */
     function readInvoiceBox(prefix, hasTemplate) {
-      var needed = document.getElementById('inv-needed-' + prefix).checked;
+      var cb = document.getElementById('inv-needed-' + prefix);
+      if (!cb) return { invoice: { needed: false }, tplFile: null }; // no invoice box (combined invoice)
+      var needed = cb.checked;
       if (!needed) return { invoice: { needed: false }, tplFile: null };
       var picked = document.querySelector('input[name="inv-opt-' + prefix + '"]:checked');
       var option = picked ? picked.value : 'Default'; // ticked but no option chosen -> Default
@@ -1327,16 +1587,18 @@
         var e2 = checkPickedFile(tplFile, 'invoice template');
         if (e2) return { error: e2 };
       }
-      return {
-        tplFile: tplFile || null,
-        invoice: {
-          needed: true, option: option,
-          name: document.getElementById('inv-name-' + prefix).value.trim(),
-          place: document.getElementById('inv-place-' + prefix).value.trim(),
-          phone: document.getElementById('inv-phone-' + prefix).value.trim(),
-          template: null
-        }
-      };
+      var val = function (k) { return document.getElementById('inv-' + k + '-' + prefix).value.trim(); };
+      var names = Array.prototype.slice.call(document.querySelectorAll('#inv-names-' + prefix + ' input[data-key]:checked')).map(function (cb) { return cb.getAttribute('data-key'); });
+      var invoice = { needed: true, option: option, billTo: val('billTo'), address: val('address'), taxId: val('taxId'), names: names, phone: val('phone'), note: val('note'), template: null };
+      if (option === 'Default') {
+        var miss = [];
+        if (!invoice.billTo) miss.push('Bill to');
+        if (!invoice.address) miss.push('Address');
+        if (!invoice.taxId) miss.push('Tax ID');
+        if (miss.length) return { error: 'Invoice request: for the KKU template, please fill in ' + miss.join(', ') + '.' };
+        if (!names.length) return { error: 'Invoice request: please tick at least one name to put on the invoice.' };
+      }
+      return { tplFile: tplFile || null, invoice: invoice };
     }
 
     function saveInvoice(paymentId, idx, hasTemplate) {
@@ -1391,6 +1653,15 @@
       return box;
     }
 
+    /** Everyone a new payment would cover (for the names on the invoice). */
+    function optionPeople(o, idx) {
+      var list = (o.people || []).filter(function (p) { return !p.excluded; }).map(function (p) { return { key: p.key, name: p.name, role: p.role }; });
+      var picked = {};
+      document.querySelectorAll('.obs-pick-' + idx + ':checked').forEach(function (cb) { picked[cb.getAttribute('data-obs-id')] = true; });
+      (o.observers || []).forEach(function (ob) { if (picked[ob.id]) list.push({ key: ob.id, name: ob.name, role: 'observer' }); });
+      return list;
+    }
+
     function pickedObservers(idx) {
       return Array.prototype.slice.call(document.querySelectorAll('.obs-pick-' + idx + ':checked')).map(function (cb) {
         return { id: cb.getAttribute('data-obs-id'), price: Number(cb.getAttribute('data-price')) || 0 };
@@ -1404,6 +1675,9 @@
       if (tot) tot.textContent = 'Total: ' + thb(o.total + extra);
       var lbl = document.getElementById('slip-label-' + idx);
       if (lbl) lbl.textContent = 'Payment slip (PDF, JPG or PNG, max 10 MB) — transfer exactly ' + thb(o.total + extra);
+      renderInvoiceNames('o' + idx, optionPeople(o, idx), null);
+      var pb = document.getElementById('pay-btn-' + idx);
+      if (pb && o.needsObserver && !busyActions['pay-' + idx]) pb.disabled = pickedObservers(idx).length === 0;
     }
 
     function renderMyPayment(p, idx) {
@@ -1427,8 +1701,15 @@
         var m = el('div', 'msg'); m.id = 'addslip-msg-' + idx;
         d.appendChild(m);
       }
-      if (p.invoice) {
-        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, 'You can add, change or cancel the invoice request at any time.'));
+      if (p.invoice && p.invoice.combined) {
+        var cw = el('div', 'inv-section');
+        cw.appendChild(el('h4', '', 'Invoice request'));
+        cw.appendChild(el('p', 'muted', 'This payment is part of your combined invoice below.'));
+        d.appendChild(cw);
+      } else if (p.invoice && p.invoice.confirmed) {
+        d.appendChild(buildInvoiceBox('p' + idx, p.invoice));
+      } else if (p.invoice) {
+        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, 'You can add, change or cancel the invoice request until the organizers confirm it.'));
         var srow = el('div', 'btn-row');
         var sb = el('button', 'btn-secondary btn-small', 'Save invoice request'); sb.id = 'inv-save-p' + idx;
         sb.onclick = function () { saveInvoice(p.id, idx, !!p.invoice.hasTemplate); };
@@ -1831,16 +2112,24 @@
         University: university,
         Country: document.getElementById('info-country').value.trim(),
         Religion: document.getElementById('info-religion').value.trim(),
-        ContactInformation: document.getElementById('info-contact').value.trim(),
+        OtherContact: document.getElementById('info-otherContact').value.trim(),
         FoodPreference: getCheckedFoodPrefs().join(', '),
         FoodPreferenceOther: document.getElementById('info-foodPrefOther').value.trim(),
         FoodAndDrugAllergy: document.getElementById('info-allergy').value.trim(),
         UnderlyingDisease: document.getElementById('info-disease').value.trim(),
         CurrentMedication: document.getElementById('info-medication').value.trim(),
+        AllergyNone: document.getElementById('none-allergy').checked,
+        DiseaseNone: document.getElementById('none-disease').checked,
+        MedicationNone: document.getElementById('none-medication').checked,
         ShirtSize: document.getElementById('info-shirtSize').value,
         'Special requirement': document.getElementById('info-specialRequirement').value.trim()
       };
       if (university === undefined) delete fields.University;
+      // Telephone numbers are only sent when they look right (a half-typed one waits).
+      ['phone', 'emergency'].forEach(function (which) {
+        var v = readPhone(which);
+        if (v !== undefined) fields[which === 'phone' ? 'Phone' : 'EmergencyPhone'] = v;
+      });
       // Delegates: educational year. Advisors and observers: highest level
       // of education (observers since 2026-10-21).
       if (currentUser.position === 'delegate') {
@@ -2060,6 +2349,207 @@
     }
 
 
+    // ---------------- TERMS OF SERVICE, PAYMENT DETAILS (2026-10-31) ----------------
+    function openTos(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      document.getElementById('tos-overlay').classList.remove('hidden');
+      document.getElementById('tos-close').focus();
+    }
+    function closeTos() { document.getElementById('tos-overlay').classList.add('hidden'); }
+    function setTosLang(lang) {
+      var th = lang === 'th';
+      document.getElementById('tos-list-en').classList.toggle('hidden', th);
+      document.getElementById('tos-list-th').classList.toggle('hidden', !th);
+      document.getElementById('tos-en').classList.toggle('on', !th);
+      document.getElementById('tos-th').classList.toggle('on', th);
+      document.getElementById('tos-title').textContent = th ? 'ข้อกำหนดการสมัคร' : 'Terms of service';
+      document.getElementById('tos-close').textContent = th ? 'ปิด' : 'Close';
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeTos(); });
+
+    function setPayDetails(which) {
+      var intl = which === 'intl';
+      document.getElementById('pd-th').classList.toggle('hidden', intl);
+      document.getElementById('pd-intl').classList.toggle('hidden', !intl);
+      document.getElementById('pd-btn-th').classList.toggle('on', !intl);
+      document.getElementById('pd-btn-intl').classList.toggle('on', intl);
+    }
+    function copyText(text, btn) {
+      function done() { btn.textContent = 'Copied'; btn.classList.add('done'); setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1800); }
+      function fallback() {
+        var t = document.createElement('textarea');
+        t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+        document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); done(); } catch (e) { /* nothing more to try */ }
+        t.remove();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    }
+
+    // ---------------- TELEPHONE NUMBERS (2026-10-31) ----------------
+    // Saved as +<country code><number>, e.g. +66812345678. The leading 0 of a
+    // national number (081… in Thailand) is dropped, except for Italy.
+    var DIAL_CODES = [
+      ['Thailand', '66'], ['Laos', '856'], ['Cambodia', '855'], ['Myanmar', '95'], ['Vietnam', '84'], ['Malaysia', '60'], ['Singapore', '65'],
+      ['Indonesia', '62'], ['Philippines', '63'], ['Brunei', '673'], ['Timor-Leste', '670'],
+      ['Afghanistan', '93'], ['Argentina', '54'], ['Australia', '61'], ['Austria', '43'], ['Bahrain', '973'], ['Bangladesh', '880'], ['Belgium', '32'],
+      ['Bhutan', '975'], ['Brazil', '55'], ['Canada / United States', '1'], ['Chile', '56'], ['China', '86'], ['Colombia', '57'], ['Czechia', '420'],
+      ['Denmark', '45'], ['Egypt', '20'], ['Ethiopia', '251'], ['Fiji', '679'], ['Finland', '358'], ['France', '33'], ['Germany', '49'], ['Ghana', '233'],
+      ['Greece', '30'], ['Hong Kong', '852'], ['Hungary', '36'], ['India', '91'], ['Iran', '98'], ['Iraq', '964'], ['Ireland', '353'], ['Israel', '972'],
+      ['Italy', '39'], ['Japan', '81'], ['Jordan', '962'], ['Kenya', '254'], ['Kuwait', '965'], ['Lebanon', '961'], ['Macau', '853'], ['Maldives', '960'],
+      ['Mexico', '52'], ['Mongolia', '976'], ['Morocco', '212'], ['Nepal', '977'], ['Netherlands', '31'], ['New Zealand', '64'], ['Nigeria', '234'],
+      ['Norway', '47'], ['Oman', '968'], ['Pakistan', '92'], ['Papua New Guinea', '675'], ['Peru', '51'], ['Poland', '48'], ['Portugal', '351'],
+      ['Qatar', '974'], ['Romania', '40'], ['Russia / Kazakhstan', '7'], ['Saudi Arabia', '966'], ['South Africa', '27'], ['South Korea', '82'],
+      ['Spain', '34'], ['Sri Lanka', '94'], ['Sweden', '46'], ['Switzerland', '41'], ['Taiwan', '886'], ['Turkey', '90'], ['Ukraine', '380'],
+      ['United Arab Emirates', '971'], ['United Kingdom', '44'], ['Uzbekistan', '998']
+    ];
+    var PHONE_IDS = { phone: ['phone-cc', 'phone-number', 'phone-error'], emergency: ['emergency-cc', 'emergency-number', 'emergency-error'] };
+    function fillDialCodes() {
+      Object.keys(PHONE_IDS).forEach(function (which) {
+        var sel = document.getElementById(PHONE_IDS[which][0]);
+        if (sel.options.length) return;
+        DIAL_CODES.forEach(function (c, i) {
+          var o = document.createElement('option');
+          o.value = c[1]; o.textContent = c[0] + ' (+' + c[1] + ')';
+          sel.appendChild(o);
+          if (i === 10) { var sep = document.createElement('option'); sep.disabled = true; sep.textContent = '──────────'; sel.appendChild(sep); }
+        });
+        var other = document.createElement('option');
+        other.value = 'other'; other.textContent = 'Other — type +code and number';
+        sel.appendChild(other);
+        sel.value = '66';
+        sel.addEventListener('change', function () { updatePhonePlaceholder(which); showPhoneError(which); updateRequiredNotice(); });
+        var num = document.getElementById(PHONE_IDS[which][1]);
+        num.addEventListener('blur', function () { showPhoneError(which); });
+        num.addEventListener('input', function () { document.getElementById(PHONE_IDS[which][2]).classList.add('hidden'); updateRequiredNotice(); });
+      });
+    }
+    function updatePhonePlaceholder(which) {
+      var cc = document.getElementById(PHONE_IDS[which][0]).value;
+      var num = document.getElementById(PHONE_IDS[which][1]);
+      if (cc === 'other') num.placeholder = 'e.g. +44 7700 900123';
+      else if (cc === '66') num.placeholder = which === 'phone' ? 'e.g. 081 234 5678' : 'Someone we can call in an emergency, e.g. 089 876 5432';
+      else num.placeholder = which === 'phone' ? 'Number without the country code' : 'Someone we can call in an emergency';
+    }
+    /** '' = empty, undefined = not a valid number, otherwise "+66812345678". */
+    function readPhone(which) {
+      var cc = document.getElementById(PHONE_IDS[which][0]).value;
+      var raw = document.getElementById(PHONE_IDS[which][1]).value.trim();
+      if (!raw) return '';
+      if (cc === 'other' || raw.charAt(0) === '+') {
+        var full = raw.replace(/[\s\-().]/g, '').replace(/^\+/, '');
+        return /^[1-9]\d{6,14}$/.test(full) ? '+' + full : undefined;
+      }
+      if (/[^\d\s\-().]/.test(raw)) return undefined;
+      var digits = raw.replace(/\D/g, '');
+      if (cc !== '39') digits = digits.replace(/^0+/, '');
+      if (cc === '66' && (digits.length < 8 || digits.length > 9)) return undefined;
+      var total = cc.length + digits.length;
+      if (digits.length < 6 || total < 8 || total > 15) return undefined;
+      return '+' + cc + digits;
+    }
+    function setPhone(which, e164) {
+      fillDialCodes();
+      var sel = document.getElementById(PHONE_IDS[which][0]), num = document.getElementById(PHONE_IDS[which][1]);
+      document.getElementById(PHONE_IDS[which][2]).classList.add('hidden');
+      var digits = String(e164 || '').replace(/^\+/, '');
+      if (!digits) { sel.value = '66'; num.value = ''; updatePhonePlaceholder(which); return; }
+      var match = DIAL_CODES.map(function (c) { return c[1]; }).filter(function (code) { return digits.indexOf(code) === 0; })
+        .sort(function (a, b) { return b.length - a.length; })[0];
+      if (match) { sel.value = match; num.value = (match === '66' ? '0' : '') + digits.slice(match.length); }
+      else { sel.value = 'other'; num.value = '+' + digits; }
+      updatePhonePlaceholder(which);
+    }
+    function showPhoneError(which) {
+      var err = document.getElementById(PHONE_IDS[which][2]);
+      var bad = readPhone(which) === undefined;
+      err.textContent = bad ? (document.getElementById(PHONE_IDS[which][0]).value === '66'
+        ? 'Please check this number — a Thai number has 9–10 digits, e.g. 081 234 5678. For another country, choose its code first.'
+        : 'Please check the country code and the number.') : '';
+      err.classList.toggle('hidden', !bad);
+    }
+
+    // ---------------- "NONE" BOXES AND REQUIRED REMINDER (2026-10-31) ----------------
+    function applyNoneBoxes() {
+      document.querySelectorAll('input[data-none-for]').forEach(function (cb) {
+        var input = document.getElementById(cb.getAttribute('data-none-for'));
+        if (cb.checked) { input.value = ''; input.disabled = true; input.placeholder = 'None'; }
+        else { input.disabled = !!currentLocks.infoLocked; input.placeholder = 'Leave blank or tick None if you have none'; }
+      });
+    }
+    function updateRequiredNotice() {
+      var box = document.getElementById('info-required');
+      if (!box || !currentUser) return;
+      var missing = [];
+      if (!readPhone('phone')) missing.push('your telephone number');
+      if (!readPhone('emergency')) missing.push('an emergency contact telephone');
+      if (!document.getElementById('info-shirtSize').value) missing.push('your shirt size');
+      box.textContent = missing.length ? 'Still needed: ' + missing.join(', ') + '. Your other answers are saved meanwhile.' : '';
+      box.classList.toggle('hidden', !missing.length || !!currentLocks.infoLocked);
+    }
+    function initContactFields() {
+      fillDialCodes();
+      document.querySelectorAll('input[data-none-for]').forEach(function (cb) { cb.addEventListener('change', applyNoneBoxes); });
+      document.getElementById('info-shirtSize').addEventListener('change', function () {
+        document.getElementById('shirt-old-note').classList.add('hidden');
+        updateRequiredNotice();
+      });
+    }
+
+    // ---------------- ONE INVOICE FOR ALL MY PAYMENTS (2026-10-31) ----------------
+    function renderCombinedInvoice(s) {
+      var box = document.getElementById('combined-invoice');
+      box.textContent = '';
+      var c = s.combinedInvoice;
+      box.classList.toggle('hidden', !c || !c.available);
+      if (!c || !c.available) return;
+      var card = el('div', 'combined-card');
+      card.appendChild(el('h3', '', 'One invoice for all your payments'));
+      var list = (c.payments || []).map(function (x) { return x.id + ' (' + thb(x.total) + ')'; }).join(', ');
+      card.appendChild(el('p', 'muted', (c.confirmed ? 'Covers ' : 'Would cover ') + list + ' — total ' + thb(c.total) + '.' +
+        (c.confirmed ? '' : ' Payments you submit later are added automatically. Your separate invoice requests are switched off while this is on.')));
+      if (c.confirmed) {
+        card.appendChild(confirmedInvoiceBox(c, 'Combined invoice'));
+        box.appendChild(card);
+        return;
+      }
+      if (c.blockedBy && c.blockedBy.length) {
+        card.appendChild(el('p', 'muted', 'Not available: the invoice for payment ' + c.blockedBy.join(', ') + ' is already confirmed by the organizers. Please contact them if you need one combined invoice.'));
+        box.appendChild(card);
+        return;
+      }
+      card.appendChild(buildInvoiceBox('c', c, '', { title: 'Combined invoice', label: 'Combine all my payments into one invoice' }));
+      var row = el('div', 'btn-row');
+      var b = el('button', 'btn-secondary btn-small', 'Save combined invoice'); b.id = 'inv-save-c';
+      b.onclick = saveCombinedInvoice;
+      row.appendChild(b);
+      card.appendChild(row);
+      var m = el('div', 'msg'); m.id = 'inv-msg-c';
+      card.appendChild(m);
+      box.appendChild(card);
+    }
+    function saveCombinedInvoice() {
+      clearMsg('inv-msg-c');
+      var c = paymentStatus && paymentStatus.combinedInvoice;
+      var r = readInvoiceBox('c', !!(c && c.hasTemplate));
+      if (r.error) { setMsg('inv-msg-c', r.error, true); return; }
+      if (!beginAction('invoice-combined', ['inv-save-c'])) return;
+      readAsBase64(r.tplFile, function (tpl) {
+        r.invoice.template = tpl;
+        callServer('saveCombinedInvoice', [sessionToken, r.invoice], {
+          buttonIds: ['inv-save-c'],
+          onFinish: function () { endAction('invoice-combined', ['inv-save-c']); },
+          msgElId: 'inv-msg-c',
+          onSuccess: function (res) {
+            if (!checkRes(res, 'inv-msg-c')) return;
+            if (!res.success) { setMsg('inv-msg-c', res.message, true); return; }
+            refreshPaymentStatus();
+            setTimeout(function () { var m = document.getElementById('inv-msg-c'); if (m) setMsg('inv-msg-c', r.invoice.needed ? 'Combined invoice request saved.' : 'Combined invoice switched off.', false); }, 600);
+          }
+        });
+      });
+    }
+
     // ---------------- ORGANIZERS AND EDIT LOCKS (2026-10-26) ----------------
     // An organizer account (a username, no "@") logs in on this same page and
     // is sent to organizer.html. Its login is kept for this tab only.
@@ -2083,6 +2573,8 @@
         el.disabled = false;
       });
       if (!on && paymentStatus) renderLevelControl(paymentStatus);
+      if (!on) applyNoneBoxes();
+      updateRequiredNotice();
       INFO_LOCK_DOCS.forEach(function (k) {
         ['upload-btn-', 'delete-', 'file-'].forEach(function (pre) { var el = document.getElementById(pre + k); if (el) el.disabled = on; });
       });
@@ -2474,6 +2966,7 @@
       });
     }
 
+    initContactFields();
     initLiveAndAutosave();
     restoreSession();
   </script>

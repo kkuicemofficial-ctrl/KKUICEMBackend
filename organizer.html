@@ -13,20 +13,29 @@
   <title>ICEMKKU Organizer</title>
   <style>
     :root {
-      --bg: #f6f6f4;
-      --surface: #ffffff;
-      --border: #e0e0dc;
-      --text: #1f1f1d;
-      --muted: #67675f;
-      --accent: #2f6f5e;
-      --accent-hover: #24564a;
-      --accent-soft: #e9f2ee;
-      --danger: #b3432b;
-      --danger-soft: #fbe9e5;
-      --warn: #8a5a00;
-      --warn-soft: #fdf3dc;
-      --unpaid: #fbe4df;
-      --unpaid-border: #e8b4a8;
+      /* ICEM 2027 "Ramayana" colours (PANTONE page) */
+      --bg: #fcf6ee;
+      --surface: #fffdf9;
+      --border: #e6dccd;
+      --text: #302b20;
+      --muted: #6c6352;
+      --accent: #225589;
+      --accent-hover: #14416f;
+      --accent-soft: #e4edf5;
+      --steel: #528196;
+      --sky: #80acc0;
+      --ok: #3f6b37;
+      --ok-soft: #e7efe2;
+      --danger: #ad4d4d;
+      --danger-soft: #f7e2df;
+      --warn: #7d5a12;
+      --warn-soft: #fbf0d6;
+      --gold: #e5b663;
+      --sage: #b2cbaa;
+      --rose: #cf7070;
+      --sand: #f3ede7;
+      --unpaid: #f6dcd8;
+      --unpaid-border: #dfa9a3;
       --radius: 10px;
     }
     * { box-sizing: border-box; }
@@ -55,14 +64,14 @@
     input[type=text], input[type=password], input[type=number], input[type=search], input[type=datetime-local], select {
       width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: var(--surface); color: var(--text);
     }
-    input:disabled { background: #f1f1ee; color: var(--muted); }
+    input:disabled { background: var(--sand); color: var(--muted); }
     button { font: inherit; font-weight: 600; border-radius: 8px; border: 1px solid transparent; padding: 8px 14px; cursor: pointer; }
     button:disabled { opacity: .5; cursor: default; }
     button:focus-visible, a:focus-visible, input:focus-visible, .tile:focus-visible, .team-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
     .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
-    .btn-secondary:hover:not(:disabled) { background: #f1f1ee; }
+    .btn-secondary:hover:not(:disabled) { background: var(--sand); }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-link { background: none; border: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; }
     .btn-small { padding: 5px 10px; font-size: 12.5px; }
@@ -71,10 +80,11 @@
 
     /* status pills */
     .pill { display: inline-block; font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-    .pill.ok { background: var(--accent-soft); color: var(--accent); }
+    .pill.ok { background: var(--ok-soft); color: var(--ok); }
     .pill.bad { background: var(--danger-soft); color: var(--danger); }
     .pill.wait { background: var(--warn-soft); color: var(--warn); }
-    .pill.none { background: #efefec; color: var(--muted); }
+    .pill.none { background: var(--sand); color: var(--muted); }
+    .pill.info { background: var(--accent-soft); color: var(--accent); }
 
     /* home */
     .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -87,12 +97,12 @@
     .search input { flex: 1; min-width: 0; }
     .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
     .count { background: var(--danger); color: #fff; border-radius: 999px; font-size: 12px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
-    .count.zero { background: #d9d9d4; color: var(--muted); }
+    .count.zero { background: #ddd3c4; color: var(--muted); }
 
     /* notification items */
     .items { display: flex; flex-direction: column; gap: 10px; }
     .item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) auto minmax(0, .9fr); gap: 14px; align-items: start; transition: opacity .4s, background .3s; }
-    .item.done { background: var(--accent-soft); }
+    .item.done { background: var(--ok-soft); }
     .item.leaving { opacity: .35; }
     .item.rejected { border-color: var(--unpaid-border); }
     .item .who b { display: block; }
@@ -106,11 +116,11 @@
     .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
     table { border-collapse: collapse; width: 100%; font-size: 13px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { background: #f3f3f0; font-weight: 650; white-space: nowrap; position: sticky; top: 0; }
+    th { background: var(--sand); font-weight: 650; white-space: nowrap; position: sticky; top: 0; }
     tr:last-child td { border-bottom: none; }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     tr.click { cursor: pointer; }
-    tr.click:hover td { background: #f7f7f4; }
+    tr.click:hover td { background: #faf3ea; }
     tr.selected td { background: var(--accent-soft); }
 
     /* teams */
@@ -138,22 +148,22 @@
     .doc .dh { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
     .doc .dh b { font-weight: 650; }
     .checks { display: flex; gap: 6px; flex-wrap: wrap; }
-    .checks button.on-ok { background: var(--accent); color: #fff; }
+    .checks button.on-ok { background: var(--ok); color: #fff; }
     .checks button.on-bad { background: var(--danger); color: #fff; }
 
     /* modal */
-    .overlay { position: fixed; inset: 0; background: rgba(20, 20, 18, .45); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; z-index: 50; }
+    .overlay { position: fixed; inset: 0; background: rgba(48, 43, 32, .45); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; z-index: 50; }
     .overlay.open { display: flex; }
     .modal { background: var(--surface); border-radius: 12px; width: 100%; max-width: 980px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
     .modal.narrow { max-width: 460px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
     #confirm-overlay { z-index: 60; }
-    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1f1f1d; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; z-index: 80; display: none; max-width: calc(100% - 32px); }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; z-index: 80; display: none; max-width: calc(100% - 32px); }
     .toast.show { display: block; }
     .toast.err { background: var(--danger); }
     .msg { font-size: 13px; padding: 9px 12px; border-radius: 8px; margin-top: 12px; display: none; }
     .msg.error { display: block; background: var(--danger-soft); color: var(--danger); }
-    .msg.success { display: block; background: var(--accent-soft); color: var(--accent); }
+    .msg.success { display: block; background: var(--ok-soft); color: var(--ok); }
     .banner { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
     .center-card { max-width: 440px; margin: 40px auto 0; }
     .who-title { font-size: 28px; font-weight: 700; text-align: center; margin: 0 0 6px; }
@@ -161,11 +171,46 @@
     .params td input { min-width: 180px; }
     .params td.key { font-weight: 650; white-space: nowrap; }
     .params td.note { color: var(--muted); font-size: 12.5px; min-width: 220px; }
-    .check-ok { color: var(--accent); font-weight: 650; }
+    .check-ok { color: var(--ok); font-weight: 650; }
     .check-bad { color: var(--danger); font-weight: 650; }
     .size-cell { font-weight: 650; }
     @media (max-width: 560px) { .wrap { padding: 18px 14px 60px; } dl.kv { grid-template-columns: 1fr; } dl.kv dt { margin-top: 4px; } }
     @media (prefers-reduced-motion: reduce) { .item { transition: none; } }
+    /* 2026-10-31 */
+    .brand-stripe { display: flex; height: 4px; }
+    .brand-stripe i { flex: 1; }
+    .brand-stripe i:nth-child(1) { background: var(--sky); } .brand-stripe i:nth-child(2) { background: var(--accent); }
+    .brand-stripe i:nth-child(3) { background: var(--rose); } .brand-stripe i:nth-child(4) { background: var(--sage); }
+    .brand-stripe i:nth-child(5) { background: var(--gold); }
+    .tile .t { color: var(--accent); }
+    .tile.alert .t { color: var(--danger); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+    .chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+    .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .stat .n { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat .l { font-size: 12.5px; color: var(--muted); }
+    .stat.bad { border-color: var(--unpaid-border); background: var(--unpaid); }
+    .stat.bad .n { color: var(--danger); }
+    tr.unpaid td { background: var(--unpaid); }
+    tr.unpaid:hover td { background: #f1cfca; }
+    td ul.people { margin: 0; padding-left: 16px; }
+    td .links a { display: inline-block; margin-right: 8px; }
+    td .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .export-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .export-group h3 { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 14px; }
+    .export-group h3 span { display: flex; gap: 8px; }
+    .export-group label { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 2px 0; cursor: pointer; }
+    .export-group input { width: auto; margin: 0; }
+    .filters { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+    .filters label { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+    .filters input[type=checkbox] { width: auto; margin: 0; }
+    .filters select { width: auto; }
+    .inv-meta { font-size: 12.5px; color: var(--muted); }
+    .inv-warn { font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 4px 8px; margin-top: 4px; }
+    td.note { max-width: 260px; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
@@ -179,6 +224,7 @@
         <button class="btn-link" id="logout">Log out</button>
       </div>
     </div>
+    <div class="brand-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
   </div>
 
   <div class="wrap">
@@ -318,6 +364,51 @@
       <p class="muted small">The export contains every detail of every observer, including health information. Keep the file private and delete it after the event.</p>
     </div>
 
+    <!-- FINANCIAL VIEW -->
+    <div class="view" id="v-finance">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <div class="section-head">
+        <div><h1>Financial view</h1><p class="sub" style="margin:0;">Every payment: who paid for whom, the slips and their status. Below: everyone who has not paid yet.</p></div>
+      </div>
+      <div class="stats" id="fin-stats"></div>
+      <div class="section-head"><h2>Payments</h2><div class="exports" id="fin-export"></div></div>
+      <div class="chips" id="fin-chips"></div>
+      <div class="table-wrap"><table><thead><tr><th>Payment</th><th>Paid by</th><th>Paid for</th><th class="num">Total</th><th>Slips</th><th>Status</th><th></th></tr></thead><tbody id="fin-rows"></tbody></table></div>
+      <div class="section-head" style="margin-top:22px;"><h2>Not paid yet<span class="count" id="unpaid-count">0</span></h2><div class="exports" id="unpaid-export"></div></div>
+      <p class="muted small" style="margin:0 0 10px;">Registrants who are not in any payment (cancelled payments don't count). Red = not paid.</p>
+      <div class="table-wrap"><table><thead><tr><th class="num">#</th><th>Name</th><th>Position</th><th>Team, university</th><th>Telephone</th><th>Why not yet</th><th>Registered</th></tr></thead><tbody id="unpaid-rows"></tbody></table></div>
+    </div>
+
+    <!-- INVOICE VIEW -->
+    <div class="view" id="v-invoice">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <div class="section-head">
+        <div><h1>Invoice view</h1><p class="sub" style="margin:0;">Invoice requests from payers. <b>Confirm</b> once the invoice is made: the request is then locked on the registrant's page. <b>Undo confirm</b> unlocks it.</p></div>
+        <div class="exports" id="inv-export"></div>
+      </div>
+      <div class="chips" id="inv-chips"></div>
+      <div class="table-wrap"><table><thead><tr><th>Requested by</th><th>Covers</th><th class="num">Amount</th><th>Bill to · address · tax ID · names</th><th>Template</th><th>Other information</th><th>Status</th><th></th></tr></thead><tbody id="inv-rows"></tbody></table></div>
+    </div>
+
+    <!-- ALL STATUS EXPORT -->
+    <div class="view" id="v-export">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <div class="section-head">
+        <div><h1>All status export</h1><p class="sub" style="margin:0;">Tick the information you need, choose who to include, then export. The file contains only the ticked columns.</p></div>
+        <div class="row"><button class="btn-secondary btn-small" id="exp-all">Tick everything</button><button class="btn-secondary btn-small" id="exp-none">Clear</button></div>
+      </div>
+      <div class="export-grid" id="exp-groups"></div>
+      <div class="filters" id="exp-filters">
+        <b>Include:</b>
+        <label><input type="checkbox" id="exp-pos-delegate" checked> Delegates</label>
+        <label><input type="checkbox" id="exp-pos-advisor" checked> Advisors</label>
+        <label><input type="checkbox" id="exp-pos-observer" checked> Observers</label>
+        <label>Payment <select id="exp-pay"><option value="">Everyone</option><option value="verified">Paid (verified)</option><option value="waiting">Paid, waiting for a check</option><option value="none">Not paid yet</option></select></label>
+      </div>
+      <div class="section-head"><h2 id="exp-count"></h2><div class="exports" id="exp-export"></div></div>
+      <div id="exp-preview"></div>
+    </div>
+
     <!-- PARAMETERS -->
     <div class="view" id="v-params">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
@@ -357,8 +448,8 @@
     var TOKEN_KEY = 'icemkku.organizer';
     var POLL_MS = 30 * 1000;
     var LEAVE_MS = 3000; // a verified notification stays 3 s before moving to History
-    var SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-    var DOC_LABEL = { passport: 'Passport', enrollment: 'Proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
+    var SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+    var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
     var CHECK_LABEL = { verified: 'Verified', notVerified: 'Not verified' };
     var PAY_LABEL = { pending: 'Pending', verified: 'Verified', notVerified: 'Not verified', cancelled: 'Cancelled' };
     var TYPE_LABEL = { team: 'Team payment', university: 'University payment', individual: 'Individual payment' };
@@ -487,7 +578,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && token && D) loadData(true); });
 
     // ---------------- views ----------------
-    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'teams', 'team', 'trip', 'shirts', 'alert', 'observers', 'params'];
+    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'teams', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
     function showView(name) {
       VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('active', v === name); });
       window.scrollTo(0, 0);
@@ -511,7 +602,7 @@
     window.addEventListener('hashchange', route);
     function renderCurrent() {
       if (!D) return;
-      var r = { home: renderHome, teams: renderTeams, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, params: renderParams }[current];
+      var r = { home: renderHome, teams: renderTeams, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
       if (r) r();
     }
 
@@ -651,7 +742,9 @@
       var row = function (k, v, alert) { add(kv, [h('dt', { text: k }), h('dd', { cls: alert && v ? 'alertval' : null, text: v || '—' })]); };
       row('Nickname', p.nickname);
       row('Email', p.email);
-      row('Contact', p.contact);
+      row('Telephone', p.phone, false);
+      row('Other contact', p.otherContact);
+      row('Emergency phone', p.emergencyPhone);
       row('Position', positionText(p));
       if (p.position !== 'observer') row('Team', teamsOfPerson(p).join(', '));
       row('University', p.university);
@@ -661,10 +754,10 @@
       else row('Highest education', p.highestLevel);
       if (p.position === 'observer') row('Study level', p.observerLevel);
       row('Food preference', foodText(p), alertFood(p));
-      row('Food/drug allergy', p.allergy, isSomething(p.allergy));
-      row('Underlying disease', p.disease, isSomething(p.disease));
-      row('Medication', p.medication, isSomething(p.medication));
-      row('Shirt size', p.shirtSize);
+      row('Food/drug allergy', p.allergyNone ? 'None' : p.allergy, isSomething(p.allergy));
+      row('Underlying disease', p.diseaseNone ? 'None' : p.disease, isSomething(p.disease));
+      row('Medication', p.medicationNone ? 'None' : p.medication, isSomething(p.medication));
+      row('Shirt size', p.shirtSize || (p.shirtSizeOld ? 'Needs to choose again (was ' + p.shirtSizeOld + ')' : ''));
       row('Special needs', p.special, !!p.special);
       if (p.position === 'delegate') row('Trip', p.trip ? 'Option ' + p.trip : '');
       add(kv, [h('dt', { text: 'Payment' }), h('dd', null, payPill(p.paymentStatus), p.paymentId ? ' ' + p.paymentId : '')]);
@@ -707,6 +800,7 @@
       D.people.forEach(function (p) {
         var key = p.position === 'delegate' ? 'ifmsaCert' : p.position === 'observer' ? 'enrollment' : null;
         if (!key) return;
+        if (key === 'ifmsaCert' && p.paymentStatus === 'verified' && !justDone['doc:' + p.email + ':' + key]) return; // paid: the certificate no longer matters
         var d = p.docs[key], k = 'doc:' + p.email + ':' + key;
         if (!d.url || (d.check === 'verified' && !justDone[k])) return;
         items.push({ k: k, kind: 'doc', p: p, key: key, d: d, time: d.uploadedAt || p.updatedAt });
@@ -775,7 +869,7 @@
           h('div', null, h('b', { text: (TYPE_LABEL[pay.type] || 'Payment') + ' ' + pay.id }), ' ', payPill(pay.status), ' ', h('b', { text: thb(pay.total) })),
           slips,
           h('div', { cls: 'small', style: 'margin-top:4px;' }, 'Paid for:', paidFor),
-          pay.invoice.needed ? h('div', { cls: 'small muted', text: 'Invoice requested: ' + [pay.invoice.name, pay.invoice.place, pay.invoice.phone].filter(Boolean).join(' · ') + (pay.invoice.templateUrl ? ' (custom template)' : '') }) : null,
+          pay.invoice.needed ? h('div', { cls: 'small muted', text: 'Invoice requested: ' + [pay.invoice.billTo, pay.invoice.address, pay.invoice.taxId ? 'Tax ID ' + pay.invoice.taxId : ''].filter(Boolean).join(' · ') + (pay.invoice.templateUrl ? ' (custom template)' : '') }) : null,
           pay.organizerNote ? h('div', { cls: 'small muted', text: 'Note: ' + pay.organizerNote }) : null));
         if (canEdit()) {
           add(actions, [
@@ -838,7 +932,10 @@
         tile('High alert section', alerts + (alerts === 1 ? ' person' : ' people') + ' with food, allergy, health or special needs', 'alert', alerts ? 'alert' : ''),
         tile('Parameters', lockText, 'params'),
         tile('View all teams', plural(teams.length, 'team', 'teams') + ' · ' + unpaid + ' not fully paid', 'teams'),
-        tile('View all observers', plural(obs.length, 'observer', 'observers'), 'observers')
+        tile('View all observers', plural(obs.length, 'observer', 'observers'), 'observers'),
+        tile('Financial view', plural(unpaidPeople().length, 'person', 'people') + ' not paid · ' + D.payments.filter(function (x) { return x.status === 'pending'; }).length + ' waiting for a check', 'finance', unpaidPeople().length ? 'alert' : ''),
+        tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed', 'invoice'),
+        tile('All status export', 'Choose the columns and who to include', 'export')
       ]);
       renderNotifs();
       if ($('search-q').value.trim()) runSearch();
@@ -848,7 +945,7 @@
       var box = clear($('search-results'));
       if (!q || !D) return;
       var hits = D.people.filter(function (p) {
-        return [p.fullName, p.nickname, p.email, p.teamName, p.secondTeamName, p.university, p.contact, p.paymentId].some(function (v) { return String(v || '').toLowerCase().indexOf(q) !== -1; });
+        return [p.fullName, p.nickname, p.email, p.teamName, p.secondTeamName, p.university, p.phone, p.otherContact, p.emergencyPhone, p.paymentId].some(function (v) { return String(v || '').toLowerCase().indexOf(q) !== -1; });
       });
       var teamHits = D.teams.filter(function (t) { return t.name.toLowerCase().indexOf(q) !== -1; });
       if (teamHits.length) add(box, h('div', { cls: 'row', style: 'margin-bottom:8px;' }, h('span', { cls: 'muted small', text: 'Teams:' }), teamHits.map(function (t) {
@@ -978,7 +1075,7 @@
         headers: ['Name', 'Team (position)', 'University', 'Size'],
         rows: list.map(function (p) {
           var team = p.position === 'observer' ? '—' : teamsOfPerson(p).join(', ') || 'no team yet';
-          return [nameOf(p), team + ' (' + p.position + ')', p.university, p.shirtSize || 'Not filled in'];
+          return [nameOf(p), team + ' (' + p.position + ')', p.university, p.shirtSize || (p.shirtSizeOld ? 'Choose again (was ' + p.shirtSizeOld + ')' : 'Not chosen')];
         })
       };
     }
@@ -991,10 +1088,10 @@
           h('td', { cls: 'size-cell', text: label }), h('td', { cls: 'num', text: n }));
       };
       SIZES.forEach(function (s) { add(tb, rowFor(s, s, counts[s] || 0)); });
-      add(tb, rowFor('none', 'Not filled in', none));
+      add(tb, rowFor('none', 'Not chosen', none));
       add(tb, h('tr', null, h('td', null, h('b', { text: 'Total' })), h('td', { cls: 'num', text: D.people.length })));
       var t = shirtTable();
-      $('shirt-list-title').textContent = (shirtFilter ? (shirtFilter === 'none' ? 'Not filled in' : 'Size ' + shirtFilter) : 'Everyone') + ' — ' + t.rows.length;
+      $('shirt-list-title').textContent = (shirtFilter ? (shirtFilter === 'none' ? 'Not chosen' : 'Size ' + shirtFilter) : 'Everyone') + ' — ' + t.rows.length;
       exportButtons($('shirt-export'), function () { return 'Shirts ' + (shirtFilter ? (shirtFilter === 'none' ? 'not filled in' : shirtFilter) : 'all'); }, shirtTable);
       var rows = clear($('shirt-rows'));
       if (!t.rows.length) add(rows, h('tr', null, h('td', { colspan: 5, cls: 'muted', text: 'Nobody.' })));
@@ -1027,7 +1124,7 @@
     function observerExport() {
       var cols = [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Nickname', 'nickname'], ['Email', 'email'],
         ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Highest education', 'highestLevel'], ['Study level', 'observerLevel'],
-        ['Contact', 'contact'], ['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
+        ['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone'], ['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
         ['Food/drug allergy', 'allergy'], ['Underlying disease', 'disease'], ['Medication', 'medication'], ['Shirt size', 'shirtSize'], ['Special needs', 'special'],
         ['Proof of enrolment file', function (p) { return p.docs.enrollment.url; }], ['Proof of enrolment check', function (p) { return CHECK_LABEL[p.docs.enrollment.check] || ''; }],
         ['Passport file', function (p) { return p.docs.passport.url; }], ['Passport check', function (p) { return CHECK_LABEL[p.docs.passport.check] || ''; }],
@@ -1048,6 +1145,252 @@
           h('td', null, p.docs.enrollment.url ? checkPill(p.docs.enrollment.check) : pill('No file', 'none')), h('td', null, payPill(p.paymentStatus)),
           h('td', null, h('button', { cls: 'btn-link', text: 'View more info', onclick: function () { openPerson(p.email); } }))));
       });
+    }
+
+    // ---------------- financial view (2026-10-31) ----------------
+    var finFilter = 'all';
+    function unpaidPeople() {
+      return D.people.filter(function (p) { return !p.paymentId; });
+    }
+    function whyUnpaid(p) {
+      if (p.position === 'observer') {
+        var d = p.docs.enrollment;
+        if (!p.observerLevel) return 'Study level not chosen';
+        if (!d.url) return 'No proof of enrolment yet';
+        if (d.check !== 'verified') return d.check === 'notVerified' ? 'Proof of enrolment not verified' : 'Proof of enrolment waiting for a check';
+        return 'Can pay now';
+      }
+      var t = teamByName(p.teamName || '');
+      if (!p.teamName) return 'No team yet';
+      if (t && !t.complete) return 'Team not complete (' + t.delegates + ' of 3 delegates' + (t.advisor ? '' : ', no advisor') + ')';
+      return 'Team can pay now';
+    }
+    function phoneText(p) { return p.phone || p.otherContact || ''; }
+    function paymentRows(list) {
+      return list.map(function (pay) {
+        var payer = byEmail[pay.payerEmail];
+        return {
+          pay: pay,
+          cells: [pay.id + ' · ' + (TYPE_LABEL[pay.type] || pay.type), payer ? nameOf(payer) : pay.payerName || pay.payerEmail,
+            pay.people.map(function (x) { var q = byEmail[x.email]; return (q ? nameOf(q) : x.name || x.email) + ' (' + x.role + (x.team ? ', ' + x.team : '') + '): ' + thb(x.price); }).join('\n'),
+            thb(pay.total), pay.slipUrls.join('\n'), (PAY_LABEL[pay.status] || pay.status) + (pay.statusBy ? ' — ' + pay.statusBy : ''), when(pay.submittedAt)]
+        };
+      });
+    }
+    function finTable() {
+      var list = D.payments.filter(function (x) { return finFilter === 'all' || x.status === finFilter; });
+      return { headers: ['Payment', 'Paid by', 'Paid for', 'Total', 'Slips', 'Status', 'Submitted'], rows: paymentRows(list).map(function (r) { return r.cells; }), list: list };
+    }
+    function unpaidTable() {
+      return { headers: ['Name', 'Position', 'Team, university', 'Email', 'Telephone', 'Why not yet', 'Registered'],
+        rows: unpaidPeople().map(function (p) { return [nameOf(p), positionText(p), teamUni(p), p.email, phoneText(p), whyUnpaid(p), when(p.createdAt)]; }) };
+    }
+    function renderFinance() {
+      var sum = function (st) { return D.payments.filter(function (x) { return x.status === st; }).reduce(function (n, x) { return n + (x.total || 0); }, 0); };
+      var cnt = function (st) { return D.payments.filter(function (x) { return x.status === st; }).length; };
+      var unpaid = unpaidPeople();
+      var stat = function (n, l, bad) { return h('div', { cls: 'stat' + (bad ? ' bad' : '') }, h('div', { cls: 'n', text: n }), h('div', { cls: 'l', text: l })); };
+      add(clear($('fin-stats')), [
+        stat(thb(sum('verified')), cnt('verified') + ' verified payments'),
+        stat(thb(sum('pending')), cnt('pending') + ' waiting for a check'),
+        stat(String(cnt('notVerified')), 'not verified (waiting for a new slip)', cnt('notVerified') > 0),
+        stat(String(unpaid.length), 'registrants not paid yet', unpaid.length > 0)
+      ]);
+      var chips = clear($('fin-chips'));
+      [['all', 'All'], ['pending', 'Pending'], ['notVerified', 'Not verified'], ['verified', 'Verified'], ['cancelled', 'Cancelled']].forEach(function (c) {
+        var n = c[0] === 'all' ? D.payments.length : cnt(c[0]);
+        add(chips, h('button', { cls: 'chip' + (finFilter === c[0] ? ' on' : ''), text: c[1] + ' (' + n + ')', onclick: function () { finFilter = c[0]; renderFinance(); } }));
+      });
+      exportButtons($('fin-export'), function () { return 'Payments ' + (finFilter === 'all' ? 'all' : PAY_LABEL[finFilter]); }, finTable);
+      var tb = clear($('fin-rows'));
+      var t = finTable();
+      if (!t.list.length) add(tb, h('tr', null, h('td', { colspan: 7, cls: 'muted', text: 'No payments here.' })));
+      t.list.forEach(function (pay) {
+        var payer = byEmail[pay.payerEmail];
+        var acts = h('div', { cls: 'acts' });
+        if (canEdit()) {
+          if (pay.status !== 'verified' && pay.status !== 'cancelled') add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Verified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'verified', renderFinance); } }));
+          if (pay.status === 'pending') add(acts, h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'notVerified', renderFinance); } }));
+          if (pay.status !== 'cancelled') add(acts, h('button', { cls: 'btn-link small', text: 'Cancel', onclick: function () {
+            confirmBox('Cancel payment ' + pay.id + '?', h('p', { text: 'Everyone in this payment is released and can pay again. The slip stays in Drive.' }), 'Cancel payment', function () { setPayment(pay, 'cancelled', renderFinance); });
+          } }));
+          else add(acts, h('button', { cls: 'btn-link small', text: 'Restore', onclick: function () { setPayment(pay, 'pending', renderFinance); } }));
+        }
+        add(tb, h('tr', null,
+          h('td', null, h('b', { text: pay.id }), h('div', { cls: 'muted small', text: (TYPE_LABEL[pay.type] || pay.type) + ' · ' + when(pay.submittedAt) })),
+          h('td', null, payer ? h('button', { cls: 'btn-link', style: 'text-align:left;', text: nameOf(payer), onclick: function () { openPerson(payer.email); } }) : (pay.payerName || pay.payerEmail),
+            payer && payer.phone ? h('div', { cls: 'muted small', text: payer.phone }) : null),
+          h('td', null, h('ul', { cls: 'people' }, pay.people.map(function (x) { var q = byEmail[x.email]; return h('li', { text: (q ? nameOf(q) : x.name || x.email) + ' — ' + x.role + (x.team ? ', ' + x.team : '') + ': ' + thb(x.price) }); }))),
+          h('td', { cls: 'num', text: thb(pay.total) }),
+          h('td', null, h('div', { cls: 'links' }, pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: 'Slip ' + (i + 1) + ' ↗' }); }))),
+          h('td', null, payPill(pay.status), pay.statusBy ? h('div', { cls: 'muted small', text: 'by ' + pay.statusBy }) : null),
+          h('td', null, acts)));
+      });
+      var un = unpaidTable(), ub = clear($('unpaid-rows'));
+      $('unpaid-count').textContent = un.rows.length;
+      $('unpaid-count').className = 'count' + (un.rows.length ? '' : ' zero');
+      exportButtons($('unpaid-export'), function () { return 'Not paid yet'; }, unpaidTable);
+      if (!un.rows.length) add(ub, h('tr', null, h('td', { colspan: 7, cls: 'muted', text: 'Everyone is in a payment.' })));
+      unpaidPeople().forEach(function (p, i) {
+        add(ub, h('tr', { cls: 'unpaid click', onclick: function () { openPerson(p.email); } },
+          h('td', { cls: 'num', text: i + 1 }), h('td', { text: nameOf(p) }), h('td', { text: positionText(p) }), h('td', { text: teamUni(p) }),
+          h('td', { text: phoneText(p) || '—' }), h('td', { text: whyUnpaid(p) }), h('td', { text: when(p.createdAt) })));
+      });
+    }
+
+    // ---------------- invoice view (2026-10-31) ----------------
+    var invFilter = 'waiting';
+    function invoiceRequests() {
+      var out = [];
+      D.payments.forEach(function (pay) {
+        if (!pay.invoice.needed || pay.status === 'cancelled') return;
+        out.push(Object.assign({ kind: 'payment', key: 'pay:' + pay.id, payerEmail: pay.payerEmail, ids: [pay.id], total: pay.total, statuses: [pay.status] }, pay.invoice));
+      });
+      D.people.forEach(function (p) {
+        var c = p.combinedInvoice;
+        if (!c) return;
+        out.push(Object.assign({ kind: 'combined', key: 'comb:' + p.email, payerEmail: p.email, ids: c.payments, total: c.total, later: c.later || [],
+          statuses: c.payments.map(function (id) { var x = D.payments.filter(function (q) { return q.id === id; })[0]; return x ? x.status : ''; }) }, c));
+      });
+      out.sort(function (a, b) { return (a.confirmedAt ? 1 : 0) - (b.confirmedAt ? 1 : 0) || String(a.updatedAt).localeCompare(String(b.updatedAt)); });
+      return out;
+    }
+    function invTable() {
+      var list = invoiceRequests().filter(function (r) { return invFilter === 'all' || (invFilter === 'waiting' ? !r.confirmedAt : !!r.confirmedAt); });
+      return { list: list, headers: ['Requested by', 'Email', 'Telephone', 'Kind', 'Payments', 'Amount', 'Bill to', 'Address', 'Tax ID', 'Names on the invoice', 'Invoice telephone', 'Template', 'Other information', 'Status'],
+        rows: list.map(function (r) {
+          var p = byEmail[r.payerEmail];
+          return [p ? nameOf(p) : r.payerEmail, r.payerEmail, p ? p.phone : '', r.kind === 'combined' ? 'Combined (all payments)' : 'One payment', r.ids.join(', '), thb(r.total),
+            r.billTo, r.address, r.taxId, namesText(r), r.phone, r.option === 'custom' ? 'Custom: ' + r.templateUrl : 'Default (KKU)', r.note, r.confirmedAt ? 'Confirmed ' + when(r.confirmedAt) + ' by ' + r.confirmedBy : 'Waiting'];
+        }) };
+    }
+    function namesText(r) { return (r.names || []).map(function (x) { return x.name + ' (' + cap(x.position) + ')'; }).join(', '); }
+    function confirmInvoice(r, yes) {
+      var body = r.kind === 'payment' ? { paymentId: r.ids[0], confirm: yes, updatedAt: r.updatedAt } : { email: r.payerEmail, confirm: yes, updatedAt: r.updatedAt };
+      return api('POST', '/api/admin/invoices/confirm', body).then(function (res) {
+        if (!res.success) { toast(res.message, true); if (res.changed) loadData(true); return; }
+        toast(yes ? 'Invoice confirmed — it is now locked for the registrant.' : 'Confirmation undone — the registrant can edit it again.');
+        loadData(true);
+      }, function (err) { toast(err.message, true); });
+    }
+    function renderInvoices() {
+      var all = invoiceRequests();
+      var chips = clear($('inv-chips'));
+      [['waiting', 'Waiting', all.filter(function (r) { return !r.confirmedAt; }).length], ['confirmed', 'Confirmed', all.filter(function (r) { return r.confirmedAt; }).length], ['all', 'All', all.length]].forEach(function (c) {
+        add(chips, h('button', { cls: 'chip' + (invFilter === c[0] ? ' on' : ''), text: c[1] + ' (' + c[2] + ')', onclick: function () { invFilter = c[0]; renderInvoices(); } }));
+      });
+      exportButtons($('inv-export'), function () { return 'Invoices ' + invFilter; }, invTable);
+      var t = invTable(), tb = clear($('inv-rows'));
+      if (!t.list.length) add(tb, h('tr', null, h('td', { colspan: 8, cls: 'muted', text: invFilter === 'waiting' ? 'No invoice requests waiting.' : 'Nothing here.' })));
+      t.list.forEach(function (r) {
+        var p = byEmail[r.payerEmail];
+        var acts = h('div', { cls: 'acts' });
+        if (canEdit()) {
+          if (!r.confirmedAt) add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Confirm', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, true); } }));
+          else add(acts, h('button', { cls: 'btn-link small', text: 'Undo confirm', onclick: function () {
+            confirmBox('Undo the confirmation?', h('p', { text: 'The registrant will be able to change this invoice request again. Use this when they asked for a correction.' }), 'Undo confirm', function () { confirmInvoice(r, false); });
+          } }));
+        }
+        add(tb, h('tr', null,
+          h('td', null, p ? h('button', { cls: 'btn-link', style: 'text-align:left;', text: nameOf(p), onclick: function () { openPerson(p.email); } }) : r.payerEmail,
+            h('div', { cls: 'inv-meta', text: [r.payerEmail, p && p.phone].filter(Boolean).join(' · ') }),
+            r.updatedAt ? h('div', { cls: 'inv-meta', text: 'last changed ' + when(r.updatedAt) }) : null),
+          h('td', null, h('b', { text: r.kind === 'combined' ? 'Combined invoice' : 'One payment' }), h('div', { cls: 'small', text: r.ids.join(', ') }),
+            r.later && r.later.length ? h('div', { cls: 'inv-warn', text: r.later.join(', ') + ' paid after this was confirmed — not in this invoice' }) : null),
+          h('td', { cls: 'num', text: thb(r.total) }),
+          h('td', null, h('div', null, h('b', { text: r.billTo || '—' })), h('div', { cls: 'inv-meta', text: r.address || '' }),
+            r.taxId ? h('div', { cls: 'inv-meta', text: 'Tax ID ' + r.taxId }) : null, r.phone ? h('div', { cls: 'inv-meta', text: 'Tel. ' + r.phone }) : null,
+            h('div', { cls: 'small', style: 'margin-top:4px;' }, h('span', { cls: 'inv-meta', text: 'Names: ' }), namesText(r) || '—')),
+          h('td', null, r.option === 'custom' ? (r.templateUrl ? h('a', { href: r.templateUrl, target: '_blank', rel: 'noopener', text: 'Their template ↗' }) : 'Custom (no file)') : 'Default (KKU)'),
+          h('td', { cls: 'note', text: r.note || '—' }),
+          h('td', null, r.confirmedAt ? pill('Invoice confirmed', 'ok') : pill('Waiting', 'wait'),
+            r.confirmedAt ? h('div', { cls: 'inv-meta', text: 'by ' + r.confirmedBy + ', ' + when(r.confirmedAt) }) : null),
+          h('td', null, acts)));
+      });
+    }
+
+    // ---------------- all status export (2026-10-31) ----------------
+    var EXPORT_KEY = 'icemkku.exportColumns';
+    var EXPORT_GROUPS = [
+      ['Basic', [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Full name', function (p) { return p.fullName; }], ['Nickname', 'nickname'], ['Email', 'email'],
+        ['Position', function (p) { return cap(p.position); }], ['Role in team', function (p) { return cap(p.roleInTeam); }], ['Team', 'teamName'], ['Second team (advisors)', 'secondTeamName'],
+        ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Educational year', 'educationYear'], ['Highest education', 'highestLevel'], ['Study level (observers)', 'observerLevel']]],
+      ['Contact', [['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone']]],
+      ['Food and health', [['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
+        ['Food/drug allergy', function (p) { return p.allergyNone ? 'None' : p.allergy; }], ['Underlying disease', function (p) { return p.diseaseNone ? 'None' : p.disease; }],
+        ['Current medication', function (p) { return p.medicationNone ? 'None' : p.medication; }], ['Special needs', 'special']]],
+      ['Event', [['Shirt size', function (p) { return p.shirtSize || (p.shirtSizeOld ? 'Choose again (was ' + p.shirtSizeOld + ')' : ''); }], ['Trip option', 'trip']]],
+      ['Documents', [['Passport file', function (p) { return p.docs.passport.url; }], ['Passport check', function (p) { return CHECK_LABEL[p.docs.passport.check] || ''; }],
+        ['Proof of enrolment file', function (p) { return p.docs.enrollment.url; }], ['Proof of enrolment check', function (p) { return CHECK_LABEL[p.docs.enrollment.check] || ''; }],
+        ['IFMSA/AMSA certificate file', function (p) { return p.docs.ifmsaCert.url; }], ['IFMSA/AMSA certificate check', function (p) { return CHECK_LABEL[p.docs.ifmsaCert.check] || ''; }]]],
+      ['Payment', [['Payment ID', 'paymentId'], ['Payment status', function (p) { return PAY_LABEL[p.paymentStatus] || 'Not paid'; }],
+        ['Paid by', function (p) { var pay = payOf(p); var q = pay && byEmail[pay.payerEmail]; return pay ? (q ? nameOf(q) : pay.payerName) : ''; }],
+        ['Registration fee', function (p) { var pay = payOf(p); var x = pay && pay.people.filter(function (y) { return y.email === p.email; })[0]; return x ? x.price : ''; }],
+        ['Invoice', function (p) { var pay = payOf(p); var c = pay && pay.payerEmail === p.email ? (byEmail[p.email].combinedInvoice || (pay.invoice.needed ? pay.invoice : null)) : null;
+          return c ? (c.confirmedAt ? 'Confirmed' : 'Requested') : ''; }]]],
+      ['Account', [['Registered', function (p) { return when(p.createdAt); }], ['Last updated', function (p) { return when(p.updatedAt); }]]]
+    ];
+    function payOf(p) { return p.paymentId ? D.payments.filter(function (x) { return x.id === p.paymentId; })[0] : null; }
+    function exportColumns() { var out = []; EXPORT_GROUPS.forEach(function (g) { g[1].forEach(function (c) { out.push(c); }); }); return out; }
+    function chosenColumns() {
+      var on = {};
+      Array.prototype.forEach.call(document.querySelectorAll('#exp-groups input:checked'), function (i) { on[i.getAttribute('data-col')] = true; });
+      return exportColumns().filter(function (c) { return on[c[0]]; });
+    }
+    function exportPeople() {
+      var pay = $('exp-pay').value;
+      return D.people.filter(function (p) {
+        if (!$('exp-pos-' + p.position) || !$('exp-pos-' + p.position).checked) return false;
+        if (pay === 'verified') return p.paymentStatus === 'verified';
+        if (pay === 'waiting') return p.paymentStatus === 'pending' || p.paymentStatus === 'notVerified';
+        if (pay === 'none') return !p.paymentId;
+        return true;
+      });
+    }
+    function allStatusTable() {
+      var cols = chosenColumns();
+      return { headers: cols.map(function (c) { return c[0]; }), rows: exportPeople().map(function (p) { return cols.map(function (c) { var v = typeof c[1] === 'function' ? c[1](p) : p[c[1]]; return v === null || v === undefined ? '' : v; }); }) };
+    }
+    function saveColumnChoice() {
+      try { localStorage.setItem(EXPORT_KEY, JSON.stringify(chosenColumns().map(function (c) { return c[0]; }))); } catch (e) { /* ignore */ }
+    }
+    var exportBuilt = false;
+    function buildExportChoices() {
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem(EXPORT_KEY) || 'null'); } catch (e) { saved = null; }
+      var def = ['Full name', 'Position', 'Team', 'University', 'Telephone'];
+      var box = clear($('exp-groups'));
+      EXPORT_GROUPS.forEach(function (g, gi) {
+        var group = h('div', { cls: 'export-group' });
+        var setAll = function (v) { Array.prototype.forEach.call(group.querySelectorAll('input'), function (i) { i.checked = v; }); saveColumnChoice(); renderExport(); };
+        add(group, h('h3', null, g[0], h('span', null, h('button', { cls: 'btn-link small', text: 'All', onclick: function () { setAll(true); } }), h('button', { cls: 'btn-link small', text: 'None', onclick: function () { setAll(false); } }))));
+        g[1].forEach(function (c, ci) {
+          var id = 'exp-col-' + gi + '-' + ci;
+          var cb = h('input', { type: 'checkbox', id: id, 'data-col': c[0] });
+          cb.checked = (saved || def).indexOf(c[0]) !== -1;
+          cb.addEventListener('change', function () { saveColumnChoice(); renderExport(); });
+          add(group, h('label', { for: id }, cb, c[0]));
+        });
+        add(box, group);
+      });
+      ['exp-pos-delegate', 'exp-pos-advisor', 'exp-pos-observer', 'exp-pay'].forEach(function (id) { $(id).addEventListener('change', renderExport); });
+      $('exp-all').addEventListener('click', function () { Array.prototype.forEach.call(document.querySelectorAll('#exp-groups input'), function (i) { i.checked = true; }); saveColumnChoice(); renderExport(); });
+      $('exp-none').addEventListener('click', function () { Array.prototype.forEach.call(document.querySelectorAll('#exp-groups input'), function (i) { i.checked = false; }); saveColumnChoice(); renderExport(); });
+      exportBuilt = true;
+    }
+    function renderExport() {
+      if (!exportBuilt) buildExportChoices();
+      var t = allStatusTable();
+      $('exp-count').textContent = t.rows.length + (t.rows.length === 1 ? ' person' : ' people') + ' · ' + t.headers.length + (t.headers.length === 1 ? ' column' : ' columns');
+      exportButtons($('exp-export'), function () { return 'All status'; }, function () {
+        var x = allStatusTable();
+        if (!x.headers.length) { toast('Tick at least one column first.', true); return { headers: [], rows: [] }; }
+        return x;
+      });
+      var box = clear($('exp-preview'));
+      if (!t.headers.length) { add(box, h('div', { cls: 'empty', text: 'Tick the columns you need above.' })); return; }
+      add(box, h('p', { cls: 'muted small', text: 'Preview of the first ' + Math.min(8, t.rows.length) + ' rows:' }));
+      add(box, table(t.headers, t.rows.slice(0, 8), { empty: 'Nobody matches these choices.' }));
     }
 
     // ---------------- parameters ----------------
