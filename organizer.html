@@ -211,6 +211,20 @@
     .inv-meta { font-size: 12.5px; color: var(--muted); }
     .inv-warn { font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 4px 8px; margin-top: 4px; }
     td.note { max-width: 260px; overflow-wrap: anywhere; }
+    /* 2026-11-01 */
+    .status-text { font-size: 13px; font-weight: 650; cursor: default; user-select: text; }
+    .status-text.bad { color: var(--danger); }
+    .status-text.ok { color: var(--ok); }
+    .status-text::before { content: '\25CF'; margin-right: 5px; font-size: 10px; vertical-align: 1px; }
+    .deadline-alert { background: #fdecea; border: 1px solid #eba59e; color: #b3261e; font-weight: 700; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin: 0 0 14px; }
+    .who-fixed { font-size: 12.5px; color: var(--muted); margin: 5px 0 0; }
+    .key-sub { display: block; font-size: 12px; font-weight: 600; color: var(--danger); margin-top: 2px; }
+    .edit-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    @media (max-width: 560px) { .edit-form .grid2 { grid-template-columns: 1fr; } }
+    .edit-form .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin: 4px 14px 0 0; font-weight: 500; }
+    .edit-form .chk input { width: auto; margin: 0; }
+    .edit-form .hint { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
+    .panel .edit-btn { float: right; }
   </style>
 </head>
 <body>
@@ -259,8 +273,9 @@
         <input type="text" id="who-in-name" maxlength="60" autocomplete="given-name">
         <label class="f" for="who-in-div">Your division</label>
         <input type="text" id="who-in-div" maxlength="60" list="divisions" placeholder="e.g. finance team">
+        <p class="who-fixed hidden" id="who-div-fixed">Set by this account.</p>
         <datalist id="divisions">
-          <option value="finance team"></option><option value="registration team"></option><option value="academic team"></option>
+          <option value="finance team"></option><option value="registration team"></option><option value="core team"></option><option value="IT team"></option><option value="academic team"></option>
           <option value="logistics team"></option><option value="PR team"></option><option value="president team"></option>
         </datalist>
         <div class="row" style="margin-top:16px;"><button class="btn-primary" id="who-save">Continue</button></div>
@@ -274,7 +289,7 @@
         <div>
           <h1>ICEMKKU organizer menu</h1>
           <p class="sub" id="home-sub"></p>
-          <div class="banner hidden" id="view-only-banner">This account can only view. Verifying, deleting and changing parameters need the full organizer account.</div>
+          <div class="banner hidden" id="view-only-banner">This account can only view. Verifying, deleting and changing parameters need a full organizer account.</div>
         </div>
         <div class="tiles" id="tiles"></div>
         <div class="card">
@@ -289,7 +304,7 @@
             <h2>Notification center<span class="count" id="notif-count">0</span></h2>
             <button class="btn-secondary" id="history-open">History</button>
           </div>
-          <p class="muted small" style="margin:0 0 10px;">IFMSA/AMSA certificates, observers' proof of enrolment and payment slips waiting for a check, oldest first. Verified items move to History.</p>
+          <p class="muted small" style="margin:0 0 10px;">IFMSA/AMSA certificates, observers' proof of enrolment, payment slips and invoice edit requests waiting for you, oldest first. Verified items move to History.</p>
           <div class="items" id="notifs"></div>
         </div>
       </div>
@@ -300,10 +315,21 @@
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <div class="section-head">
         <div><h1>Team overview</h1><p class="sub" id="teams-sub" style="margin:0;"></p></div>
-        <span class="legend"><i></i> payment not complete</span>
+        <div class="row"><span class="legend"><i></i> payment not complete</span><button class="btn-secondary" id="contacts-open" data-go="contacts">Contact view</button></div>
       </div>
       <div class="team-grid" id="team-grid"></div>
       <div id="no-team-advisors" style="margin-top:18px;"></div>
+    </div>
+
+    <!-- CONTACT VIEW (2026-11-01): team leaders' and advisors' contacts -->
+    <div class="view" id="v-contacts">
+      <button class="btn-secondary back" data-go="teams">← Back to all teams</button>
+      <div class="section-head">
+        <div><h1>Contact view</h1><p class="sub" style="margin:0;">Team leaders and advisors of every team, with their contact details.</p></div>
+        <div class="exports" id="contacts-export"></div>
+      </div>
+      <div class="deadline-alert hidden" id="contacts-lock"></div>
+      <div class="table-wrap" id="contacts-table"><table><thead><tr><th class="num">#</th><th>Team</th><th>University</th><th>Role</th><th>Name</th><th>Telephone</th><th>Other contact</th><th>Email</th></tr></thead><tbody id="contacts-rows"></tbody></table></div>
     </div>
 
     <!-- ONE TEAM -->
@@ -502,7 +528,9 @@
       toast.timer = setTimeout(function () { t.className = 'toast'; }, isErr ? 6000 : 3500);
     }
     function setMsg(id, text, isErr) { var m = $(id); m.textContent = text || ''; m.className = 'msg' + (text ? (isErr ? ' error' : ' success') : ''); }
-    function canEdit() { return !!D && D.me.role === 'full'; }
+    function canEdit() { return !!D && (D.me.role === 'full' || D.me.role === 'master'); }
+    function isMaster() { return !!D && D.me.role === 'master'; } // ICEMmasteraccount: may edit registrants' information
+    var myDivision = '';     // division accounts: fixed in "Who's in?" (2026-11-01)
     function pill(text, kind) { return h('span', { cls: 'pill ' + kind, text: text }); }
     function checkPill(check) { return check === 'verified' ? pill('Verified', 'ok') : check === 'notVerified' ? pill('Not verified', 'bad') : pill('Not checked yet', 'wait'); }
     function payPill(status) {
@@ -533,7 +561,7 @@
               function () { throw new Error('Could not reach the server. Please check your internet connection.'); })
         .then(function (res) {
           if (res && res.sessionExpired) { signedOut(res.message); throw new Error(res.message); }
-          if (res && res.needsWho) { showView('who'); throw new Error(res.message); }
+          if (res && res.needsWho) { prepWho(); showView('who'); throw new Error(res.message); }
           return res;
         });
     }
@@ -558,7 +586,8 @@
         byEmail = {};
         D.people.forEach(function (p) { byEmail[p.email] = p; });
         $('who-name').textContent = D.me.who;
-        $('who-account').textContent = D.me.username + (D.me.role === 'view' ? ' (view only)' : '');
+        $('who-account').textContent = D.me.username + (D.me.role === 'view' ? ' (view only)' : D.me.role === 'master' ? ' (master)' : '');
+        myDivision = D.me.division || '';
         show('who-bar', true);
         renderCurrent();
         if (modalRender) modalRender();
@@ -578,7 +607,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && token && D) loadData(true); });
 
     // ---------------- views ----------------
-    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'teams', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
+    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
     function showView(name) {
       VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('active', v === name); });
       window.scrollTo(0, 0);
@@ -602,7 +631,7 @@
     window.addEventListener('hashchange', route);
     function renderCurrent() {
       if (!D) return;
-      var r = { home: renderHome, teams: renderTeams, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
+      var r = { home: renderHome, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
       if (r) r();
     }
 
@@ -744,7 +773,7 @@
       row('Email', p.email);
       row('Telephone', p.phone, false);
       row('Other contact', p.otherContact);
-      row('Emergency phone', p.emergencyPhone);
+      row('Emergency phone', p.emergencyPhone ? p.emergencyPhone + (p.emergencyWho ? ' (' + p.emergencyWho + ')' : '') : '');
       row('Position', positionText(p));
       if (p.position !== 'observer') row('Team', teamsOfPerson(p).join(', '));
       row('University', p.university);
@@ -762,9 +791,11 @@
       if (p.position === 'delegate') row('Trip', p.trip ? 'Option ' + p.trip : '');
       add(kv, [h('dt', { text: 'Payment' }), h('dd', null, payPill(p.paymentStatus), p.paymentId ? ' ' + p.paymentId : '')]);
       row('Registered', when(p.createdAt));
+      if (p.editedByOrganizer) row('Edited by organizer', p.editedByOrganizer + (p.editedByOrganizerAt ? ', ' + when(p.editedByOrganizerAt) : ''));
       var docs = h('div', { cls: 'docs' });
       ['passport', 'enrollment', 'ifmsaCert'].forEach(function (k) { if (k !== 'ifmsaCert' || p.position === 'delegate') add(docs, docControl(p, k)); });
-      return h('div', { cls: 'panel' }, roleText ? h('div', { cls: 'role', text: roleText }) : null, h('div', { cls: 'pname', text: nameOf(p) }), kv, docs);
+      var edit = isMaster() ? h('button', { cls: 'btn-secondary btn-small edit-btn', text: 'Edit info', onclick: function () { openEditPerson(p.email); } }) : null;
+      return h('div', { cls: 'panel' }, edit, roleText ? h('div', { cls: 'role', text: roleText }) : null, h('div', { cls: 'pname', text: nameOf(p) }), kv, docs);
     }
     function openPerson(email) {
       openModal('Registrant', function (body) {
@@ -809,6 +840,11 @@
         var k = 'pay:' + pay.id;
         if ((pay.status === 'pending' || pay.status === 'notVerified') || justDone[k]) items.push({ k: k, kind: 'pay', pay: pay, time: pay.lastSlipAt || pay.submittedAt });
       });
+      // "Request invoice edit" from a payer (2026-11-01)
+      invoiceRequests().forEach(function (r) {
+        var k = 'invedit:' + r.key;
+        if (r.confirmedAt && r.editRequestedAt) items.push({ k: k, kind: 'invedit', r: r, time: r.editRequestedAt });
+      });
       items.sort(function (a, b) { return String(a.time).localeCompare(String(b.time)); });
       return items;
     }
@@ -841,7 +877,29 @@
         justDone[it.k] = { text: text, until: Date.now() + LEAVE_MS };
         setTimeout(function () { delete justDone[it.k]; if (current === 'home') renderNotifs(); }, LEAVE_MS + 50);
       };
-      if (it.kind === 'doc') {
+      if (it.kind === 'invedit') {
+        var r = it.r, payerP = byEmail[r.payerEmail];
+        add(el, personBlock(payerP, r.payerEmail));
+        add(el, h('div', null,
+          h('div', null, h('b', { text: 'Invoice edit requested' }), ' ', pill('Waiting', 'wait'), ' ', h('b', { text: thb(r.total) })),
+          h('div', { cls: 'small', text: (r.kind === 'combined' ? 'Combined invoice for ' : 'Invoice for ') + r.ids.join(', ') + ' · confirmed by ' + (r.confirmedBy || 'an organizer') + ', ' + when(r.confirmedAt) }),
+          r.editRequestNote ? h('div', { cls: 'small', style: 'margin-top:4px;' }, h('span', { cls: 'muted', text: 'Their message: ' }), r.editRequestNote) : h('div', { cls: 'small muted', text: 'No message.' }),
+          h('div', { cls: 'small muted', text: 'Undo confirm unlocks the invoice so they can change it (or combine their payments). Dismiss keeps it as it is.' })));
+        if (canEdit()) {
+          add(actions, [
+            h('button', { cls: 'btn-primary btn-small', text: 'Undo confirm (unlock)', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, false); } }),
+            h('button', { cls: 'btn-secondary btn-small', text: 'Dismiss', onclick: function (e) {
+              e.target.disabled = true;
+              var body = r.kind === 'payment' ? { paymentId: r.ids[0] } : { email: r.payerEmail };
+              api('POST', '/api/admin/invoices/dismiss-edit-request', body).then(function (res) {
+                if (!res.success) { toast(res.message, true); e.target.disabled = false; return; }
+                toast('Request dismissed — the invoice stays confirmed.'); loadData(true);
+              }, function (err) { toast(err.message, true); e.target.disabled = false; });
+            } })
+          ]);
+        }
+        stateText = 'Requested ' + when(r.editRequestedAt);
+      } else if (it.kind === 'doc') {
         var p = it.p, d = it.d;
         add(el, personBlock(p));
         add(el, h('div', null,
@@ -866,7 +924,7 @@
         }));
         var slips = h('div', { cls: 'row', style: 'gap:10px;' }, pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: (pay.slipUrls.length > 1 ? 'Slip ' + (i + 1) : 'Payment slip') + ' ↗' }); }));
         add(el, h('div', null,
-          h('div', null, h('b', { text: (TYPE_LABEL[pay.type] || 'Payment') + ' ' + pay.id }), ' ', payPill(pay.status), ' ', h('b', { text: thb(pay.total) })),
+          h('div', null, h('b', { text: (TYPE_LABEL[pay.type] || 'Payment') + ' ' + pay.id }), ' ', payPill(pay.status), pay.late ? [' ', pill('Late', 'bad')] : null, ' ', h('b', { text: thb(pay.total) })),
           slips,
           h('div', { cls: 'small', style: 'margin-top:4px;' }, 'Paid for:', paidFor),
           pay.invoice.needed ? h('div', { cls: 'small muted', text: 'Invoice requested: ' + [pay.invoice.billTo, pay.invoice.address, pay.invoice.taxId ? 'Tax ID ' + pay.invoice.taxId : ''].filter(Boolean).join(' · ') + (pay.invoice.templateUrl ? ' (custom template)' : '') }) : null,
@@ -919,7 +977,8 @@
       var unpaid = teams.filter(function (t) { return !t.paymentComplete; }).length;
       var shirts = people.filter(function (p) { return p.shirtSize; }).length;
       var alerts = highAlert().length;
-      var lockText = D.locks.infoLocked ? 'Registrant info locked' : D.locks.infoLockAt ? 'Info lock: ' + D.locks.infoLockAt : 'No info lock set';
+      var lockText = D.locks.infoLocked ? 'Payment + info deadline passed (' + D.locks.infoLockAt + ')' : D.locks.infoLockAt ? 'Payment + info deadline: ' + D.locks.infoLockAt : 'No payment / info deadline set';
+      var editReqs = invoiceRequests().filter(function (r) { return r.confirmedAt && r.editRequestedAt; }).length;
       var plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
       $('home-sub').textContent = plural(people.length, 'registrant', 'registrants') + ' · ' + plural(teams.length, 'team', 'teams') + ' · ' + plural(obs.length, 'observer', 'observers') + ' · updated ' + when(D.serverNow);
       show('view-only-banner', !canEdit());
@@ -927,15 +986,15 @@
         return h('button', { cls: 'tile' + (cls ? ' ' + cls : ''), onclick: function () { go(view); } }, h('span', { cls: 't', text: title }), h('span', { cls: 's', text: sub }));
       };
       add(clear($('tiles')), [
-        tile('Trip view', 'A ' + D.trip.counts.A + ' · B ' + D.trip.counts.B + ' · C ' + D.trip.counts.C + ' of ' + D.trip.seats + ' seats each', 'trip'),
-        tile('Shirt size view', shirts + ' of ' + people.length + ' sizes filled in', 'shirts'),
-        tile('High alert section', alerts + (alerts === 1 ? ' person' : ' people') + ' with food, allergy, health or special needs', 'alert', alerts ? 'alert' : ''),
-        tile('Parameters', lockText, 'params'),
         tile('View all teams', plural(teams.length, 'team', 'teams') + ' · ' + unpaid + ' not fully paid', 'teams'),
         tile('View all observers', plural(obs.length, 'observer', 'observers'), 'observers'),
+        tile('Shirt size view', shirts + ' of ' + people.length + ' sizes filled in', 'shirts'),
+        tile('Trip view', 'A ' + D.trip.counts.A + ' · B ' + D.trip.counts.B + ' · C ' + D.trip.counts.C + ' of ' + D.trip.seats + ' seats each', 'trip'),
+        tile('High alert section', alerts + (alerts === 1 ? ' person' : ' people') + ' with food, allergy, health or special needs', 'alert', alerts ? 'alert' : ''),
         tile('Financial view', plural(unpaidPeople().length, 'person', 'people') + ' not paid · ' + D.payments.filter(function (x) { return x.status === 'pending'; }).length + ' waiting for a check', 'finance', unpaidPeople().length ? 'alert' : ''),
-        tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed', 'invoice'),
-        tile('All status export', 'Choose the columns and who to include', 'export')
+        tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed' + (editReqs ? ' · ' + editReqs + ' edit request' + (editReqs === 1 ? '' : 's') : ''), 'invoice', editReqs ? 'alert' : ''),
+        tile('All status export', 'Choose the columns and who to include', 'export'),
+        tile('Parameters', lockText, 'params')
       ]);
       renderNotifs();
       if ($('search-q').value.trim()) runSearch();
@@ -991,7 +1050,7 @@
       if (!t) { $('team-title').textContent = currentTeam; $('team-sub').textContent = 'This team no longer exists.'; show('team-delete', false); return; }
       $('team-title').textContent = 'Team ' + t.name;
       $('team-sub').textContent = (t.university || 'University not filled in') + ' · ' + (t.complete ? 'complete team' : t.delegates + ' of 3 delegates' + (t.advisor ? '' : ', no advisor yet'));
-      var pays = h('div', { cls: 'row' }, h('b', { text: 'Payment:' }), t.paymentComplete ? pill('Complete', 'ok') : pill('Not complete', 'bad'));
+      var pays = h('div', { cls: 'row' }, h('b', { text: 'Payment:' }), h('span', { cls: 'status-text ' + (t.paymentComplete ? 'ok' : 'bad'), text: t.paymentComplete ? 'Complete' : 'Payment not complete' }));
       t.payments.forEach(function (x) { add(pays, h('span', null, x.id + ' ', payPill(x.status))); });
       add($('team-pay'), pays);
       if (t.advisor) add(panels, personPanel(byEmail[t.advisor], t.advisorExtra ? 'Advisor (their second team)' : 'Advisor'));
@@ -1030,6 +1089,107 @@
       }, true);
       setTimeout(function () { input.focus(); }, 50);
     });
+
+    // ---------------- contact view (2026-11-01) ----------------
+    // Team leaders' and advisors' contacts. Opens once the team leader can no
+    // longer change and the information is locked (both deadlines passed).
+    function contactsTable() {
+      var rows = [];
+      D.teams.forEach(function (t) {
+        [['Team leader', t.leader], ['Advisor', t.advisor]].forEach(function (x) {
+          var p = x[1] ? byEmail[x[1]] : null;
+          if (!p) return;
+          rows.push([t.name, p.university || t.university, x[0], nameOf(p), p.phone, p.otherContact, p.email]);
+        });
+      });
+      return { headers: ['Team', 'University', 'Role', 'Name', 'Telephone', 'Other contact', 'Email'], rows: rows };
+    }
+    function renderContacts() {
+      var open = !!D.locks.contactViewOpen;
+      var lock = $('contacts-lock');
+      show('contacts-lock', !open); show('contacts-table', open); show('contacts-export', open);
+      if (!open) {
+        lock.textContent = 'The contact view opens once both deadlines have passed, so the team leaders and contact details no longer change: ' +
+          'TeamLeaderChangeDeadline (' + (D.locks.leaderLockAt || 'not set yet') + (D.locks.leaderLocked ? ', passed' : '') + ') and ' +
+          'InfoEditDeadline (' + (D.locks.infoLockAt || 'not set yet') + (D.locks.infoLocked ? ', passed' : '') + ').' +
+          (!D.locks.leaderLockAt || !D.locks.infoLockAt ? ' Set the missing date in Parameters.' : '');
+        return;
+      }
+      var t = contactsTable();
+      exportButtons($('contacts-export'), function () { return 'Contacts leaders and advisors'; }, contactsTable);
+      var tb = clear($('contacts-rows'));
+      if (!t.rows.length) add(tb, h('tr', null, h('td', { colspan: 8, cls: 'muted', text: 'No team leaders or advisors yet.' })));
+      t.rows.forEach(function (r, i) { add(tb, h('tr', null, h('td', { cls: 'num', text: i + 1 }), r.map(function (v) { return h('td', { text: v || '—' }); }))); });
+    }
+
+    // ---------------- edit a registrant's information (master account, 2026-11-01) ----------------
+    var FOOD = ['Regular', 'Halal', 'Vegetarian', 'Vegan', 'Not spicy', 'Other'];
+    var RELATIONS = [['', '—'], ['Mom', 'Mom'], ['Dad', 'Dad'], ['Partner', 'Partner'], ['Friend/coworker', 'Friend / coworker'], ['Other', 'Other']];
+    function openEditPerson(email) {
+      var p = byEmail[email];
+      if (!p || !isMaster()) return;
+      openModal('Edit ' + nameOf(p), function (body) {
+        var form = h('div', { cls: 'edit-form' });
+        var inputs = {};
+        var field = function (key, label, value, opts) {
+          opts = opts || {};
+          var id = 'ed-' + key.replace(/\W/g, '');
+          var i;
+          if (opts.options) {
+            i = h('select', { id: id }, opts.options.map(function (o) { var v = Array.isArray(o) ? o[0] : o; return h('option', { value: v, text: Array.isArray(o) ? o[1] : (o || '—') }); }));
+            i.value = value || '';
+          } else if (opts.multi) { i = h('textarea', { id: id, rows: 2, maxlength: 500 }); i.value = value || ''; }
+          else i = h('input', { type: 'text', id: id, maxlength: opts.max || 200, value: value || '', placeholder: opts.placeholder || null });
+          inputs[key] = i;
+          return h('div', null, h('label', { cls: 'f', for: id, text: label }), i, opts.hint ? h('p', { cls: 'hint', text: opts.hint }) : null);
+        };
+        var none = function (key, label, checked) {
+          var cb = h('input', { type: 'checkbox', id: 'ed-' + key }); cb.checked = !!checked; inputs[key] = cb;
+          return h('label', { cls: 'chk', for: 'ed-' + key }, cb, label);
+        };
+        var edu = p.position === 'delegate' ? field('EducationYear', 'Educational year', p.educationYear) : field('HighestLevelOfEducation', 'Highest level of education', p.highestLevel);
+        var food = h('div', null, h('label', { cls: 'f', text: 'Food preference' }), FOOD.map(function (f) {
+          var cb = h('input', { type: 'checkbox', 'data-food': f, id: 'ed-food-' + f.replace(/\W/g, '') }); cb.checked = (p.foodPreferences || []).indexOf(f) !== -1;
+          return h('label', { cls: 'chk', for: cb.id }, cb, f);
+        }));
+        add(form, [
+          h('p', { cls: 'muted small', style: 'margin-top:0;', text: 'Saved straight away for ' + p.email + ', also after the InfoEditDeadline. Your name is noted on the change. Documents and payments are not changed here.' }),
+          h('div', { cls: 'grid2' },
+            field('Name', 'Name', p.firstName), field('MiddleName', 'Middle name', p.middleName),
+            field('Surname', 'Surname', p.lastName), field('Nickname', 'Nickname', p.nickname),
+            edu, field('University', 'University', p.university, { hint: p.paymentId ? 'In a payment: a different university is not saved.' : '' }),
+            field('Country', 'Country', p.country), field('Religion', 'Religion', p.religion),
+            field('Phone', 'Telephone', p.phone, { placeholder: '+66812345678', hint: 'With the country code, e.g. +66812345678.' }), field('OtherContact', 'Other contact', p.otherContact),
+            field('EmergencyPhone', 'Emergency telephone', p.emergencyPhone, { placeholder: '+66898765432' }), field('EmergencyRelation', 'Emergency contact is', p.emergencyRelation, { options: RELATIONS }),
+            field('EmergencyRelationOther', 'Emergency contact (if Other)', p.emergencyRelationOther),
+            field('ShirtSize', 'Shirt size', p.shirtSize, { options: [''].concat(SIZES) }),
+            p.position === 'observer' ? field('ObserverLevel', 'Study level', p.observerLevel, { options: ['', 'Undergraduate', 'Postgraduate'], hint: 'Locked once they are in a payment or their proof of enrolment is verified.' }) : h('div')),
+          food, field('FoodPreferenceOther', 'Food preference (other)', p.foodPreferenceOther),
+          field('FoodAndDrugAllergy', 'Food / drug allergy', p.allergy), none('AllergyNone', 'None', p.allergyNone),
+          field('UnderlyingDisease', 'Underlying disease', p.disease), none('DiseaseNone', 'None', p.diseaseNone),
+          field('CurrentMedication', 'Current medication', p.medication), none('MedicationNone', 'None', p.medicationNone),
+          field('Special requirement', 'Special requirement', p.special, { multi: true })
+        ]);
+        var msg = h('div', { cls: 'msg', id: 'ed-msg' });
+        var save = h('button', { cls: 'btn-primary', id: 'ed-save', text: 'Save changes', onclick: function () {
+          var fields = {};
+          Object.keys(inputs).forEach(function (k) { var i = inputs[k]; fields[k] = i.type === 'checkbox' ? i.checked : i.value.trim(); });
+          fields.FoodPreference = Array.prototype.slice.call(form.querySelectorAll('input[data-food]:checked')).map(function (c) { return c.getAttribute('data-food'); }).join(', ');
+          if (fields.EmergencyRelation !== 'Other') fields.EmergencyRelationOther = '';
+          save.disabled = true;
+          api('PUT', '/api/admin/people/info', { email: p.email, fields: fields }).then(function (res) {
+            save.disabled = false;
+            if (!res.success) { setMsg('ed-msg', res.message, true); return; }
+            toast(res.changed.length ? 'Saved ' + res.changed.length + ' change' + (res.changed.length === 1 ? '' : 's') + ' for ' + nameOf(p) + '.' : 'Nothing changed.');
+            if (res.note) setMsg('ed-msg', res.note, true);
+            loadData(true).then(function () { if (!res.note) openPerson(p.email); });
+          }, function (err) { save.disabled = false; setMsg('ed-msg', err.message, true); });
+        } });
+        add(form, [h('div', { cls: 'row', style: 'margin-top:16px;' }, save, h('button', { cls: 'btn-secondary', text: 'Cancel', onclick: function () { openPerson(p.email); } })), msg]);
+        add(body, form);
+      });
+      modalRender = null; // keep what is typed when the data refreshes
+    }
 
     // ---------------- trip ----------------
     function tripPeople(opt) {
@@ -1124,7 +1284,7 @@
     function observerExport() {
       var cols = [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Nickname', 'nickname'], ['Email', 'email'],
         ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Highest education', 'highestLevel'], ['Study level', 'observerLevel'],
-        ['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone'], ['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
+        ['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone'], ['Emergency contact is', 'emergencyWho'], ['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
         ['Food/drug allergy', 'allergy'], ['Underlying disease', 'disease'], ['Medication', 'medication'], ['Shirt size', 'shirtSize'], ['Special needs', 'special'],
         ['Proof of enrolment file', function (p) { return p.docs.enrollment.url; }], ['Proof of enrolment check', function (p) { return CHECK_LABEL[p.docs.enrollment.check] || ''; }],
         ['Passport file', function (p) { return p.docs.passport.url; }], ['Passport check', function (p) { return CHECK_LABEL[p.docs.passport.check] || ''; }],
@@ -1173,13 +1333,13 @@
           pay: pay,
           cells: [pay.id + ' · ' + (TYPE_LABEL[pay.type] || pay.type), payer ? nameOf(payer) : pay.payerName || pay.payerEmail,
             pay.people.map(function (x) { var q = byEmail[x.email]; return (q ? nameOf(q) : x.name || x.email) + ' (' + x.role + (x.team ? ', ' + x.team : '') + '): ' + thb(x.price); }).join('\n'),
-            thb(pay.total), pay.slipUrls.join('\n'), (PAY_LABEL[pay.status] || pay.status) + (pay.statusBy ? ' — ' + pay.statusBy : ''), when(pay.submittedAt)]
+            thb(pay.total), pay.slipUrls.join('\n'), (PAY_LABEL[pay.status] || pay.status) + (pay.statusBy ? ' — ' + pay.statusBy : ''), when(pay.submittedAt), pay.late ? 'Late' : '']
         };
       });
     }
     function finTable() {
       var list = D.payments.filter(function (x) { return finFilter === 'all' || x.status === finFilter; });
-      return { headers: ['Payment', 'Paid by', 'Paid for', 'Total', 'Slips', 'Status', 'Submitted'], rows: paymentRows(list).map(function (r) { return r.cells; }), list: list };
+      return { headers: ['Payment', 'Paid by', 'Paid for', 'Total', 'Slips', 'Status', 'Submitted', 'After the payment deadline'], rows: paymentRows(list).map(function (r) { return r.cells; }), list: list };
     }
     function unpaidTable() {
       return { headers: ['Name', 'Position', 'Team, university', 'Email', 'Telephone', 'Why not yet', 'Registered'],
@@ -1223,7 +1383,7 @@
           h('td', null, h('ul', { cls: 'people' }, pay.people.map(function (x) { var q = byEmail[x.email]; return h('li', { text: (q ? nameOf(q) : x.name || x.email) + ' — ' + x.role + (x.team ? ', ' + x.team : '') + ': ' + thb(x.price) }); }))),
           h('td', { cls: 'num', text: thb(pay.total) }),
           h('td', null, h('div', { cls: 'links' }, pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: 'Slip ' + (i + 1) + ' ↗' }); }))),
-          h('td', null, payPill(pay.status), pay.statusBy ? h('div', { cls: 'muted small', text: 'by ' + pay.statusBy }) : null),
+          h('td', null, payPill(pay.status), pay.late ? [' ', pill('Late', 'bad')] : null, pay.statusBy ? h('div', { cls: 'muted small', text: 'by ' + pay.statusBy }) : null),
           h('td', null, acts)));
       });
       var un = unpaidTable(), ub = clear($('unpaid-rows'));
@@ -1261,7 +1421,7 @@
         rows: list.map(function (r) {
           var p = byEmail[r.payerEmail];
           return [p ? nameOf(p) : r.payerEmail, r.payerEmail, p ? p.phone : '', r.kind === 'combined' ? 'Combined (all payments)' : 'One payment', r.ids.join(', '), thb(r.total),
-            r.billTo, r.address, r.taxId, namesText(r), r.phone, r.option === 'custom' ? 'Custom: ' + r.templateUrl : 'Default (KKU)', r.note, r.confirmedAt ? 'Confirmed ' + when(r.confirmedAt) + ' by ' + r.confirmedBy : 'Waiting'];
+            r.billTo, r.address, r.taxId, namesText(r), r.phone, r.option === 'custom' ? 'Custom: ' + r.templateUrl : 'Default (KKU)', r.note, (r.confirmedAt ? 'Confirmed ' + when(r.confirmedAt) + ' by ' + r.confirmedBy : 'Waiting') + (r.confirmedAt && r.editRequestedAt ? ' — edit requested: ' + (r.editRequestNote || '(no message)') : '')];
         }) };
     }
     function namesText(r) { return (r.names || []).map(function (x) { return x.name + ' (' + cap(x.position) + ')'; }).join(', '); }
@@ -1304,7 +1464,8 @@
           h('td', null, r.option === 'custom' ? (r.templateUrl ? h('a', { href: r.templateUrl, target: '_blank', rel: 'noopener', text: 'Their template ↗' }) : 'Custom (no file)') : 'Default (KKU)'),
           h('td', { cls: 'note', text: r.note || '—' }),
           h('td', null, r.confirmedAt ? pill('Invoice confirmed', 'ok') : pill('Waiting', 'wait'),
-            r.confirmedAt ? h('div', { cls: 'inv-meta', text: 'by ' + r.confirmedBy + ', ' + when(r.confirmedAt) }) : null),
+            r.confirmedAt ? h('div', { cls: 'inv-meta', text: 'by ' + r.confirmedBy + ', ' + when(r.confirmedAt) }) : null,
+            r.confirmedAt && r.editRequestedAt ? h('div', { cls: 'inv-warn', text: 'Edit requested ' + when(r.editRequestedAt) + (r.editRequestNote ? ': ' + r.editRequestNote : '') }) : null),
           h('td', null, acts)));
       });
     }
@@ -1315,7 +1476,7 @@
       ['Basic', [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Full name', function (p) { return p.fullName; }], ['Nickname', 'nickname'], ['Email', 'email'],
         ['Position', function (p) { return cap(p.position); }], ['Role in team', function (p) { return cap(p.roleInTeam); }], ['Team', 'teamName'], ['Second team (advisors)', 'secondTeamName'],
         ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Educational year', 'educationYear'], ['Highest education', 'highestLevel'], ['Study level (observers)', 'observerLevel']]],
-      ['Contact', [['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone']]],
+      ['Contact', [['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone'], ['Emergency contact is', 'emergencyWho']]],
       ['Food and health', [['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
         ['Food/drug allergy', function (p) { return p.allergyNone ? 'None' : p.allergy; }], ['Underlying disease', function (p) { return p.diseaseNone ? 'None' : p.disease; }],
         ['Current medication', function (p) { return p.medicationNone ? 'None' : p.medication; }], ['Special needs', 'special']]],
@@ -1326,6 +1487,7 @@
       ['Payment', [['Payment ID', 'paymentId'], ['Payment status', function (p) { return PAY_LABEL[p.paymentStatus] || 'Not paid'; }],
         ['Paid by', function (p) { var pay = payOf(p); var q = pay && byEmail[pay.payerEmail]; return pay ? (q ? nameOf(q) : pay.payerName) : ''; }],
         ['Registration fee', function (p) { var pay = payOf(p); var x = pay && pay.people.filter(function (y) { return y.email === p.email; })[0]; return x ? x.price : ''; }],
+        ['Paid late', function (p) { var pay = payOf(p); return pay && pay.late ? 'Late' : ''; }],
         ['Invoice', function (p) { var pay = payOf(p); var c = pay && pay.payerEmail === p.email ? (byEmail[p.email].combinedInvoice || (pay.invoice.needed ? pay.invoice : null)) : null;
           return c ? (c.confirmedAt ? 'Confirmed' : 'Requested') : ''; }]]],
       ['Account', [['Registered', function (p) { return when(p.createdAt); }], ['Last updated', function (p) { return when(p.updatedAt); }]]]
@@ -1410,7 +1572,10 @@
         input.addEventListener('input', function () { paramsDirty = true; });
         var cell = h('td', null, input);
         if (s.date && s.key !== 'EarlyBirdDeadline' && canEdit()) add(cell, h('button', { cls: 'btn-link small', style: 'margin-top:4px;', text: 'Clear', onclick: function () { input.value = ''; paramsDirty = true; } }));
-        add(tb, h('tr', null, h('td', { cls: 'key', text: s.key }), cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?Thailand time, yyyy-MM-dd HH:mm\./, ' Thailand time.') : s.note }),
+        var keyCell = h('td', { cls: 'key', text: s.key });
+        if (s.key === 'InfoEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Payment deadline + info edit deadline' }));
+        if (s.key === 'RegistrationCloses') add(keyCell, h('span', { cls: 'key-sub', text: 'Registration end date' }));
+        add(tb, h('tr', null, keyCell, cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?Thailand time, yyyy-MM-dd HH:mm\./, ' Thailand time.') : s.note }),
           h('td', { cls: check === 'OK' ? 'check-ok' : 'check-bad', text: check })));
       });
       $('params-save').disabled = !canEdit();
@@ -1444,8 +1609,17 @@
     $('who-in-div').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('who-save').click(); });
     $('who-change').addEventListener('click', function () {
       $('who-in-name').value = ''; $('who-in-div').value = '';
+      prepWho();
       showView('who');
     });
+    /** Division accounts (ICEMregisteam, ICEMcoreteam, ICEMfinanceteam, ICEMITteam): the division is set by the account. */
+    function prepWho(division) {
+      if (division !== undefined) myDivision = division || '';
+      var fixed = !!myDivision;
+      if (fixed) $('who-in-div').value = myDivision;
+      $('who-in-div').disabled = fixed;
+      show('who-div-fixed', fixed);
+    }
     $('logout').addEventListener('click', function () {
       var t = token;
       fetch(API_BASE + '/api/admin/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + t }, credentials: 'omit' }).catch(function () {});
@@ -1500,6 +1674,7 @@
       if (!token) { signedOut(); return; }
       api('GET', '/api/admin/me').then(function (res) {
         if (!res.success) { signedOut(res.message); return; }
+        prepWho(res.division || '');
         if (!res.who) { showView('who'); setTimeout(function () { $('who-in-name').focus(); }, 50); return; }
         loadData().then(function () { startPolling(); route(); });
       }, function (err) { if (token) { $('out-msg').textContent = err.message + ' Reload the page to try again.'; showView('out'); } });

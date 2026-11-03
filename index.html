@@ -268,6 +268,35 @@
     .inv-names .role { color: var(--muted); font-size: 12.5px; }
     .inv-kku-note { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
     .inv-req { color: var(--danger); font-weight: 600; font-size: 12px; margin-left: 4px; }
+    /* Time-sensitive notices: red background, red bold text (2026-11-01) */
+    .deadline-alert { background: #fdecea; border: 1px solid #eba59e; color: #b3261e; font-weight: 700; border-radius: var(--radius); padding: 10px 14px; font-size: 14px; line-height: 1.45; }
+    .banner.deadline-alert { background: #fdecea; border-color: #eba59e; }
+    p.deadline-alert, div.deadline-alert { margin: 8px 0 10px; }
+    .deadline-alert .countdown { font-weight: 700; }
+    .late-tag { display: inline-block; font-size: 12px; font-weight: 700; color: #b3261e; background: #fdecea; border: 1px solid #eba59e; border-radius: 999px; padding: 1px 9px; margin-left: 6px; vertical-align: 2px; }
+    .edit-request { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .edit-request textarea { margin-top: 6px; }
+    .edit-request .sent { font-size: 13px; color: var(--warn); font-weight: 600; }
+    /* Trip details popup (2026-11-01) */
+    .trip-box { max-width: 680px; text-align: left; max-height: calc(100vh - 40px); overflow-y: auto; }
+    .trip-box h2 { margin: 0; }
+    .trip-item { display: flex; gap: 22px; align-items: center; padding: 18px 4px; }
+    .trip-item + .trip-item { border-top: 1px solid var(--border); }
+    .trip-item.flip { flex-direction: row-reverse; }
+    .trip-pic { flex: none; width: 128px; background: #fff; padding: 6px 6px 16px; border-radius: 3px; box-shadow: 0 4px 12px rgba(48, 43, 32, 0.18); transform: rotate(-3deg); position: relative; }
+    .trip-item.flip .trip-pic { transform: rotate(3deg); }
+    .trip-pic::before { content: ''; position: absolute; top: -7px; left: 50%; width: 44px; height: 14px; margin-left: -22px; background: rgba(229, 177, 90, 0.75); border-radius: 2px; }
+    .trip-pic img { display: block; width: 116px; height: 78px; border-radius: 2px; }
+    .trip-text .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px; }
+    .trip-text h3 { margin: 0 0 6px; font-size: 20px; }
+    .trip-text p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text); text-align: left; }
+    @media (max-width: 520px) { .trip-item, .trip-item.flip { flex-direction: column; align-items: flex-start; gap: 12px; } }
+    .trip-detail-btn { margin: 0 0 14px; }
+    /* University view (2026-11-01) */
+    .uni-card .role { font-size: 12px; font-weight: 600; color: var(--accent); margin: 0 0 4px; }
+    .uni-card .pname { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+    .uni-card .you { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--sand); padding: 1px 7px; border-radius: 999px; margin-left: 6px; }
+    .emergency-box select { margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -277,6 +306,7 @@
     <div class="session-info hidden" id="sessionBar">
       <span id="sessionEmail"></span>
       <button class="btn-link" id="viewTeamNavBtn" onclick="openTeamStat()">View team</button>
+      <button class="btn-link" id="viewUniNavBtn" onclick="openUniStat()">View university</button>
       <button class="btn-link" onclick="openChangePassword()">Change password</button>
       <button class="btn-link" onclick="logout()">Log out</button>
     </div>
@@ -465,6 +495,13 @@
             <input type="tel" id="emergency-number" inputmode="tel" placeholder="Someone we can call in an emergency">
           </div>
           <p class="field-error hidden" id="emergency-error"></p>
+          <label for="emergency-relation" style="margin-top:10px;">Who is this? <span class="muted" style="font-weight:400;">(who the organizers will be calling)</span></label>
+          <select id="emergency-relation">
+            <option value="">Choose…</option>
+            <option value="Mom">Mom</option><option value="Dad">Dad</option><option value="Partner">Partner</option>
+            <option value="Friend/coworker">Friend / coworker</option><option value="Other">Other</option>
+          </select>
+          <input type="text" id="emergency-relation-other" class="hidden" maxlength="100" placeholder="Who is it? e.g. aunt, guardian, roommate" style="margin-top:8px;">
         </div>
 
         <div class="row2">
@@ -510,14 +547,14 @@
           <table>
             <thead><tr><th>Size</th><th>Chest (in)</th><th>Length (in)</th></tr></thead>
             <tbody>
-              <tr><td>S</td><td>32</td><td>25</td></tr>
-              <tr><td>M</td><td>36</td><td>27</td></tr>
-              <tr><td>L</td><td>40</td><td>28</td></tr>
-              <tr><td>XL</td><td>44</td><td>29</td></tr>
+              <tr><td>S</td><td>33</td><td>25</td></tr>
+              <tr><td>M</td><td>36</td><td>26</td></tr>
+              <tr><td>L</td><td>40</td><td>29</td></tr>
+              <tr><td>XL</td><td>44</td><td>29.5</td></tr>
               <tr><td>2XL</td><td>48</td><td>30</td></tr>
-              <tr><td>3XL</td><td>50</td><td>32</td></tr>
-              <tr><td>4XL</td><td>56</td><td>34</td></tr>
-              <tr><td>5XL</td><td>60</td><td>35</td></tr>
+              <tr><td>3XL</td><td>52</td><td>31</td></tr>
+              <tr><td>4XL</td><td>54</td><td>32</td></tr>
+              <tr><td>5XL</td><td>56</td><td>32.5</td></tr>
             </tbody>
           </table>
         </details>
@@ -597,19 +634,21 @@
 
       <div class="card" id="trip-section">
         <h2 style="margin-top:0;">Trip selection</h2>
-        <p class="sub" style="margin-bottom:14px;">Choose one trip option below. Seats are limited and given first come, first served — click your chosen option again to clear it.</p>
+        <p class="sub" style="margin-bottom:10px;">Choose one trip option below. Seats are limited and given first come, first served — click your chosen option again to clear it.</p>
+        <button type="button" class="btn-secondary btn-small trip-detail-btn" id="trip-detail-open" onclick="openTripDetails()">View trip details</button>
         <div class="trip-options" id="trip-options">
           <button type="button" class="btn-secondary trip-btn" id="trip-btn-A" onclick="selectTrip('A')">Option A<span class="trip-seats" id="trip-seats-A">…</span></button>
           <button type="button" class="btn-secondary trip-btn" id="trip-btn-B" onclick="selectTrip('B')">Option B<span class="trip-seats" id="trip-seats-B">…</span></button>
           <button type="button" class="btn-secondary trip-btn" id="trip-btn-C" onclick="selectTrip('C')">Option C<span class="trip-seats" id="trip-seats-C">…</span></button>
         </div>
-        <p class="muted hidden" id="trip-lock-note" style="margin:10px 0 0;"></p>
+        <p class="deadline-alert hidden" id="trip-lock-note" style="margin:12px 0 0;"></p>
         <div class="msg" id="trip-msg"></div>
       </div>
 
       <div class="btn-row">
         <button class="btn-primary" id="info-save-btn" onclick="savePersonalInfo()">Save info</button>
         <button class="btn-secondary hidden" id="info-viewTeamBtn" onclick="openTeamStat()">View team</button>
+        <button class="btn-secondary" id="info-viewUniBtn" onclick="openUniStat()">View university</button>
       </div>
       <p class="action-hint" id="save-hint">Your information saves by itself a few seconds after you stop typing (you can also click Save info). Documents are saved when you click Upload.</p>
       <div class="msg" id="info-msg"></div>
@@ -620,7 +659,7 @@
       <h1>Team profile</h1>
       <p class="sub" id="team-name-heading"></p>
       <div class="msg" id="team-msg"></div>
-      <p class="action-hint hidden" id="leader-change-note" style="margin:0 0 12px;"></p>
+      <p class="deadline-alert hidden" id="leader-change-note" style="margin:0 0 14px;"></p>
 
       <div class="team-grid">
         <div class="card team-panel" id="panel-leader"></div>
@@ -631,6 +670,17 @@
 
       <div class="btn-row">
         <button class="btn-secondary" onclick="backFromTeamStat()">Back</button>
+      </div>
+    </div>
+
+    <!-- UNIVERSITY VIEW (2026-11-01): everyone from my university -->
+    <div class="view" id="view-unistat">
+      <h1>University</h1>
+      <p class="sub" id="uni-heading"></p>
+      <div class="msg" id="uni-msg"></div>
+      <div class="team-grid" id="uni-grid"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="routeToInfoForm()">Back</button>
       </div>
     </div>
 
@@ -679,16 +729,29 @@
         <li><b>Team Adviser</b>Each team must have one adviser. However, if two teams are from the same university or medical center, they may share one adviser.</li>
         <li><b>Observer Registration</b>There is no limit to the number of observers from each university or medical center. Observers may be medical students and/or faculty members. The registration fee for each observer will be based on their status, equivalent to the applicable fee for either a medical student or a faculty member.</li>
         <li><b>Early Bird Registration and Payment Deadline</b>For the Early Bird registration period, payment must be completed by 30 November 2026 at 11:59 PM (GMT+7, Thailand Time).</li>
-        <li><b>Regular Registration and Payment Deadline</b>For the Regular registration period, payment must be completed within 72 hours of registration. All payments must be received no later than 31 December 2026 at 11:59 PM (GMT+7, Thailand Time), regardless of the registration date.</li>
+        <li><b>Regular Registration and Payment Deadline</b>For the Regular registration period, all payments must be received no later than 31 December 2026 at 11:59 PM (GMT+7, Thailand Time), regardless of the registration date.</li>
       </ol>
       <ol id="tos-list-th" class="hidden" lang="th">
         <li><b>การสมัครเข้าร่วมการแข่งขัน</b>แต่ละมหาวิทยาลัยหรือศูนย์แพทย์สามารถส่งทีมเข้าร่วมการแข่งขันได้ไม่เกิน 2 ทีม โดยแต่ละทีมต้องมีสมาชิกจำนวน 3 คน</li>
         <li><b>อาจารย์ที่ปรึกษาประจำทีม (Adviser)</b>แต่ละทีมต้องมีอาจารย์ที่ปรึกษาประจำทีมจำนวน 1 คน อย่างไรก็ตาม หากทั้ง 2 ทีมมาจากมหาวิทยาลัยหรือศูนย์แพทย์เดียวกัน สามารถใช้อาจารย์ที่ปรึกษาร่วมกันได้ 1 คน</li>
         <li><b>การสมัครเข้าร่วมในฐานะผู้สังเกตการณ์ (Observer)</b>แต่ละมหาวิทยาลัยหรือศูนย์แพทย์สามารถส่งผู้สังเกตการณ์เข้าร่วมได้โดยไม่จำกัดจำนวน โดยผู้สังเกตการณ์สามารถเป็นนักศึกษาแพทย์และ/หรืออาจารย์ได้ ทั้งนี้ อัตราค่าสมัครสำหรับผู้สังเกตการณ์จะขึ้นอยู่กับสถานะของผู้สมัคร โดยใช้อัตราเดียวกับค่าสมัครของนักศึกษาแพทย์หรืออาจารย์ตามลำดับ</li>
         <li><b>การชำระค่าสมัครในรอบ Early Bird</b>ผู้สมัครในรอบ Early Bird ต้องชำระค่าสมัครให้เสร็จสิ้นภายในวันที่ 30 พฤศจิกายน พ.ศ. 2569 เวลา 23.59 น. (GMT+7 หรือเวลาประเทศไทย)</li>
-        <li><b>การชำระค่าสมัครในรอบ Regular</b>ผู้สมัครในรอบ Regular ต้องชำระค่าสมัครให้เสร็จสิ้นภายใน 72 ชั่วโมงนับจากเวลาที่ลงทะเบียนสมัคร และต้องชำระค่าสมัครให้เสร็จสิ้นภายในวันที่ 31 ธันวาคม พ.ศ. 2569 เวลา 23.59 น. (GMT+7 หรือเวลาประเทศไทย) ทั้งนี้ หากกำหนดเวลาชำระเงินภายใน 72 ชั่วโมงเกินกว่าวันและเวลาสิ้นสุดที่กำหนด ผู้สมัครจะต้องชำระเงินภายในวันที่ 31 ธันวาคม พ.ศ. 2569 เวลา 23.59 น. เป็นอย่างช้า</li>
+        <li><b>การชำระค่าสมัครในรอบ Regular</b>ผู้สมัครในรอบ Regular ต้องชำระค่าสมัครให้เสร็จสิ้นภายในวันที่ 31 ธันวาคม พ.ศ. 2569 เวลา 23.59 น. (GMT+7 หรือเวลาประเทศไทย) ไม่ว่าจะลงทะเบียนสมัครเมื่อใดก็ตาม</li>
       </ol>
       <button class="btn-primary" type="button" id="tos-close" onclick="closeTos()" style="width:100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Trip details (2026-11-01). The texts and pictures are placeholders until the final programme is ready. -->
+  <div class="modal-overlay hidden" id="trip-overlay" role="dialog" aria-modal="true" aria-labelledby="trip-title" onclick="if (event.target === this) closeTripDetails()">
+    <div class="modal-box trip-box">
+      <div class="tos-head">
+        <h2 id="trip-title">Trip details</h2>
+        <button type="button" class="btn-secondary btn-small" style="width:auto;" onclick="closeTripDetails()">Close</button>
+      </div>
+      <p class="muted" style="margin:6px 0 0;text-align:left;">More information about each trip is coming soon.</p>
+      <div id="trip-details"></div>
+      <button class="btn-primary" type="button" id="trip-close" onclick="closeTripDetails()" style="width:100%;margin-top:6px;">Close</button>
     </div>
   </div>
 
@@ -775,6 +838,8 @@
       addPaymentSlip: function (a) { return ['POST', '/api/payments/' + enc(a[1]) + '/slips', { data: a[2], fileName: a[3] }, a[0]]; },
       updatePaymentInvoice: function (a) { return ['PUT', '/api/payments/' + enc(a[1]) + '/invoice', { invoice: a[2] }, a[0]]; },
       saveCombinedInvoice: function (a) { return ['PUT', '/api/me/combined-invoice', { invoice: a[1] }, a[0]]; },
+      requestInvoiceEdit: function (a) { return ['POST', '/api/me/invoice-edit-request', a[1], a[0]]; },
+      getUniversityStat: function (a) { return ['GET', '/api/university', null, a[0]]; },
       addAdvisorTeam: function (a) { return ['POST', '/api/teams', { name: a[1] }, a[0]]; },
       renameAdvisorTeam: function (a) { return ['PATCH', '/api/teams/' + enc(a[1]), { newName: a[2] }, a[0]]; },
       removeAdvisorTeam: function (a) { return ['DELETE', '/api/teams/' + enc(a[1]), null, a[0]]; },
@@ -1159,12 +1224,10 @@
 
       if (pos === 'delegate') {
         document.getElementById('info-eduLabel').textContent = 'Educational year';
-        banner.classList.remove('hidden');
-        banner.textContent = 'You are a team leader/member of ' + currentUser.teamName;
+        updateTeamBanner();
       } else if (pos === 'advisor') {
         document.getElementById('info-eduLabel').textContent = 'Highest level of education';
-        banner.classList.remove('hidden');
-        banner.textContent = currentUser.teamName ? 'Advisor of team ' + currentUser.teamName : 'Advisor — you have not added a team yet. Add it in "My teams" below.';
+        updateTeamBanner();
       } else {
         document.getElementById('info-eduLabel').textContent = 'Highest level of education';
         banner.classList.add('hidden');
@@ -1213,6 +1276,9 @@
       document.getElementById('info-religion').value = d.Religion || '';
       setPhone('phone', d.Phone || '');
       setPhone('emergency', d.EmergencyPhone || '');
+      document.getElementById('emergency-relation').value = d.EmergencyRelation || '';
+      document.getElementById('emergency-relation-other').value = d.EmergencyRelationOther || '';
+      showRelationOther();
       // Before 2026-10-31 there was one "Contact information" box: it shows here until changed.
       document.getElementById('info-otherContact').value = d.OtherContact || d.ContactInformation || '';
       document.getElementById('info-allergy').value = d.FoodAndDrugAllergy || '';
@@ -1324,18 +1390,26 @@
       document.getElementById('level-help').classList.toggle('hidden', !!s.levelLocked);
     }
 
+    var payDetailsInOption = false; // the bank details moved into a new payment's box (see renderOption)
     function renderPaymentSection(s) {
       var section = document.getElementById('payment-section');
       section.classList.remove('hidden');
       clearMsg('payment-msg');
       paymentDirtyAt = 0; // freshly drawn: nothing typed or chosen here yet
 
-      // Once the payment is Verified the price line and the payment-detail
-      // image are no longer needed (2026-10-21); the "paid" status stays.
+      // Once the payment is Verified the price line is no longer needed
+      // (2026-10-21); the "paid" status stays. The bank details stay whenever
+      // a NEW payment can still be made — e.g. an advisor who already paid
+      // and now pays for an observer who registered later (2026-11-01).
       var paidDone = !!(s.paymentVerified || (s.covered && s.covered.status === 'Verified'));
+      var canPayNew = (s.options || []).some(function (o) { return o.available; });
+      var details = document.getElementById('payment-image');
+      document.getElementById('fee-note').insertAdjacentElement('afterend', details); // back to its place before redrawing
+      payDetailsInOption = paidDone && canPayNew;
       // The IFMSA/AMSA certificate only lowers the price: not needed once paid (2026-11-01).
       document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone);
-      ['fee-line', 'fee-note', 'payment-image'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone); });
+      ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone); });
+      details.classList.toggle('hidden', paidDone && !canPayNew);
       document.getElementById('fee-line').textContent = 'Final price: ' + thb(s.price);
       var note;
       if (s.price === null) note = s.priceBasis;
@@ -1397,17 +1471,20 @@
     function renderOption(o, idx) {
       var d = el('div', 'pay-option');
       d.appendChild(el('h3', '', o.title));
-      if (o.window && o.window.mode === 'early') {
-        d.appendChild(el('p', 'muted', 'Pay before ' + o.window.earlyEnds + ' (Thailand time) to get the early-bird price.'));
-      } else if (o.window && o.window.mode === 'countdown' && o.available) {
-        if (o.window.cleaned) {
-          d.appendChild(el('div', 'msg error', 'The 72-hour payment window has passed, so your team\'s uploaded documents were removed. Your personal information is kept. Please contact the organizers.'));
+      // One payment deadline for everyone (2026-11-01) = InfoEditDeadline.
+      if (o.window && o.window.mode === 'early' && o.available) {
+        d.appendChild(el('p', 'deadline-alert', 'Pay before ' + o.window.earlyEnds + ' (Thailand time) to get the early-bird price.' +
+          (o.window.payByText ? ' Payment deadline: ' + o.window.payByText + '.' : '')));
+      } else if (o.window && o.window.mode === 'deadline' && o.available) {
+        var p = el('p', 'deadline-alert');
+        if (o.window.overdue) {
+          p.textContent = 'The payment deadline was ' + o.window.payByText + ' (Thailand time). You can still pay, but your payment will be marked late — please pay as soon as possible.';
+        } else {
+          p.appendChild(document.createTextNode('Payment deadline: ' + o.window.payByText + ' (Thailand time). '));
+          var cd = el('span', 'countdown', '…');
+          cd.setAttribute('data-payby', o.window.payBy);
+          p.appendChild(cd);
         }
-        var p = el('p', 'muted');
-        p.appendChild(document.createTextNode('Payment window: 72 hours (until ' + o.window.payByText + ', Thailand time). '));
-        var cd = el('span', 'countdown', '…');
-        cd.setAttribute('data-payby', o.window.payBy);
-        p.appendChild(cd);
         d.appendChild(p);
       }
       (o.notes || []).forEach(function (n) { d.appendChild(el('p', 'muted', n)); });
@@ -1423,6 +1500,13 @@
         return d;
       }
 
+      if (payDetailsInOption) {
+        // Already paid for yourself: the bank details go right here, for this new payment.
+        payDetailsInOption = false;
+        var det = document.getElementById('payment-image');
+        det.classList.remove('hidden');
+        d.appendChild(det);
+      }
       var slipLabel = el('label', '', 'Payment slip (PDF, JPG or PNG, max 10 MB) — transfer exactly ' + thb(o.total));
       slipLabel.id = 'slip-label-' + idx;
       d.appendChild(slipLabel);
@@ -1457,8 +1541,9 @@
     // ---- Invoice request (below the submit button; can be changed after paying) ----
     var FILE_ACCEPT = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
 
-    /** A confirmed invoice: shown, not editable. */
-    function confirmedInvoiceBox(cur, title) {
+    /** A confirmed invoice: shown, not editable — with "Request invoice edit" (2026-11-01). */
+    function confirmedInvoiceBox(cur, title, opts) {
+      opts = opts || {};
       var wrap = el('div', 'inv-section');
       wrap.appendChild(el('h4', '', title || 'Invoice request'));
       var box = el('div', 'inv-confirmed');
@@ -1474,13 +1559,58 @@
       });
       box.appendChild(dl);
       wrap.appendChild(box);
+      if (opts.editTarget) wrap.appendChild(editRequestBox(opts.editTarget, opts.editKey || 'x', cur, ''));
       return wrap;
+    }
+
+    /**
+     * "Request invoice edit": asks the organizers to unlock a confirmed
+     * invoice (they see it in their Notification center). target =
+     * { paymentId } or { combined: true }.
+     */
+    function editRequestBox(target, key, cur, defaultNote) {
+      var box = el('div', 'edit-request');
+      if (cur && cur.editRequested) {
+        box.appendChild(el('div', 'sent', 'Edit requested on ' + cur.editRequestedAt + ' — waiting for the organizers to unlock this invoice.'));
+        if (cur.editRequestNote) box.appendChild(el('p', 'muted', 'Your message: ' + cur.editRequestNote));
+        return box;
+      }
+      var open = el('button', 'btn-secondary btn-small', 'Request invoice edit'); open.id = 'inv-edit-open-' + key;
+      var form = el('div', 'hidden');
+      var lbl = el('label', '', 'What should change? (optional)'); lbl.setAttribute('for', 'inv-edit-note-' + key);
+      var ta = el('textarea'); ta.id = 'inv-edit-note-' + key; ta.rows = 2; ta.maxLength = 500; ta.value = defaultNote || '';
+      ta.placeholder = 'e.g. add the observers who paid later, the Tax ID is wrong, …';
+      var row = el('div', 'btn-row');
+      var send = el('button', 'btn-primary btn-small', 'Send request'); send.id = 'inv-edit-send-' + key;
+      var msg = el('div', 'msg'); msg.id = 'inv-edit-msg-' + key;
+      open.onclick = function () { form.classList.remove('hidden'); open.classList.add('hidden'); ta.focus(); };
+      send.onclick = function () {
+        if (!beginAction('inv-edit-' + key, [send.id])) return;
+        var body = { note: ta.value.trim() };
+        if (target.paymentId) body.paymentId = target.paymentId; else body.combined = true;
+        callServer('requestInvoiceEdit', [sessionToken, body], {
+          buttonIds: [send.id],
+          onFinish: function () { endAction('inv-edit-' + key, [send.id]); },
+          msgElId: msg.id,
+          onSuccess: function (res) {
+            if (!checkRes(res, msg.id)) return;
+            if (!res.success) { setMsg(msg.id, res.message, true); return; }
+            refreshPaymentStatus();
+          }
+        });
+      };
+      box.appendChild(el('p', 'muted', 'Need a change? The organizers can unlock the invoice for you.'));
+      box.appendChild(open);
+      form.appendChild(lbl); form.appendChild(ta); row.appendChild(send); form.appendChild(row);
+      box.appendChild(form);
+      box.appendChild(msg);
+      return box;
     }
 
     function buildInvoiceBox(prefix, cur, hint, opts) {
       cur = cur || {};
       opts = opts || {};
-      if (cur.confirmed) return confirmedInvoiceBox(cur, opts.title);
+      if (cur.confirmed) return confirmedInvoiceBox(cur, opts.title, opts);
       var wrap = el('div', 'inv-section');
       wrap.appendChild(el('h4', '', opts.title || 'Invoice request'));
       if (hint) wrap.appendChild(el('p', 'muted', hint));
@@ -1685,7 +1815,9 @@
       var h = el('h3');
       h.appendChild(document.createTextNode('Your payment ' + p.id + ' — ' + thb(p.total) + ' — '));
       h.appendChild(statusSpan(p.status));
+      if (p.late) h.appendChild(el('span', 'late-tag', 'Late'));
       d.appendChild(h);
+      if (p.late) d.appendChild(el('p', 'muted', 'Sent after the payment deadline, so it is marked late for the organizers.'));
       d.appendChild(el('p', 'muted', cap(p.type) + ' payment' + (p.teams && p.teams.length ? ' for ' + p.teams.join(' + ') : '') +
         ', ' + p.people.length + ' ' + (p.people.length === 1 ? 'person' : 'people') + ', ' + p.slipCount + ' slip' + (p.slipCount === 1 ? '' : 's') + '.'));
       d.appendChild(renderTable(p.people.map(function (x) { return { name: x.name, role: x.role, team: x.team, price: x.price }; })));
@@ -1707,7 +1839,7 @@
         cw.appendChild(el('p', 'muted', 'This payment is part of your combined invoice below.'));
         d.appendChild(cw);
       } else if (p.invoice && p.invoice.confirmed) {
-        d.appendChild(buildInvoiceBox('p' + idx, p.invoice));
+        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, null, { editTarget: { paymentId: p.id }, editKey: 'p' + idx }));
       } else if (p.invoice) {
         d.appendChild(buildInvoiceBox('p' + idx, p.invoice, 'You can add, change or cancel the invoice request until the organizers confirm it.'));
         var srow = el('div', 'btn-row');
@@ -1731,7 +1863,7 @@
         spans.forEach(function (sp) {
           var left = new Date(sp.getAttribute('data-payby')).getTime() - now;
           if (left <= 0) {
-            sp.textContent = 'The 72-hour payment window has passed.';
+            sp.textContent = 'The payment deadline has passed — a payment sent now is marked late.';
             document.getElementById('payment-section').classList.add('overdue');
             return;
           }
@@ -2122,7 +2254,9 @@
         DiseaseNone: document.getElementById('none-disease').checked,
         MedicationNone: document.getElementById('none-medication').checked,
         ShirtSize: document.getElementById('info-shirtSize').value,
-        'Special requirement': document.getElementById('info-specialRequirement').value.trim()
+        'Special requirement': document.getElementById('info-specialRequirement').value.trim(),
+        EmergencyRelation: document.getElementById('emergency-relation').value,
+        EmergencyRelationOther: document.getElementById('emergency-relation').value === 'Other' ? document.getElementById('emergency-relation-other').value.trim() : ''
       };
       if (university === undefined) delete fields.University;
       // Telephone numbers are only sent when they look right (a half-typed one waits).
@@ -2229,7 +2363,7 @@
             currentPersonalInfo[checkCol] = '';
             setUploadStatus(key, res.url, '');
             if (key === 'enrollment' && currentUser.position === 'observer') {
-              statusEl.appendChild(document.createTextNode(' — the organizers have been notified to check it.'));
+              statusEl.appendChild(document.createTextNode(' — it is now waiting for the organizers to check it.'));
               refreshPaymentStatus();
             }
           },
@@ -2332,7 +2466,7 @@
       var lc = data.leaderChange || { open: true, until: '' };
       var note = document.getElementById('leader-change-note');
       note.textContent = lc.open
-        ? (lc.until ? 'The team leader can be changed until ' + lc.until + ' (Thailand time).' : '')
+        ? (lc.until ? 'Deadline: the team leader can be changed until ' + lc.until + ' (Thailand time).' : '')
         : 'The team leader can no longer be changed (the deadline was ' + lc.until + ', Thailand time). Please contact the organizers if needed.';
       note.classList.toggle('hidden', !note.textContent);
       var iAmDelegate = currentUser.position === 'delegate' && lc.open;
@@ -2348,6 +2482,89 @@
       }
     }
 
+
+    // ---------------- UNIVERSITY VIEW (2026-11-01) ----------------
+    // Everyone from the same university, as ID cards like the team page
+    // (without the team colours): name, role in which team, education,
+    // country, religion and email. No phone numbers or health details.
+    function openUniStat() {
+      clearMsg('uni-msg');
+      document.getElementById('uni-heading').textContent = '';
+      var grid = document.getElementById('uni-grid');
+      grid.innerHTML = '<div class="card team-panel"><div class="spinner-row"><span class="spinner"></span> Loading…</div></div>';
+      showView('view-unistat');
+      callServer('getUniversityStat', [sessionToken], {
+        msgElId: 'uni-msg',
+        onSuccess: function (res) {
+          if (!checkRes(res, 'uni-msg')) return;
+          grid.textContent = '';
+          if (!res.success) { setMsg('uni-msg', res.message, true); return; }
+          document.getElementById('uni-heading').textContent = res.university + ' — ' + res.people.length + (res.people.length === 1 ? ' registrant' : ' registrants');
+          res.people.forEach(function (p) {
+            var c = el('div', 'card team-panel uni-card');
+            c.appendChild(el('div', 'role', p.role));
+            var nm = el('div', 'pname', [p.name, p.middleName, p.surname].filter(Boolean).join(' ') || 'Name not filled in yet');
+            if (p.nickname) nm.appendChild(document.createTextNode(' ("' + p.nickname + '")'));
+            if (p.me) nm.appendChild(el('span', 'you', 'You'));
+            c.appendChild(nm);
+            var dl = el('dl');
+            var row = function (k, v) { dl.appendChild(el('dt', '', k)); dl.appendChild(el('dd', '', v || '—')); };
+            row(p.educationLabel, p.education);
+            if (p.position === 'observer') row('Study level', p.studyLevel);
+            row('University', p.university);
+            row('Country', p.country);
+            row('Religion', p.religion);
+            row('Email', p.email);
+            c.appendChild(dl);
+            grid.appendChild(c);
+          });
+        }
+      });
+    }
+
+    // ---------------- TRIP DETAILS (2026-11-01) ----------------
+    // Placeholder texts and pictures until the organizers send the programme.
+    var TRIP_DETAILS = [
+      { key: 'A', colors: ['#7aa7c7', '#2f5e8e'], kicker: 'Option A · Explore',
+        text: 'Trip A is made for the curious: a full day of discovery once the competition is over. Expect new sights, local stories and plenty of moments worth a photo. ' +
+          'You travel together with delegates from other teams, so new friendships come along for the ride. The organizers take care of the route, the timing and the food — you just bring your energy. ' +
+          'The full programme will be posted here soon.' },
+      { key: 'B', colors: ['#e8a39c', '#c4554d'], kicker: 'Option B · Culture',
+        text: 'Trip B is a calmer journey for everyone who loves culture and a good story. Slow down, look closely and enjoy the places that make this part of Thailand special. ' +
+          'It is the perfect way to unwind after five packed days of competition. Comfortable shoes and an open mind are all you need. Details are on their way.' },
+      { key: 'C', colors: ['#b9cfae', '#6f9361'], kicker: 'Option C · Adventure',
+        text: 'Trip C is the lively choice: more movement, more laughter and more to remember. Team up with new friends from across the region and make the most of your last day together. ' +
+          'Every stop is planned to keep the energy high from start to finish. Seats are limited, so choose early if this one is for you. More information is coming soon.' }
+    ];
+    function tripPicture(letter, c1, c2) {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="232" height="156" viewBox="0 0 232 156">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs>' +
+        '<rect width="232" height="156" fill="url(#g)"/>' +
+        '<circle cx="190" cy="34" r="16" fill="#ffffff" fill-opacity="0.35"/>' +
+        '<path d="M0 124 L52 86 L92 112 L140 70 L232 128 L232 156 L0 156 Z" fill="#ffffff" fill-opacity="0.22"/>' +
+        '<text x="116" y="104" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-size="84" font-weight="700" fill="#ffffff">' + letter + '</text></svg>';
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    function openTripDetails() {
+      var box = document.getElementById('trip-details');
+      if (!box.childNodes.length) {
+        TRIP_DETAILS.forEach(function (t, i) {
+          var item = el('div', 'trip-item' + (i % 2 ? ' flip' : ''));
+          var pic = el('div', 'trip-pic');
+          var img = el('img'); img.src = tripPicture(t.key, t.colors[0], t.colors[1]); img.alt = 'Trip ' + t.key;
+          pic.appendChild(img);
+          var txt = el('div', 'trip-text');
+          txt.appendChild(el('p', 'kicker', t.kicker));
+          txt.appendChild(el('h3', '', 'Trip ' + t.key));
+          txt.appendChild(el('p', '', t.text));
+          item.appendChild(pic); item.appendChild(txt);
+          box.appendChild(item);
+        });
+      }
+      document.getElementById('trip-overlay').classList.remove('hidden');
+      document.getElementById('trip-close').focus();
+    }
+    function closeTripDetails() { document.getElementById('trip-overlay').classList.add('hidden'); }
 
     // ---------------- TERMS OF SERVICE, PAYMENT DETAILS (2026-10-31) ----------------
     function openTos(e) {
@@ -2365,7 +2582,7 @@
       document.getElementById('tos-title').textContent = th ? 'ข้อกำหนดการสมัคร' : 'Terms of service';
       document.getElementById('tos-close').textContent = th ? 'ปิด' : 'Close';
     }
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeTos(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeTos(); closeTripDetails(); } });
 
     function setPayDetails(which) {
       var intl = which === 'intl';
@@ -2483,6 +2700,7 @@
       var missing = [];
       if (!readPhone('phone')) missing.push('your telephone number');
       if (!readPhone('emergency')) missing.push('an emergency contact telephone');
+      else if (!document.getElementById('emergency-relation').value) missing.push('who the emergency number belongs to');
       if (!document.getElementById('info-shirtSize').value) missing.push('your shirt size');
       box.textContent = missing.length ? 'Still needed: ' + missing.join(', ') + '. Your other answers are saved meanwhile.' : '';
       box.classList.toggle('hidden', !missing.length || !!currentLocks.infoLocked);
@@ -2494,6 +2712,12 @@
         document.getElementById('shirt-old-note').classList.add('hidden');
         updateRequiredNotice();
       });
+      document.getElementById('emergency-relation').addEventListener('change', function () { showRelationOther(); updateRequiredNotice(); });
+    }
+    function showRelationOther() {
+      var other = document.getElementById('emergency-relation').value === 'Other';
+      var box = document.getElementById('emergency-relation-other');
+      box.classList.toggle('hidden', !other);
     }
 
     // ---------------- ONE INVOICE FOR ALL MY PAYMENTS (2026-10-31) ----------------
@@ -2509,12 +2733,13 @@
       card.appendChild(el('p', 'muted', (c.confirmed ? 'Covers ' : 'Would cover ') + list + ' — total ' + thb(c.total) + '.' +
         (c.confirmed ? '' : ' Payments you submit later are added automatically. Your separate invoice requests are switched off while this is on.')));
       if (c.confirmed) {
-        card.appendChild(confirmedInvoiceBox(c, 'Combined invoice'));
+        card.appendChild(confirmedInvoiceBox(c, 'Combined invoice', { editTarget: { combined: true }, editKey: 'c' }));
         box.appendChild(card);
         return;
       }
       if (c.blockedBy && c.blockedBy.length) {
-        card.appendChild(el('p', 'muted', 'Not available: the invoice for payment ' + c.blockedBy.join(', ') + ' is already confirmed by the organizers. Please contact them if you need one combined invoice.'));
+        card.appendChild(el('p', 'muted', 'Not available yet: the invoice for payment ' + c.blockedBy.join(', ') + ' is already confirmed by the organizers. ' +
+          'Use "Request invoice edit" on that payment above (for example: "please unlock it so I can combine all my payments into one invoice"); once the organizers unlock it, you can combine your payments here.'));
         box.appendChild(card);
         return;
       }
@@ -2581,13 +2806,13 @@
       document.getElementById('info-save-btn').classList.toggle('hidden', on);
       var banner = document.getElementById('info-lock-banner');
       if (on) {
-        banner.textContent = 'Your personal information and documents were locked on ' + currentLocks.infoLockAt + ' (Thailand time), so they can no longer be changed. Please contact the organizers if something needs to change. Payments still work.';
+        banner.textContent = 'Your personal information and documents were locked on ' + currentLocks.infoLockAt + ' (Thailand time), so they can no longer be changed. Please contact the organizers if something needs to change. Payments still work (marked late).';
         cancelAutosaveTimer();
         setAutosaveStatus('');
       } else if (currentLocks.infoLockAt) {
-        banner.textContent = 'You can add or change your information and documents until ' + currentLocks.infoLockAt + ' (Thailand time).';
+        banner.textContent = 'Deadline: ' + currentLocks.infoLockAt + ' (Thailand time). Please pay and finish your information and documents by then — after it they can no longer be changed.';
       }
-      banner.classList.toggle('hidden', !currentLocks.infoLockAt);
+      banner.className = 'banner deadline-alert' + (currentLocks.infoLockAt ? '' : ' hidden');
       document.getElementById('save-hint').classList.toggle('hidden', on);
       document.querySelectorAll('#info-fields-card ~ .card .action-hint').forEach(function (x) { x.classList.toggle('hidden', on); });
     }
@@ -2597,7 +2822,7 @@
         ['A', 'B', 'C'].forEach(function (o) { document.getElementById('trip-btn-' + o).disabled = true; });
         note.textContent = 'Trip selection closed on ' + res.tripLockAt + ' (Thailand time). Please contact the organizers if you need to change it.';
       } else {
-        note.textContent = res.tripLockAt ? 'You can choose or change your trip until ' + res.tripLockAt + ' (Thailand time).' : '';
+        note.textContent = res.tripLockAt ? 'Deadline: choose or change your trip by ' + res.tripLockAt + ' (Thailand time).' : '';
       }
       note.classList.toggle('hidden', !note.textContent);
     }
@@ -2744,11 +2969,12 @@
       });
     }
 
+    /** "You are the team leader of …" / "You are a team member of …" (2026-11-01: the role as it is now). */
     function updateTeamBanner() {
       var banner = document.getElementById('info-team-banner');
       if (currentUser.position === 'delegate') {
         banner.classList.remove('hidden');
-        banner.textContent = 'You are a team leader/member of ' + currentUser.teamName;
+        banner.textContent = (currentUser.roleInTeam === 'Leader' ? 'You are the team leader of ' : 'You are a team member of ') + currentUser.teamName;
       } else if (currentUser.position === 'advisor') {
         banner.classList.remove('hidden');
         banner.textContent = currentUser.teamName ? 'Advisor of team ' + currentUser.teamName : 'Advisor — you have not added a team yet. Add it in "My teams" below.';
@@ -2944,10 +3170,12 @@
       callServer('getPublicConfig', [], {
         onSuccess: function (res) {
           var el = document.getElementById('reg-closed-banner');
-          if (res && res.success && !res.registrationOpen) {
-            el.textContent = 'Registration opens on ' + res.opensAt + ' (Thailand time). If you already have an account you can still log in.';
-            el.classList.remove('hidden');
-          }
+          if (!res || !res.success) return;
+          var text = '';
+          if (res.registrationClosed) text = 'Registration closed on ' + res.closesAt + ' (Thailand time). If you already have an account you can still log in.';
+          else if (!res.registrationOpen) text = 'Registration opens on ' + res.opensAt + ' (Thailand time). If you already have an account you can still log in.';
+          else if (res.closesAt) text = 'Registration closes on ' + res.closesAt + ' (Thailand time).';
+          if (text) { el.textContent = text; el.className = 'banner deadline-alert'; }
         },
         onFailure: function () {}
       });
