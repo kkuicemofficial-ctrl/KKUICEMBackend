@@ -225,6 +225,14 @@
     .edit-form .chk input { width: auto; margin: 0; }
     .edit-form .hint { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
     .panel .edit-btn { float: right; }
+    /* Organizer accounts (2026-11-03) */
+    .acct-form { max-width: 620px; }
+    .acct-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    @media (max-width: 560px) { .acct-form .grid2 { grid-template-columns: 1fr; } }
+    .acct-form .radio { display: flex; align-items: center; gap: 7px; font-size: 13px; margin: 6px 0 0; font-weight: 500; cursor: pointer; }
+    .acct-form .radio input { width: auto; margin: 0; }
+    .acct-form .hint { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
+    .acct-form hr { border: 0; border-top: 1px solid var(--border); margin: 16px 0 4px; }
   </style>
 </head>
 <body>
@@ -330,6 +338,36 @@
       </div>
       <div class="deadline-alert hidden" id="contacts-lock"></div>
       <div class="table-wrap" id="contacts-table"><table><thead><tr><th class="num">#</th><th>Team</th><th>University</th><th>Role</th><th>Name</th><th>Telephone</th><th>Other contact</th><th>Email</th></tr></thead><tbody id="contacts-rows"></tbody></table></div>
+    </div>
+
+    <!-- ORGANIZER ACCOUNTS (2026-11-03): ICEMmasteraccount only -->
+    <div class="view" id="v-accounts">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <h1>Organizer accounts</h1>
+      <p class="sub">Only ICEMmasteraccount sees this screen. Every change needs your own password, and is written in the history.</p>
+      <div class="table-wrap"><table><thead><tr><th>Username</th><th>Kind</th><th>Division in "Who's in?"</th><th>Created</th><th></th></tr></thead><tbody id="acct-rows"></tbody></table></div>
+      <p class="muted small" style="margin:6px 0 18px;"><b>Master</b>: everything, including editing registrants' information. <b>Full</b>: verify, confirm, delete teams, change parameters. <b>View only</b>: look and export.</p>
+      <div class="card acct-form">
+        <h2 style="margin-top:0;">Create an account</h2>
+        <div class="grid2">
+          <div><label class="f" for="acct-user">Username</label><input type="text" id="acct-user" maxlength="40" autocomplete="off" placeholder="e.g. ICEMPRteam"><p class="hint">Letters, numbers, dot, dash or underscore. No @ or spaces.</p></div>
+          <div><label class="f" for="acct-role">Kind of account</label>
+            <select id="acct-role"><option value="full">Full</option><option value="master">Master</option><option value="view">View only</option></select></div>
+        </div>
+        <label class="f">Division in "Who's in?"</label>
+        <label class="radio" for="acct-div-typed"><input type="radio" name="acct-div" id="acct-div-typed" value="typed" checked> Typed in by the person each time</label>
+        <label class="radio" for="acct-div-fixed"><input type="radio" name="acct-div" id="acct-div-fixed" value="fixed"> Fixed:</label>
+        <input type="text" id="acct-division" maxlength="60" list="divisions" placeholder="e.g. PR team" disabled style="margin-top:6px;">
+        <div class="grid2">
+          <div><label class="f" for="acct-pw1">Password for the new account</label><input type="password" id="acct-pw1" autocomplete="new-password"><p class="hint">At least 12 characters — for example 4 random words.</p></div>
+          <div><label class="f" for="acct-pw2">Type it again</label><input type="password" id="acct-pw2" autocomplete="new-password"></div>
+        </div>
+        <hr>
+        <label class="f" for="acct-mypw">Your password (ICEMmasteraccount)</label>
+        <input type="password" id="acct-mypw" autocomplete="current-password" style="max-width:300px;">
+        <div class="row" style="margin-top:14px;"><button class="btn-primary" id="acct-create">Create account</button></div>
+        <div class="msg" id="acct-msg"></div>
+      </div>
     </div>
 
     <!-- ONE TEAM -->
@@ -607,7 +645,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && token && D) loadData(true); });
 
     // ---------------- views ----------------
-    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
+    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'accounts', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
     function showView(name) {
       VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('active', v === name); });
       window.scrollTo(0, 0);
@@ -631,7 +669,7 @@
     window.addEventListener('hashchange', route);
     function renderCurrent() {
       if (!D) return;
-      var r = { home: renderHome, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
+      var r = { home: renderHome, accounts: renderAccounts, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
       if (r) r();
     }
 
@@ -994,7 +1032,8 @@
         tile('Financial view', plural(unpaidPeople().length, 'person', 'people') + ' not paid · ' + D.payments.filter(function (x) { return x.status === 'pending'; }).length + ' waiting for a check', 'finance', unpaidPeople().length ? 'alert' : ''),
         tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed' + (editReqs ? ' · ' + editReqs + ' edit request' + (editReqs === 1 ? '' : 's') : ''), 'invoice', editReqs ? 'alert' : ''),
         tile('All status export', 'Choose the columns and who to include', 'export'),
-        tile('Parameters', lockText, 'params')
+        tile('Parameters', lockText, 'params'),
+        D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null
       ]);
       renderNotifs();
       if ($('search-q').value.trim()) runSearch();
@@ -1088,6 +1127,83 @@
         }, function (err) { toast(err.message, true); });
       }, true);
       setTimeout(function () { input.focus(); }, 50);
+    });
+
+    // ---------------- organizer accounts (ICEMmasteraccount only, 2026-11-03) ----------------
+    var accounts = null;
+    function loadAccounts() {
+      return api('GET', '/api/admin/accounts').then(function (res) {
+        if (!res.success) { toast(res.message, true); return; }
+        accounts = res.accounts; if (current === 'accounts') drawAccounts();
+      }, function (err) { toast(err.message, true); });
+    }
+    function renderAccounts() {
+      if (!D.me.owner) { go('home'); return; }
+      drawAccounts();
+      loadAccounts();
+    }
+    function drawAccounts() {
+      var tb = clear($('acct-rows'));
+      if (!accounts) { add(tb, h('tr', null, h('td', { colspan: 5, cls: 'muted', text: 'Loading…' }))); return; }
+      accounts.forEach(function (a) {
+        var acts = h('div', { cls: 'acts' });
+        if (a.self) add(acts, h('span', { cls: 'muted small', text: 'You — use "Change password" at the top' }));
+        else add(acts, [
+          h('button', { cls: 'btn-secondary btn-small', text: 'Set password', onclick: function () { openSetPassword(a); } }),
+          h('button', { cls: 'btn-link small', style: 'color:var(--danger);', text: 'Remove', onclick: function () { askRemove(a); } })
+        ]);
+        add(tb, h('tr', null, h('td', null, h('b', { text: a.username })), h('td', null, a.role === 'master' ? pill('Master', 'info') : a.role === 'view' ? pill('View only', 'none') : pill('Full', 'ok')),
+          h('td', { text: a.divisionFixed ? 'Fixed: ' + a.division : 'Typed in by the person' }),
+          h('td', { cls: 'small', text: [when(a.createdAt), a.createdBy ? 'by ' + a.createdBy : ''].filter(Boolean).join(' ') || '—' }), h('td', null, acts)));
+      });
+    }
+    function pwField(id, label, auto) { return [h('label', { cls: 'f', for: id, text: label }), h('input', { type: 'password', id: id, autocomplete: auto || 'new-password' })]; }
+    function openSetPassword(a) {
+      openModal('New password for ' + a.username, function (body) {
+        var msg = h('div', { cls: 'msg', id: 'sp-msg' });
+        var btn = h('button', { cls: 'btn-primary', id: 'sp-save', text: 'Set password', onclick: function () {
+          if ($('sp-pw1').value !== $('sp-pw2').value) { setMsg('sp-msg', 'The two new passwords do not match.', true); return; }
+          btn.disabled = true;
+          api('POST', '/api/admin/accounts/password', { username: a.username, password: $('sp-pw1').value, myPassword: $('sp-mypw').value }).then(function (res) {
+            btn.disabled = false;
+            setMsg('sp-msg', res.message, !res.success);
+            if (res.success) { $('sp-pw1').value = $('sp-pw2').value = $('sp-mypw').value = ''; loadAccounts(); }
+          }, function (err) { btn.disabled = false; setMsg('sp-msg', err.message, true); });
+        } });
+        add(body, h('div', { style: 'max-width:420px;' },
+          h('p', { cls: 'muted', style: 'margin-top:0;', text: 'Everyone using ' + a.username + ' is logged out. At least 12 characters — for example 4 random words.' }),
+          pwField('sp-pw1', 'New password'), pwField('sp-pw2', 'New password again'), pwField('sp-mypw', 'Your password (ICEMmasteraccount)', 'current-password'),
+          h('div', { cls: 'row', style: 'margin-top:14px;' }, btn), msg));
+      });
+      modalRender = null;
+    }
+    function askRemove(a) {
+      var mypw = h('input', { type: 'password', id: 'rm-mypw', autocomplete: 'current-password' });
+      mypw.addEventListener('input', function () { $('confirm-yes').disabled = !mypw.value; });
+      confirmBox('Remove ' + a.username + '?', [
+        h('p', { text: 'Anyone logged in with this ' + (a.role === 'master' ? 'master ' : '') + 'account is logged out at their next click, and it can no longer log in. Their past actions stay in the history.' }),
+        h('label', { cls: 'f', for: 'rm-mypw', text: 'Your password (ICEMmasteraccount)' }), mypw
+      ], 'Remove account', function () {
+        api('POST', '/api/admin/accounts/remove', { username: a.username, myPassword: mypw.value }).then(function (res) {
+          toast(res.message, !res.success); if (res.success) loadAccounts();
+        }, function (err) { toast(err.message, true); });
+      }, true);
+      setTimeout(function () { mypw.focus(); }, 50);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="acct-div"]'), function (r) {
+      r.addEventListener('change', function () { $('acct-division').disabled = !$('acct-div-fixed').checked; if ($('acct-div-fixed').checked) $('acct-division').focus(); });
+    });
+    $('acct-create').addEventListener('click', function () {
+      setMsg('acct-msg', '');
+      if ($('acct-pw1').value !== $('acct-pw2').value) { setMsg('acct-msg', 'The two passwords for the new account do not match.', true); return; }
+      var mode = $('acct-div-fixed').checked ? 'fixed' : 'typed';
+      $('acct-create').disabled = true;
+      api('POST', '/api/admin/accounts', { username: $('acct-user').value.trim(), role: $('acct-role').value, divisionMode: mode, division: $('acct-division').value,
+        password: $('acct-pw1').value, myPassword: $('acct-mypw').value }).then(function (res) {
+        $('acct-create').disabled = false;
+        setMsg('acct-msg', res.message, !res.success);
+        if (res.success) { ['acct-user', 'acct-pw1', 'acct-pw2', 'acct-mypw', 'acct-division'].forEach(function (id) { $(id).value = ''; }); $('acct-div-typed').checked = true; $('acct-division').disabled = true; loadAccounts(); }
+      }, function (err) { $('acct-create').disabled = false; setMsg('acct-msg', err.message, true); });
     });
 
     // ---------------- contact view (2026-11-01) ----------------
