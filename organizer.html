@@ -313,7 +313,6 @@
           <div class="banner hidden" id="view-only-banner">This account can only view. Verifying, deleting and changing parameters need a full organizer account.</div>
         </div>
         <div class="deadline-alert hidden" id="cleanup-banner"></div>
-        <div class="owner-row hidden" id="owner-row"><button class="btn-secondary" data-go="accounts">Organizer accounts</button></div>
         <div class="tiles" id="tiles"></div>
         <div class="card">
           <div class="search">
@@ -374,13 +373,19 @@
           <div id="ann-team-wrap" class="hidden"><label class="f" for="ann-team">Team</label><select id="ann-team"></select></div>
           <span class="muted small" id="ann-count" style="padding-bottom:9px;"></span>
         </div>
-        <label class="chk" for="ann-email"><input type="checkbox" id="ann-email" checked> Send by email</label>
         <label class="chk" for="ann-page"><input type="checkbox" id="ann-page" checked> Show on their registration page</label>
+        <label class="chk" for="ann-email"><input type="checkbox" id="ann-email" checked> Send by email</label>
+        <div class="row" style="gap:14px;align-items:center;margin-top:8px;">
+          <label class="chk" for="ann-when-now" style="margin-top:0;"><input type="radio" name="ann-when" id="ann-when-now" checked> Send now</label>
+          <label class="chk" for="ann-when-later" style="margin-top:0;"><input type="radio" name="ann-when" id="ann-when-later"> Schedule for</label>
+          <input type="datetime-local" id="ann-at" disabled style="width:auto;">
+          <span class="muted small">Thailand time. Sent within 5 minutes of that time, to the people in the group then.</span>
+        </div>
         <div class="row" style="margin-top:14px;"><button class="btn-primary" id="ann-send">Send announcement</button></div>
         <div class="msg" id="ann-msg"></div>
       </div>
-      <div class="section-head" style="margin-top:20px;"><h2>Sent</h2></div>
-      <div class="table-wrap"><table><thead><tr><th>Sent</th><th>Title and message</th><th>To</th><th>Email</th><th>On their page</th><th></th></tr></thead><tbody id="ann-rows"></tbody></table></div>
+      <div class="section-head" style="margin-top:20px;"><h2>Sent and scheduled</h2></div>
+      <div class="table-wrap"><table><thead><tr><th>When</th><th>Title and message</th><th>To</th><th>Email</th><th>On their page</th><th></th></tr></thead><tbody id="ann-rows"></tbody></table></div>
     </div>
 
     <!-- QUESTIONS (2026-11-04): master accounts -->
@@ -1085,12 +1090,13 @@
         tile('High alert section', alerts + (alerts === 1 ? ' person' : ' people') + ' with food, allergy, health or special needs', 'alert', alerts ? 'alert' : ''),
         tile('Financial view', plural(unpaidPeople().length, 'person', 'people') + ' not paid · ' + D.payments.filter(function (x) { return x.status === 'pending'; }).length + ' waiting for a check', 'finance', unpaidPeople().length ? 'alert' : ''),
         tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed' + (editReqs ? ' · ' + editReqs + ' edit request' + (editReqs === 1 ? '' : 's') : ''), 'invoice', editReqs ? 'alert' : ''),
+        // 2026-11-05: All status export, Parameters and Organizer accounts are always the last three
+        questionsOn() ? tile('Questions', waitingQuestions() + (waitingQuestions() === 1 ? ' question' : ' questions') + ' waiting for an answer', 'questions', waitingQuestions() ? 'alert' : '') : null,
+        tile('Announcements', annSummary(), 'announce'),
         tile('All status export', 'Choose the columns and who to include', 'export'),
         tile('Parameters', lockText, 'params'),
-        questionsOn() ? tile('Questions', waitingQuestions() + (waitingQuestions() === 1 ? ' question' : ' questions') + ' waiting for an answer', 'questions', waitingQuestions() ? 'alert' : '') : null,
-        tile('Announcements', (D.announcements || []).length + ' sent · email and / or their page', 'announce')
+        D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null
       ]);
-      show('owner-row', !!D.me.owner);
       show('cleanup-banner', !!D.locks.cleanupAt);
       $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (Thailand time): every registrant account, payment, file, announcement, question and the history will be deleted. Export what you need before then. A master account can change it in Parameters.' : '';
       renderNotifs();
@@ -1189,8 +1195,19 @@
 
     function showCleanupPw() { var w = $('cleanup-pw-wrap'); if (w) w.classList.remove('hidden'); }
 
-    // ---------------- announcements (2026-11-04) ----------------
+    // ---------------- announcements (2026-11-04; edit and schedule 2026-11-05) ----------------
     var annBuilt = false;
+    function annSummary() {
+      var l = D.announcements || [];
+      var sch = l.filter(function (a) { return a.status === 'scheduled'; }).length;
+      return (l.length - sch) + ' sent' + (sch ? ' · ' + sch + ' scheduled' : '') + ' · their page and / or email';
+    }
+    function fromLocal(v) { return v ? v.replace('T', ' ') : ''; }
+    function toLocal(isoText) {
+      if (!isoText) return '';
+      var d = new Date(new Date(isoText).getTime() + 7 * 3600 * 1000); // Thailand time
+      return d.toISOString().slice(0, 16);
+    }
     function updateAnnCount() {
       var type = $('ann-aud').value, team = $('ann-team').value;
       show('ann-team-wrap', type === 'team');
@@ -1205,6 +1222,10 @@
         $('ann-aud').addEventListener('change', updateAnnCount);
         $('ann-team').addEventListener('change', updateAnnCount);
         $('ann-send').addEventListener('click', sendAnnouncement);
+        ['ann-when-now', 'ann-when-later'].forEach(function (id) { $(id).addEventListener('change', function () {
+          $('ann-at').disabled = !$('ann-when-later').checked;
+          $('ann-send').textContent = $('ann-when-later').checked ? 'Schedule announcement' : 'Send announcement';
+        }); });
       }
       var sel = $('ann-team'), keep = sel.value;
       clear(sel); D.teams.forEach(function (t) { add(sel, h('option', { value: t.name, text: t.name })); });
@@ -1216,33 +1237,84 @@
       if (!list.length) add(tb, h('tr', null, h('td', { colspan: 6, cls: 'muted', text: 'Nothing sent yet.' })));
       list.forEach(function (a) {
         var acts = h('div', { cls: 'acts' });
-        if (canEdit() && a.page) add(acts, h('button', { cls: 'btn-link small', text: a.hidden ? 'Show again' : 'Stop showing', onclick: function (e) {
+        var post = function (path, body, done) { return function (e) {
           e.target.disabled = true;
-          api('POST', '/api/admin/announcements/hide', { id: a.id, hidden: !a.hidden }).then(function (res) { if (!res.success) toast(res.message, true); loadData(true); }, function (err) { toast(err.message, true); });
-        } }));
-        add(tb, h('tr', null, h('td', { cls: 'small', text: when(a.createdAt) + (a.createdBy ? ' · ' + a.createdBy : '') }),
+          api('POST', path, body).then(function (res) { if (!res.success) toast(res.message, true); else if (done) toast(done); loadData(true); }, function (err) { toast(err.message, true); });
+        }; };
+        var scheduled = a.status === 'scheduled';
+        if (canEdit()) {
+          add(acts, h('button', { cls: 'btn-secondary btn-small', text: 'Edit', onclick: function () { openEditAnnouncement(a); } }));
+          if (scheduled) {
+            add(acts, h('button', { cls: 'btn-link small', text: 'Send now', onclick: post('/api/admin/announcements/send-now', { id: a.id }, 'Sent.') }));
+            add(acts, h('button', { cls: 'btn-link small', style: 'color:var(--danger);', text: 'Cancel', onclick: function () {
+              confirmBox('Cancel this scheduled announcement?', h('p', { text: '"' + a.title + '" will not be sent.' }), 'Cancel it', function () {
+                api('POST', '/api/admin/announcements/edit', { id: a.id, cancel: true }).then(function (res) { toast(res.success ? 'Cancelled.' : res.message, !res.success); loadData(true); });
+              });
+            } }));
+          } else if (a.page) add(acts, h('button', { cls: 'btn-link small', text: a.hidden ? 'Show again' : 'Stop showing', onclick: post('/api/admin/announcements/hide', { id: a.id, hidden: !a.hidden }) }));
+        }
+        add(tb, h('tr', null,
+          h('td', { cls: 'small' }, scheduled ? pill('Scheduled', 'wait') : null, scheduled ? h('div', { text: 'for ' + when(a.sendAt) }) : h('div', { text: when(a.sentAt) }),
+            h('div', { cls: 'muted', text: a.createdBy || '' }), a.editedAt ? h('div', { cls: 'muted', text: 'edited ' + when(a.editedAt) + (a.editedBy ? ' by ' + a.editedBy : '') }) : null),
           h('td', null, h('b', { text: a.title }), h('div', { cls: 'ann-body', text: a.body })),
-          h('td', { cls: 'small', text: a.audienceLabel + ' (' + a.recipients + ')' }),
-          h('td', { cls: 'small', text: a.email ? a.emailed + ' sent' + (a.emailFailed.length ? ', ' + a.emailFailed.length + ' failed' : '') : '—' }),
-          h('td', null, !a.page ? '—' : a.hidden ? pill('Hidden', 'none') : pill('Shown', 'ok')), h('td', null, acts)));
+          h('td', { cls: 'small', text: a.audienceLabel + (scheduled ? '' : ' (' + a.recipients + ')') }),
+          h('td', { cls: 'small', text: !a.email ? '—' : scheduled ? 'Yes' : a.emailed + ' sent' + (a.emailFailed.length ? ', ' + a.emailFailed.length + ' failed' : '') }),
+          h('td', null, !a.page ? '—' : scheduled ? 'Yes' : a.hidden ? pill('Hidden', 'none') : pill('Shown', 'ok')), h('td', null, acts)));
       });
     }
     function sendAnnouncement() {
       setMsg('ann-msg', '');
       var body = { title: $('ann-title').value.trim(), body: $('ann-body').value.trim(), audience: { type: $('ann-aud').value, team: $('ann-team').value }, email: $('ann-email').checked, page: $('ann-page').checked };
+      var later = $('ann-when-later').checked;
+      if (later) { if (!$('ann-at').value) { setMsg('ann-msg', 'Choose the date and time to send it.', true); return; } body.sendAt = fromLocal($('ann-at').value); }
       if (!body.title || !body.body) { setMsg('ann-msg', 'Please write a title and the message.', true); return; }
-      if (!body.email && !body.page) { setMsg('ann-msg', 'Choose "Send by email", "Show on their registration page", or both.', true); return; }
-      var how = [body.email ? 'emailed' : '', body.page ? 'shown on their page' : ''].filter(Boolean).join(' and ');
-      confirmBox('Send this announcement?', h('p', { text: '"' + body.title + '" will be ' + how + ' to ' + $('ann-count').textContent.replace(' right now', '') + '. Emails cannot be taken back.' }), 'Send', function () {
+      if (!body.email && !body.page) { setMsg('ann-msg', 'Choose "Show on their registration page", "Send by email", or both.', true); return; }
+      var how = [body.page ? 'shown on their page' : '', body.email ? 'emailed' : ''].filter(Boolean).join(' and ');
+      confirmBox(later ? 'Schedule this announcement?' : 'Send this announcement?', h('p', { text: '"' + body.title + '" will be ' + how + (later ? ' on ' + body.sendAt + ' (Thailand time) to the people in "' + $('ann-aud').selectedOptions[0].text.replace('…', '') + '" at that time (' + $('ann-count').textContent.replace(' right now', ' now') + ').' : ' to ' + $('ann-count').textContent.replace(' right now', '') + '. Emails cannot be taken back.') }), later ? 'Schedule' : 'Send', function () {
         $('ann-send').disabled = true;
         api('POST', '/api/admin/announcements', body).then(function (res) {
           $('ann-send').disabled = false;
           if (!res.success) { setMsg('ann-msg', res.message, true); return; }
+          if (res.scheduled) { setMsg('ann-msg', 'Scheduled for ' + res.sendAt + ' (Thailand time). You can still edit or cancel it below.', false); $('ann-title').value = ''; $('ann-body').value = ''; loadData(true); return; }
           setMsg('ann-msg', 'Sent to ' + res.recipients + ' people' + (body.email ? ' (' + res.emailed + ' emails' + (res.failed.length ? ', failed: ' + res.failed.join(', ') : '') + ')' : '') + '.', !!res.failed.length);
           $('ann-title').value = ''; $('ann-body').value = '';
           loadData(true);
         }, function (err) { $('ann-send').disabled = false; setMsg('ann-msg', err.message, true); });
       });
+    }
+
+    function openEditAnnouncement(a) {
+      var scheduled = a.status === 'scheduled';
+      openModal(scheduled ? 'Edit the scheduled announcement' : 'Edit the announcement', function (body) {
+        var title = h('input', { type: 'text', id: 'ea-title', maxlength: 120, value: a.title });
+        var msg = h('textarea', { id: 'ea-body', rows: 7, maxlength: 4000 }); msg.value = a.body;
+        var page = h('input', { type: 'checkbox', id: 'ea-page' }); page.checked = !!a.page;
+        var email = h('input', { type: 'checkbox', id: 'ea-email' }); email.checked = !!a.email;
+        var resend = h('input', { type: 'checkbox', id: 'ea-resend' });
+        var at = h('input', { type: 'datetime-local', id: 'ea-at', value: toLocal(a.sendAt) });
+        var out = h('div', { cls: 'msg', id: 'ea-msg' });
+        var save = h('button', { cls: 'btn-primary', id: 'ea-save', text: 'Save changes', onclick: function () {
+          var b = { id: a.id, title: title.value.trim(), body: msg.value.trim() };
+          if (scheduled) Object.assign(b, { audience: a.audience, page: page.checked, email: email.checked, sendAt: fromLocal(at.value) });
+          else b.resend = resend.checked;
+          save.disabled = true;
+          api('POST', '/api/admin/announcements/edit', b).then(function (res) {
+            save.disabled = false;
+            if (!res.success) { setMsg('ea-msg', res.message, true); return; }
+            toast(scheduled ? 'Saved.' : res.emailed ? 'Saved and emailed to ' + res.emailed + ' people.' : 'Saved — their page shows the new version.');
+            closeModal(); loadData(true);
+          }, function (err) { save.disabled = false; setMsg('ea-msg', err.message, true); });
+        } });
+        add(body, h('div', { cls: 'ann-form', style: 'max-width:640px;' },
+          h('label', { cls: 'f', for: 'ea-title', text: 'Title' }), title,
+          h('label', { cls: 'f', for: 'ea-body', text: 'Message' }), msg,
+          scheduled ? [h('label', { cls: 'chk', for: 'ea-page' }, page, ' Show on their registration page'), h('label', { cls: 'chk', for: 'ea-email' }, email, ' Send by email'),
+            h('label', { cls: 'f', for: 'ea-at', text: 'Send on (Thailand time) — to: ' + a.audienceLabel }), at]
+            : [h('p', { cls: 'muted small', text: 'Their registration page shows the new version straight away.' + (a.page ? '' : ' (This one was email only.)') }),
+              h('label', { cls: 'chk', for: 'ea-resend' }, resend, ' Also email the new version to the same ' + a.recipients + ' people (subject marked "updated")')],
+          h('div', { cls: 'row', style: 'margin-top:14px;' }, save), out));
+      });
+      modalRender = null;
     }
 
     // ---------------- questions (master accounts, 2026-11-04) ----------------
@@ -1253,13 +1325,14 @@
       if (!questionsOn()) { go('home'); return; }
       var all = D.tickets.slice().sort(function (a, b) { return qFilter === 'open' ? String(a.updatedAt).localeCompare(String(b.updatedAt)) : String(b.updatedAt).localeCompare(String(a.updatedAt)); });
       var chips = clear($('q-chips'));
+      var inTab = function (q, tab) { return tab === 'open' ? q.status === 'open' : q.status !== 'open'; }; // History: answered + closed
       [['open', 'Waiting'], ['answered', 'History']].forEach(function (c) {
-        var n = all.filter(function (q) { return q.status === c[0]; }).length;
+        var n = all.filter(function (q) { return inTab(q, c[0]); }).length;
         add(chips, h('button', { cls: 'chip' + (qFilter === c[0] ? ' on' : ''), text: c[1] + ' (' + n + ')', onclick: function () { qFilter = c[0]; renderQuestions(); } }));
       });
       var box = clear($('q-list'));
       var typing = {};
-      var list = all.filter(function (q) { return q.status === qFilter; });
+      var list = all.filter(function (q) { return inTab(q, qFilter); });
       if (!list.length) { add(box, h('div', { cls: 'empty', text: qFilter === 'open' ? 'No questions waiting.' : 'Nothing answered yet.' })); return; }
       list.forEach(function (q) {
         var p = byEmail[q.email];
@@ -1284,7 +1357,8 @@
           api('POST', '/api/admin/tickets/' + encodeURIComponent(q.id) + '/reply', { done: true }).then(function (res) { if (!res.success) toast(res.message, true); loadData(true); }, function (err) { toast(err.message, true); });
         } }) : null;
         add(box, h('div', { cls: 'item q-item' }, personBlock(p, q.email),
-          h('div', null, h('div', { cls: 'small muted', text: 'Question ' + q.id + ' · asked ' + when(q.createdAt) }), thread, ta, h('div', { cls: 'row', style: 'margin-top:8px;' }, send, done))));
+          h('div', null, h('div', { cls: 'small muted', text: 'Question ' + q.id + ' · asked ' + when(q.createdAt) }),
+            q.status === 'closed' ? h('div', null, pill('Closed by the registrant' + (q.closedAt ? ' · ' + when(q.closedAt) : ''), 'none')) : null, thread, ta, h('div', { cls: 'row', style: 'margin-top:8px;' }, send, done))));
       });
     }
 

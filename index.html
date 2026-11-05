@@ -297,6 +297,25 @@
     .uni-card .pname { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
     .uni-card .you { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--sand); padding: 1px 7px; border-radius: 999px; margin-left: 6px; }
     .emergency-box select { margin-top: 2px; }
+    /* 2026-11-05: account box under the coloured bar; checklist drop-down; question actions */
+    .session-panel { max-width: 760px; margin: 12px auto 0; padding: 0 20px; }
+    .session-panel-in { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .session-email { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    .session-email b { color: var(--text); font-weight: 600; }
+    .session-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-logout { background: var(--danger); color: #fff; }
+    .btn-logout:hover { filter: brightness(0.92); }
+    .wrap { padding-top: 22px; }
+    details#checklist-card > summary { list-style: none; cursor: pointer; }
+    details#checklist-card > summary::-webkit-details-marker { display: none; }
+    details#checklist-card .chev { display: inline-block; transition: transform .15s; margin-left: 8px; color: var(--muted); font-size: 12px; }
+    details#checklist-card[open] .chev { transform: rotate(90deg); }
+    details#checklist-card .tap { font-size: 12px; color: var(--accent); font-weight: 600; }
+    details#checklist-card .progress-bar { margin-bottom: 2px; }
+    details#checklist-card[open] .progress-bar { margin-bottom: 10px; }
+    .ticket .tstatus.closed { background: var(--sand); color: var(--muted); }
+    .ticket .tactions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+    .ticket .edited { font-size: 11px; color: var(--muted); font-style: italic; }
     /* 2026-11-04: email code, checklist, announcements, questions */
     .code-input { font-size: 26px; letter-spacing: 0.4em; text-align: center; max-width: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .checklist { margin: 0; padding: 0; list-style: none; }
@@ -332,15 +351,20 @@
 
   <div class="topbar">
     <div class="brand">ICEMKKU Registration</div>
-    <div class="session-info hidden" id="sessionBar">
-      <span id="sessionEmail"></span>
-      <button class="btn-link" id="viewTeamNavBtn" onclick="openTeamStat()">View team</button>
-      <button class="btn-link" id="viewUniNavBtn" onclick="openUniStat()">View university</button>
-      <button class="btn-link" onclick="openChangePassword()">Change password</button>
-      <button class="btn-link" onclick="logout()">Log out</button>
-    </div>
   </div>
   <div class="brand-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <!-- 2026-11-05: the logged-in email under the coloured bar, with the account buttons in a box -->
+  <div class="session-panel hidden" id="sessionBar">
+    <div class="session-panel-in">
+      <span class="session-email">Logged in as <b id="sessionEmail"></b></span>
+      <div class="session-buttons">
+        <button class="btn-primary btn-small" id="viewTeamNavBtn" onclick="openTeamStat()">View team</button>
+        <button class="btn-primary btn-small" id="viewUniNavBtn" onclick="openUniStat()">View university</button>
+        <button class="btn-primary btn-small" onclick="openChangePassword()">Change password</button>
+        <button class="btn-logout btn-small" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </div>
 
   <div class="wrap">
 
@@ -466,11 +490,13 @@
       <div class="banner hidden" id="info-team-banner"></div>
       <div class="banner hidden" id="info-lock-banner"></div>
       <div id="announcements"></div>
-      <div class="card hidden" id="checklist-card">
-        <div class="progress-head"><h2 style="margin:0;" id="checklist-title">Your registration</h2><span class="muted" id="checklist-count"></span></div>
-        <div class="progress-bar"><i id="checklist-bar" style="width:0%"></i></div>
+      <details class="card hidden" id="checklist-card">
+        <summary>
+          <div class="progress-head"><h2 style="margin:0;"><span id="checklist-title">Your registration</span><span class="chev">▶</span></h2><span class="muted"><span id="checklist-count"></span> · <span class="tap">Show details</span></span></div>
+          <div class="progress-bar"><i id="checklist-bar" style="width:0%"></i></div>
+        </summary>
         <ul class="checklist" id="checklist"></ul>
-      </div>
+      </details>
 
       <div class="card hidden" id="teams-card">
         <h2 style="margin-top:0;">My teams</h2>
@@ -896,6 +922,7 @@
       getNotices: function (a) { return ['GET', '/api/me/notices', null, a[0]]; },
       openTicket: function (a) { return ['POST', '/api/me/tickets', { text: a[1] }, a[0]]; },
       replyTicket: function (a) { return ['POST', '/api/me/tickets/' + enc(a[1]) + '/reply', { text: a[2] }, a[0]]; },
+      changeTicket: function (a) { return ['POST', '/api/me/tickets/' + enc(a[1]) + '/change', { action: a[2], text: a[3] }, a[0]]; },
       loginUser: function (a) { return ['POST', '/api/login', { email: a[0], password: a[1], remember: !!a[2] }]; },
       getMe: function (a) { return ['GET', '/api/me', null, a[0]]; },
       getLiveStamp: function (a) { return ['GET', '/api/me/live', null, a[0]]; },
@@ -2634,6 +2661,7 @@
       var items = s.checklist || [];
       card.classList.toggle('hidden', !items.length);
       if (!items.length) return;
+      if (!card.__toggleHooked) { card.__toggleHooked = true; card.addEventListener('toggle', function () { card.querySelector('.tap').textContent = card.open ? 'Hide details' : 'Show details'; }); }
       var done = items.filter(function (x) { return x.done; }).length;
       document.getElementById('checklist-title').textContent = done === items.length ? 'Your registration is complete ✓' : 'Your registration';
       document.getElementById('checklist-count').textContent = done + ' of ' + items.length + ' done';
@@ -2691,14 +2719,35 @@
         var c = el('div', 'ticket');
         var head = el('div', 'thead');
         head.appendChild(el('span', '', 'Question ' + tk.id + ' · ' + when(tk.createdAt)));
-        head.appendChild(el('span', 'tstatus ' + tk.status, tk.status === 'answered' ? 'Answered' : 'Waiting for an answer'));
+        head.appendChild(el('span', 'tstatus ' + tk.status, tk.status === 'closed' ? 'Closed' : tk.status === 'answered' ? 'Answered' : 'Waiting for an answer'));
         c.appendChild(head);
-        tk.messages.forEach(function (m) {
+        tk.messages.forEach(function (m, mi) {
           var b = el('div', 'bubble ' + (m.from === 'organizer' ? 'org' : 'me'));
           b.appendChild(el('span', 'who', (m.from === 'organizer' ? 'Organizers' : 'You') + ' · ' + when(m.at)));
+          if (mi === 0 && !tk.replied && tk.status !== 'closed') {
+            b.id = 'ticket-text-' + tk.id;
+          }
           b.appendChild(document.createTextNode(m.text));
+          if (m.edited) b.appendChild(el('span', 'edited', ' (edited)'));
           c.appendChild(b);
         });
+        // Close / reopen; edit / delete before the organizers reply (2026-11-05)
+        var acts = el('div', 'tactions');
+        var link = function (text, fn, danger) { var x = el('button', 'btn-link', text); x.type = 'button'; if (danger) x.style.color = 'var(--danger)'; x.onclick = fn; return x; };
+        if (tk.status === 'closed') {
+          acts.appendChild(link('Reopen question', function () { changeTicket(tk.id, 'reopen'); }));
+          c.appendChild(acts);
+          c.appendChild(el('p', 'muted', 'You closed this question' + (tk.closedAt ? ' on ' + when(tk.closedAt) : '') + '. Reopen it if you need more help.'));
+          var mc = el('div', 'msg'); mc.id = 'ticket-reply-msg-' + tk.id; c.appendChild(mc);
+          list.appendChild(c);
+          return;
+        }
+        if (!tk.replied) {
+          acts.appendChild(link('Edit question', function () { editTicketText(tk); }));
+          acts.appendChild(link('Delete question', function () { if (confirm('Delete this question?')) changeTicket(tk.id, 'delete'); }, true));
+        }
+        acts.appendChild(link(tk.replied ? 'Close question (I got my answer)' : 'Close question', function () { changeTicket(tk.id, 'close'); }));
+        c.appendChild(acts);
         var ta = el('textarea'); ta.rows = 2; ta.maxLength = 2000; ta.setAttribute('data-ticket', tk.id); ta.id = 'ticket-reply-' + tk.id;
         ta.placeholder = tk.status === 'answered' ? 'Need more help? Reply here — it goes back to the organizers.' : 'Add to your question…';
         if (typing[tk.id]) ta.value = typing[tk.id];
@@ -2710,6 +2759,30 @@
         c.appendChild(ta); c.appendChild(row); c.appendChild(m2);
         list.appendChild(c);
       });
+    }
+    function changeTicket(id, action, text) {
+      callServer('changeTicket', [sessionToken, id, action, text || ''], {
+        msgElId: 'ticket-reply-msg-' + id,
+        onSuccess: function (res) {
+          if (!checkRes(res, 'ticket-reply-msg-' + id)) return;
+          if (!res.success) { setMsg('ticket-reply-msg-' + id, res.message, true); return; }
+          loadNotices();
+        }
+      });
+    }
+    /** Turns the question bubble into a text box with Save / Cancel. */
+    function editTicketText(tk) {
+      var b = document.getElementById('ticket-text-' + tk.id);
+      if (!b || b.querySelector('textarea')) return;
+      var ta = el('textarea'); ta.rows = 3; ta.maxLength = 2000; ta.value = tk.messages[0].text; ta.id = 'ticket-edit-' + tk.id;
+      var row = el('div', 'btn-row');
+      var save = el('button', 'btn-primary btn-small', 'Save'); save.id = 'ticket-edit-save-' + tk.id;
+      save.onclick = function () { if (ta.value.trim()) changeTicket(tk.id, 'edit', ta.value.trim()); };
+      var cancel = el('button', 'btn-secondary btn-small', 'Cancel'); cancel.onclick = function () { loadNotices(); };
+      row.appendChild(save); row.appendChild(cancel);
+      while (b.childNodes.length > 1) b.removeChild(b.lastChild);
+      b.appendChild(ta); b.appendChild(row);
+      ta.focus();
     }
     function showNewTicket(on) {
       document.getElementById('ticket-new').classList.toggle('hidden', !on);
