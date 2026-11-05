@@ -297,6 +297,35 @@
     .uni-card .pname { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
     .uni-card .you { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--sand); padding: 1px 7px; border-radius: 999px; margin-left: 6px; }
     .emergency-box select { margin-top: 2px; }
+    /* 2026-11-04: email code, checklist, announcements, questions */
+    .code-input { font-size: 26px; letter-spacing: 0.4em; text-align: center; max-width: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .checklist { margin: 0; padding: 0; list-style: none; }
+    .checklist li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; }
+    .checklist li:first-child { border-top: 0; }
+    .checklist .mark { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .checklist li.done .mark { background: #e3efdc; color: #3f6b37; }
+    .checklist li.todo .mark { background: #fdecea; color: #b3261e; }
+    .checklist li.done .what { color: var(--muted); }
+    .checklist .note { display: block; font-size: 12.5px; color: #b3261e; margin-top: 1px; }
+    .progress-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .progress-bar { height: 8px; background: var(--sand); border-radius: 999px; overflow: hidden; margin: 8px 0 10px; }
+    .progress-bar i { display: block; height: 100%; background: #6f9361; border-radius: 999px; }
+    .announce { background: #eef4fa; border: 1px solid #c8d9e8; border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; }
+    .announce h3 { margin: 0 0 4px; font-size: 15px; }
+    .announce .meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .announce .body { font-size: 14px; white-space: pre-wrap; line-height: 1.5; }
+    .incomplete-box { background: #fdecea; border: 1px solid #eba59e; color: #8c2a22; border-radius: 8px; padding: 10px 14px; font-size: 13.5px; margin: 10px 0; }
+    .incomplete-box ul { margin: 6px 0 0; padding-left: 20px; }
+    .ticket { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; background: var(--surface); }
+    .ticket .thead { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+    .ticket .tstatus { font-weight: 700; font-size: 12px; padding: 2px 9px; border-radius: 999px; }
+    .ticket .tstatus.open { background: #fbf0d6; color: #7d5a12; }
+    .ticket .tstatus.answered { background: #e3efdc; color: #3f6b37; }
+    .bubble { margin-top: 8px; padding: 8px 12px; border-radius: 10px; font-size: 14px; white-space: pre-wrap; line-height: 1.45; }
+    .bubble.me { background: var(--sand); }
+    .bubble.org { background: #eef4fa; border: 1px solid #c8d9e8; }
+    .bubble .who { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 2px; white-space: normal; }
+    .ticket textarea, #ticket-new textarea { margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -333,6 +362,23 @@
     </div>
 
     <!-- REGISTER -->
+    <!-- EMAIL CODE (2026-11-04): the account is created once the emailed code is typed -->
+    <div class="view" id="view-verify">
+      <h1>Check your email</h1>
+      <p class="sub" id="verify-sub">We sent a 6-digit code to your email.</p>
+      <div class="card">
+        <label for="verify-code">6-digit code</label>
+        <input type="text" id="verify-code" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••">
+        <p class="muted" style="margin:8px 0 0;">Can't find it? Check your spam or promotions folder. The code works for 15 minutes.</p>
+        <div class="btn-row">
+          <button class="btn-primary" id="verify-submit-btn" onclick="doVerifyCode()">Finish registering</button>
+          <button class="btn-secondary" id="verify-resend-btn" onclick="resendCode()">Send a new code</button>
+          <button class="btn-link" onclick="showView('view-register')">Use a different email</button>
+        </div>
+        <div class="msg" id="verify-msg"></div>
+      </div>
+    </div>
+
     <div class="view" id="view-register">
       <h1>Register</h1>
       <p class="sub">Create your account.</p>
@@ -419,6 +465,12 @@
       <h1>Personal information</h1>
       <div class="banner hidden" id="info-team-banner"></div>
       <div class="banner hidden" id="info-lock-banner"></div>
+      <div id="announcements"></div>
+      <div class="card hidden" id="checklist-card">
+        <div class="progress-head"><h2 style="margin:0;" id="checklist-title">Your registration</h2><span class="muted" id="checklist-count"></span></div>
+        <div class="progress-bar"><i id="checklist-bar" style="width:0%"></i></div>
+        <ul class="checklist" id="checklist"></ul>
+      </div>
 
       <div class="card hidden" id="teams-card">
         <h2 style="margin-top:0;">My teams</h2>
@@ -435,20 +487,20 @@
         <h2 style="margin-top:0;">Personal Information</h2>
         <p class="autosave-status" id="autosave-status" aria-live="polite"></p>
         <div class="row2">
-          <div><label>Name</label><input type="text" id="info-name"></div>
+          <div><label>Name<span class="req">required</span></label><input type="text" id="info-name"></div>
           <div><label>Middle name</label><input type="text" id="info-middleName"></div>
         </div>
         <div class="row2">
-          <div><label>Surname</label><input type="text" id="info-surname"></div>
+          <div><label>Surname<span class="req">required</span></label><input type="text" id="info-surname"></div>
           <div><label>Nickname</label><input type="text" id="info-nickname"></div>
         </div>
         <div class="row2">
           <div>
-            <label id="info-eduLabel">Educational year</label>
+            <label><span id="info-eduLabel">Educational year</span><span class="req">required</span></label>
             <input type="text" id="info-education">
           </div>
           <div>
-            <label>University</label>
+            <label>University<span class="req">required</span></label>
             <select id="info-university" onchange="onUniversityChange()">
               <option value="">Select your university…</option>
               <option value="__other__">Other (type it)</option>
@@ -486,7 +538,7 @@
           <input type="tel" id="phone-number" autocomplete="tel-national" inputmode="tel" placeholder="e.g. 081 234 5678">
         </div>
         <p class="field-error hidden" id="phone-error"></p>
-        <label for="info-otherContact">Other contact</label>
+        <label for="info-otherContact">Other contact<span class="req">required</span></label>
         <input type="text" id="info-otherContact" maxlength="300" placeholder="e.g. Line, Facebook, Instagram, What's App, etc.">
         <div class="emergency-box">
           <label for="emergency-number">Emergency contact telephone<span class="req">required</span></label>
@@ -495,7 +547,7 @@
             <input type="tel" id="emergency-number" inputmode="tel" placeholder="Someone we can call in an emergency">
           </div>
           <p class="field-error hidden" id="emergency-error"></p>
-          <label for="emergency-relation" style="margin-top:10px;">Who is this? <span class="muted" style="font-weight:400;">(who the organizers will be calling)</span></label>
+          <label for="emergency-relation" style="margin-top:10px;">Who is this?<span class="req">required</span> <span class="muted" style="font-weight:400;">(who the organizers will be calling)</span></label>
           <select id="emergency-relation">
             <option value="">Choose…</option>
             <option value="Mom">Mom</option><option value="Dad">Dad</option><option value="Partner">Partner</option>
@@ -566,7 +618,7 @@
       <div class="card">
         <h2 style="margin-top:0;">Documents</h2>
 
-        <label>Passport information/Thai ID card</label>
+        <label>Passport information/Thai ID card<span class="req">required</span></label>
         <div class="upload-row">
           <input type="file" id="file-passport" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
           <button class="btn-secondary btn-small" id="upload-btn-passport" onclick="uploadDoc('passport')">Upload</button>
@@ -575,7 +627,7 @@
         </div>
         <p class="action-hint">After choosing a file, click Upload.</p>
 
-        <label>Proof of enrolment</label>
+        <label>Proof of enrolment<span class="req" id="enrol-req">required</span></label>
         <div class="upload-row">
           <input type="file" id="file-enrollment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
           <button class="btn-secondary btn-small" id="upload-btn-enrollment" onclick="uploadDoc('enrollment')">Upload</button>
@@ -633,7 +685,7 @@
       </div>
 
       <div class="card" id="trip-section">
-        <h2 style="margin-top:0;">Trip selection</h2>
+        <h2 style="margin-top:0;">Trip selection<span class="req" style="font-size:13px;">required</span></h2>
         <p class="sub" style="margin-bottom:10px;">Choose one trip option below. Seats are limited and given first come, first served — click your chosen option again to clear it.</p>
         <button type="button" class="btn-secondary btn-small trip-detail-btn" id="trip-detail-open" onclick="openTripDetails()">View trip details</button>
         <div class="trip-options" id="trip-options">
@@ -643,6 +695,18 @@
         </div>
         <p class="deadline-alert hidden" id="trip-lock-note" style="margin:12px 0 0;"></p>
         <div class="msg" id="trip-msg"></div>
+      </div>
+
+      <div class="card hidden" id="tickets-card">
+        <h2 style="margin-top:0;">Questions for the organizers</h2>
+        <p class="muted" style="margin-top:0;">For non-urgent questions. The organizers answer here, and you get an email when they do.</p>
+        <button type="button" class="btn-secondary btn-small" id="ticket-open-btn" onclick="showNewTicket(true)">+ Open question ticket</button>
+        <div id="ticket-new" class="hidden">
+          <textarea id="ticket-text" rows="3" maxlength="2000" placeholder="Type your question…"></textarea>
+          <div class="btn-row"><button class="btn-primary btn-small" id="ticket-send-btn" onclick="sendTicket()">Send question</button><button class="btn-secondary btn-small" onclick="showNewTicket(false)">Cancel</button></div>
+        </div>
+        <div class="msg" id="ticket-msg"></div>
+        <div id="ticket-list"></div>
       </div>
 
       <div class="btn-row">
@@ -827,6 +891,11 @@
     var API_ROUTES = {
       getPublicConfig: function () { return ['GET', '/api/config']; },
       registerUser: function (a) { return ['POST', '/api/register', { email: a[0], password: a[1], position: a[2], teamName: a[3], tos: a[4], pdpa: a[5], observerLevel: a[6], remember: !!a[7] }]; },
+      registerVerify: function (a) { return ['POST', '/api/register/verify', { email: a[0], code: a[1], remember: !!a[2] }]; },
+      registerResend: function (a) { return ['POST', '/api/register/resend', { email: a[0] }]; },
+      getNotices: function (a) { return ['GET', '/api/me/notices', null, a[0]]; },
+      openTicket: function (a) { return ['POST', '/api/me/tickets', { text: a[1] }, a[0]]; },
+      replyTicket: function (a) { return ['POST', '/api/me/tickets/' + enc(a[1]) + '/reply', { text: a[2] }, a[0]]; },
       loginUser: function (a) { return ['POST', '/api/login', { email: a[0], password: a[1], remember: !!a[2] }]; },
       getMe: function (a) { return ['GET', '/api/me', null, a[0]]; },
       getLiveStamp: function (a) { return ['GET', '/api/me/live', null, a[0]]; },
@@ -1022,6 +1091,69 @@
         onSuccess: function (res) {
           if (!checkRes(res, 'reg-msg')) return;
           if (!res.success) { setMsg('reg-msg', res.message, true); return; }
+          if (res.codeSent) { showVerify(res.email || email, remember, position, res.message); return; }
+          finishRegistration(res, remember, position);
+        }
+      });
+    }
+
+    // ---------------- EMAIL CODE (2026-11-04) ----------------
+    var pendingSignup = null; // { email, remember, position }
+    var resendTimer = null;
+    function showVerify(email, remember, position, message) {
+      pendingSignup = { email: email, remember: remember, position: position };
+      document.getElementById('verify-sub').textContent = message || ('We sent a 6-digit code to ' + email + '.');
+      document.getElementById('verify-code').value = '';
+      clearMsg('verify-msg');
+      showView('view-verify');
+      startResendCooldown();
+      setTimeout(function () { document.getElementById('verify-code').focus(); }, 50);
+    }
+    function startResendCooldown() {
+      var b = document.getElementById('verify-resend-btn');
+      var left = 60;
+      if (resendTimer) clearInterval(resendTimer);
+      b.disabled = true; b.textContent = 'Send a new code (' + left + ' s)';
+      resendTimer = setInterval(function () {
+        left--;
+        if (left <= 0) { clearInterval(resendTimer); resendTimer = null; b.disabled = false; b.textContent = 'Send a new code'; return; }
+        b.textContent = 'Send a new code (' + left + ' s)';
+      }, 1000);
+    }
+    function doVerifyCode() {
+      if (!pendingSignup) { showView('view-register'); return; }
+      var code = document.getElementById('verify-code').value.replace(/\D/g, '');
+      if (code.length !== 6) { setMsg('verify-msg', 'Please type the 6 digits from the email.', true); return; }
+      var p = pendingSignup;
+      callServer('registerVerify', [p.email, code, p.remember], {
+        buttonIds: ['verify-submit-btn'],
+        msgElId: 'verify-msg',
+        onSuccess: function (res) {
+          if (!checkRes(res, 'verify-msg')) return;
+          if (!res.success) { setMsg('verify-msg', res.message, true); if (res.expired) pendingSignup = null; return; }
+          pendingSignup = null;
+          finishRegistration(res, p.remember, p.position);
+        }
+      });
+    }
+    function resendCode() {
+      if (!pendingSignup) { showView('view-register'); return; }
+      callServer('registerResend', [pendingSignup.email], {
+        buttonIds: ['verify-resend-btn'],
+        msgElId: 'verify-msg',
+        onSuccess: function (res) {
+          if (!checkRes(res, 'verify-msg')) return;
+          setMsg('verify-msg', res.message, !res.success);
+          if (res.success) startResendCooldown();
+          if (res.expired) { pendingSignup = null; }
+        }
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'verify-code') doVerifyCode();
+    });
+
+    function finishRegistration(res, remember, position) {
           sessionGen++;
           currentUser = res.user;
           sessionToken = res.token;
@@ -1033,8 +1165,6 @@
             enterSession();
             routeToInfoForm();
           });
-        }
-      });
     }
 
     // ---------------- MODAL (popup) ----------------
@@ -1104,6 +1234,7 @@
     }
 
     function enterSession() {
+      setTimeout(loadNotices, 0);
       document.getElementById('sessionBar').classList.remove('hidden');
       document.getElementById('sessionEmail').textContent = currentUser.email;
       updateTeamNav();
@@ -1128,6 +1259,8 @@
 
     function resetClientState() {
       currentLocks = {};
+      ['announcements', 'ticket-list', 'checklist'].forEach(function (id) { var x = document.getElementById(id); if (x) x.textContent = ''; });
+      ['tickets-card', 'checklist-card'].forEach(function (id) { var x = document.getElementById(id); if (x) x.classList.add('hidden'); });
       forgetToken();
       stopLive();
       resetAutosave();
@@ -1220,6 +1353,7 @@
 
     function routeToInfoForm() {
       var pos = currentUser.position;
+      document.getElementById('enrol-req').classList.toggle('hidden', pos === 'advisor'); // advisors: proof of enrolment not required
       var banner = document.getElementById('info-team-banner');
 
       if (pos === 'delegate') {
@@ -1447,6 +1581,7 @@
       });
       invoiceSavedFor = null;
       renderCombinedInvoice(s);
+      renderChecklist(s);
 
       section.classList.toggle('overdue', !!s.overdue);
       startCountdowns();
@@ -1496,7 +1631,15 @@
         d.appendChild(tot);
       }
       if (!o.available) {
-        d.appendChild(el('p', 'muted', o.reason));
+        if (o.incomplete && o.incomplete.length) {
+          // Required information (2026-11-04): who still misses what.
+          var box = el('div', 'incomplete-box');
+          box.appendChild(el('b', '', 'Before this payment can be sent, everyone it covers needs their required information and documents. Still missing:'));
+          var ul = el('ul');
+          o.incomplete.forEach(function (g) { ul.appendChild(el('li', '', g.name + ': ' + g.missing.join(', '))); });
+          box.appendChild(ul);
+          d.appendChild(box);
+        } else d.appendChild(el('p', 'muted', o.reason));
         return d;
       }
 
@@ -2362,6 +2505,7 @@
             currentPersonalInfo[col] = res.url;
             currentPersonalInfo[checkCol] = '';
             setUploadStatus(key, res.url, '');
+            livePaymentPending = true; tryLivePayment();
             if (key === 'enrollment' && currentUser.position === 'observer') {
               statusEl.appendChild(document.createTextNode(' — it is now waiting for the organizers to check it.'));
               refreshPaymentStatus();
@@ -2395,6 +2539,7 @@
           currentPersonalInfo[checkCol] = '';
           document.getElementById('file-' + key).value = '';
           setUploadStatus(key, null, '');
+          livePaymentPending = true; tryLivePayment();
           if (key === 'enrollment' && currentUser.position === 'observer') refreshPaymentStatus();
         },
         onFailure: function (err) { statusEl.textContent = 'Error: ' + err.message; }
@@ -2482,6 +2627,125 @@
       }
     }
 
+
+    // ---------------- CHECKLIST (2026-11-04) ----------------
+    function renderChecklist(s) {
+      var card = document.getElementById('checklist-card');
+      var items = s.checklist || [];
+      card.classList.toggle('hidden', !items.length);
+      if (!items.length) return;
+      var done = items.filter(function (x) { return x.done; }).length;
+      document.getElementById('checklist-title').textContent = done === items.length ? 'Your registration is complete ✓' : 'Your registration';
+      document.getElementById('checklist-count').textContent = done + ' of ' + items.length + ' done';
+      document.getElementById('checklist-bar').style.width = Math.round(100 * done / items.length) + '%';
+      var ul = document.getElementById('checklist');
+      ul.textContent = '';
+      items.forEach(function (x) {
+        var li = el('li', x.done ? 'done' : 'todo');
+        li.setAttribute('data-key', x.key);
+        li.appendChild(el('span', 'mark', x.done ? '✓' : '!'));
+        var w = el('span', 'what', x.label);
+        if (!x.done && x.note) w.appendChild(el('span', 'note', x.note));
+        li.appendChild(w);
+        ul.appendChild(li);
+      });
+    }
+
+    // ---------------- ANNOUNCEMENTS AND QUESTIONS (2026-11-04) ----------------
+    var noticesGen = 0;
+    function loadNotices() {
+      if (!sessionToken) return;
+      var gen = sessionGen, mine = ++noticesGen;
+      apiFetch('getNotices', [sessionToken]).then(function (res) {
+        if (gen !== sessionGen || mine !== noticesGen || !res || !res.success) return;
+        renderAnnouncements(res.announcements || []);
+        renderTickets(res);
+      }, function () {});
+    }
+    function when(isoText) {
+      var d = new Date(isoText);
+      if (!isoText || isNaN(d)) return '';
+      return d.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    function renderAnnouncements(list) {
+      var box = document.getElementById('announcements');
+      box.textContent = '';
+      list.forEach(function (a) {
+        var c = el('div', 'announce');
+        c.appendChild(el('h3', '', '📢 ' + a.title));
+        c.appendChild(el('div', 'meta', 'From the organizers · ' + when(a.at)));
+        c.appendChild(el('div', 'body', a.body));
+        box.appendChild(c);
+      });
+    }
+    function renderTickets(res) {
+      var card = document.getElementById('tickets-card');
+      card.classList.toggle('hidden', !res.ticketsOn);
+      if (!res.ticketsOn) return;
+      var list = document.getElementById('ticket-list');
+      // keep a reply being typed
+      var typing = {};
+      list.querySelectorAll('textarea[data-ticket]').forEach(function (t) { if (t.value) typing[t.getAttribute('data-ticket')] = t.value; });
+      list.textContent = '';
+      (res.tickets || []).forEach(function (tk) {
+        var c = el('div', 'ticket');
+        var head = el('div', 'thead');
+        head.appendChild(el('span', '', 'Question ' + tk.id + ' · ' + when(tk.createdAt)));
+        head.appendChild(el('span', 'tstatus ' + tk.status, tk.status === 'answered' ? 'Answered' : 'Waiting for an answer'));
+        c.appendChild(head);
+        tk.messages.forEach(function (m) {
+          var b = el('div', 'bubble ' + (m.from === 'organizer' ? 'org' : 'me'));
+          b.appendChild(el('span', 'who', (m.from === 'organizer' ? 'Organizers' : 'You') + ' · ' + when(m.at)));
+          b.appendChild(document.createTextNode(m.text));
+          c.appendChild(b);
+        });
+        var ta = el('textarea'); ta.rows = 2; ta.maxLength = 2000; ta.setAttribute('data-ticket', tk.id); ta.id = 'ticket-reply-' + tk.id;
+        ta.placeholder = tk.status === 'answered' ? 'Need more help? Reply here — it goes back to the organizers.' : 'Add to your question…';
+        if (typing[tk.id]) ta.value = typing[tk.id];
+        var row = el('div', 'btn-row');
+        var b2 = el('button', 'btn-secondary btn-small', 'Send reply'); b2.id = 'ticket-reply-btn-' + tk.id;
+        var m2 = el('div', 'msg'); m2.id = 'ticket-reply-msg-' + tk.id;
+        b2.onclick = function () { replyToTicket(tk.id); };
+        row.appendChild(b2);
+        c.appendChild(ta); c.appendChild(row); c.appendChild(m2);
+        list.appendChild(c);
+      });
+    }
+    function showNewTicket(on) {
+      document.getElementById('ticket-new').classList.toggle('hidden', !on);
+      document.getElementById('ticket-open-btn').classList.toggle('hidden', on);
+      clearMsg('ticket-msg');
+      if (on) document.getElementById('ticket-text').focus();
+    }
+    function sendTicket() {
+      var text = document.getElementById('ticket-text').value.trim();
+      if (!text) { setMsg('ticket-msg', 'Please type your question.', true); return; }
+      callServer('openTicket', [sessionToken, text], {
+        buttonIds: ['ticket-send-btn'], msgElId: 'ticket-msg',
+        onSuccess: function (res) {
+          if (!checkRes(res, 'ticket-msg')) return;
+          if (!res.success) { setMsg('ticket-msg', res.message, true); return; }
+          document.getElementById('ticket-text').value = '';
+          showNewTicket(false);
+          setMsg('ticket-msg', 'Question sent. The organizers will answer here; you will get an email when they do.', false);
+          loadNotices();
+        }
+      });
+    }
+    function replyToTicket(id) {
+      var ta = document.getElementById('ticket-reply-' + id);
+      var text = ta.value.trim();
+      if (!text) { setMsg('ticket-reply-msg-' + id, 'Please type a message.', true); return; }
+      callServer('replyTicket', [sessionToken, id, text], {
+        buttonIds: ['ticket-reply-btn-' + id], msgElId: 'ticket-reply-msg-' + id,
+        onSuccess: function (res) {
+          if (!checkRes(res, 'ticket-reply-msg-' + id)) return;
+          if (!res.success) { setMsg('ticket-reply-msg-' + id, res.message, true); return; }
+          ta.value = '';
+          loadNotices();
+        }
+      });
+    }
 
     // ---------------- UNIVERSITY VIEW (2026-11-01) ----------------
     // Everyone from the same university, as ID cards like the team page
@@ -2944,6 +3208,7 @@
         if (!res || !res.success) { liveRefreshPending = true; return; }
         applyAccountUpdate(res.user, res.personalInfo);
         if (res.locks) applyLocks(res.locks);
+        loadNotices();
         livePaymentPending = true;
         tryLivePayment();
       }, function () { if (gen === sessionGen) liveRefreshPending = true; });
@@ -3088,8 +3353,9 @@
         if (res.note) setMsg('info-msg', res.note, true);
         if (autosaveAgain) { autosaveAgain = false; autoSaveNow(); return; }
         setAutosaveStatus(autosaveTimer ? 'dirty' : (uniSuggestion ? 'uni' : 'saved'));
-        var priceChanged = PRICE_FIELDS.some(function (k) { return saved[k] !== undefined && saved[k] !== before[k]; });
-        if (priceChanged) { livePaymentPending = true; tryLivePayment(); }
+        // The checklist and "required to pay" follow every save (2026-11-04).
+        livePaymentPending = true; tryLivePayment();
+        void PRICE_FIELDS; void before;
       }, function () {
         autosaveInFlight = false;
         if (gen !== sessionGen) return;
