@@ -345,6 +345,28 @@
     .bubble.org { background: #eef4fa; border: 1px solid #c8d9e8; }
     .bubble .who { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 2px; white-space: normal; }
     .ticket textarea, #ticket-new textarea { margin-top: 8px; }
+    /* 2026-11-06 (v6.4) */
+    .row2, .row4 { margin-top: 14px; }
+    #info-fields-card .row2:first-of-type { margin-top: 0; }
+    #info-fields-card > label { margin-top: 14px; }
+    .row2 > div > .label-row:first-child { margin-top: 0; }
+    .btn-white { background: #fff; border: 1px solid var(--border); color: var(--text); border-radius: 8px; }
+    .btn-white:hover { background: var(--sand); }
+    .btn-box { background: #fff; border: 1px solid #c8d9e8; color: var(--accent); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+    .btn-box:hover { background: #eef4fa; }
+    .btn-box.red { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .btn-box.red:hover { filter: brightness(0.92); background: var(--danger); }
+    .ticket-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .ticket-wait { font-size: 12.5px; color: var(--muted); background: var(--sand); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
+    .announce.c-blue { background: #e8f1f5; border-color: #7FACBF; border-left-color: #518094; } .announce.c-blue h3 { color: #3f6f84; }
+    .announce.c-navy { background: #e7eef6; border-color: #9db5cf; border-left-color: #215386; } .announce.c-navy h3 { color: #215386; }
+    .announce.c-green { background: #eef5ec; border-color: #B3CCAC; border-left-color: #9FBD97; } .announce.c-green h3 { color: #4c7343; }
+    .announce.c-red { background: #fbeeee; border-color: #e7b3b3; border-left-color: #AF4D4D; } .announce.c-red h3 { color: #AF4D4D; }
+    .announce.c-yellow { background: #fdf6e6; border-color: #F3D193; border-left-color: #E6B865; } .announce.c-yellow h3 { color: #8a6417; }
+    .announce.c-brown { background: #f2efea; border-color: #c9c1b2; border-left-color: #605743; } .announce.c-brown h3 { color: #2F2A20; }
+    .held-note { background: #eef4fa; border: 1px solid #c8d9e8; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 8px; }
+    .inv-extra-note { font-size: 12px; color: var(--muted); font-style: italic; }
+    .id-card .contact-line { font-size: 13px; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -358,9 +380,9 @@
     <div class="session-panel-in">
       <span class="session-email">Logged in as <b id="sessionEmail"></b></span>
       <div class="session-buttons">
-        <button class="btn-primary btn-small" id="viewTeamNavBtn" onclick="openTeamStat()">View team</button>
-        <button class="btn-primary btn-small" id="viewUniNavBtn" onclick="openUniStat()">View university</button>
-        <button class="btn-primary btn-small" onclick="openChangePassword()">Change password</button>
+        <button class="btn-white btn-small" id="viewTeamNavBtn" onclick="openTeamStat()">View team</button>
+        <button class="btn-white btn-small" id="viewUniNavBtn" onclick="openUniStat()">View university</button>
+        <button class="btn-white btn-small" onclick="openChangePassword()">Change password</button>
         <button class="btn-logout btn-small" onclick="logout()">Log out</button>
       </div>
     </div>
@@ -434,7 +456,7 @@
           </label>
           <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; font-size:13px; margin:0;">
             <input type="checkbox" id="reg-pdpa" style="margin-top:2px;">
-            <span>I've read and understood the information below and consent to the use, reproduction, and publication of my individual photo/video footage in KKUICEM's posts, promotional material, and other related media. My name, role and university may also be shown to the person who pays the registration fee for my team or university.</span>
+            <span id="reg-pdpa-text">I've read and understood the information below and consent to the use, reproduction, and publication of my individual photo/video footage in KKUICEM's posts, promotional material, and other related media. My name, role and university may also be shown to the person who pays the registration fee for my team or university, and my email, telephone and other contact (not my emergency contact) are shown to my team and to registrants from my university.</span>
           </label>
         </div>
 
@@ -512,6 +534,18 @@
       <div class="card" id="info-fields-card">
         <h2 style="margin-top:0;">Personal Information</h2>
         <p class="autosave-status" id="autosave-status" aria-live="polite"></p>
+        <div class="row2">
+          <div>
+            <label for="info-title">Title<span class="req">required</span></label>
+            <select id="info-title">
+              <option value="">Choose…</option>
+              <option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Miss</option>
+              <option>Dr.</option><option>Prof.</option><option>Mx.</option><option value="Other">Other (type it)</option>
+            </select>
+            <input type="text" id="info-titleOther" class="hidden" maxlength="40" placeholder="Type your title, e.g. Assoc. Prof." style="margin-top:8px;">
+          </div>
+          <div><p class="muted" style="font-size:12.5px;margin:30px 0 0;">Shown in front of your name, also on invoices (e.g. "Ms. Jane Doe").</p></div>
+        </div>
         <div class="row2">
           <div><label>Name<span class="req">required</span></label><input type="text" id="info-name"></div>
           <div><label>Middle name</label><input type="text" id="info-middleName"></div>
@@ -624,7 +658,7 @@
           <summary>Size chart (inches)</summary>
           <table>
             <thead><tr><th>Size</th><th>Chest (in)</th><th>Length (in)</th></tr></thead>
-            <tbody>
+            <tbody id="size-chart-rows">
               <tr><td>S</td><td>33</td><td>25</td></tr>
               <tr><td>M</td><td>36</td><td>26</td></tr>
               <tr><td>L</td><td>40</td><td>29</td></tr>
@@ -664,7 +698,7 @@
         <p class="muted hidden" id="enrol-observer-note" style="margin:6px 0 0;">Observers: this confirms your study level (undergraduate / postgraduate). The organizers are notified when you upload it and check it before you can pay.</p>
 
         <div id="ifmsa-section">
-          <label>IFMSA / AMSA membership certificate</label>
+          <label id="ifmsa-label">IFMSA / AMSA membership certificate</label>
           <div class="upload-row">
             <input type="file" id="file-ifmsaCert" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
             <button class="btn-secondary btn-small" id="upload-btn-ifmsaCert" onclick="uploadDoc('ifmsaCert')">Upload</button>
@@ -672,7 +706,7 @@
             <span class="upload-status" id="status-ifmsaCert"></span>
           </div>
           <p class="action-hint">After choosing a file, click Upload.</p>
-          <div class="discount-note">Your certificate helps your whole team: after the early-bird period, once one delegate's IFMSA/AMSA certificate is verified, every delegate on the team pays the early-bird price (9,900 THB). A payment sent before that is charged the regular price.</div>
+          <div class="discount-note" id="ifmsa-note">Your certificate helps your whole team: after the early-bird period, once one delegate's IFMSA/AMSA certificate is verified, every delegate on the team pays the early-bird price (9,900 THB). A payment sent before that is charged the regular price.</div>
         </div>
       </div>
 
@@ -688,7 +722,7 @@
               <button type="button" id="pd-btn-intl" onclick="setPayDetails('intl')">International</button>
             </div>
           </div>
-          <table class="pd-table" id="pd-th" lang="th">
+          <table class="pd-table" id="pd-th" lang="th"><!-- filled in from Page content -->
             <tr><th>ธนาคาร</th><td>ธนาคารกสิกรไทย (KBank)</td></tr>
             <tr><th>เลขที่บัญชี</th><td><span class="mono" id="pd-th-account">2301875048</span><button type="button" class="copy-btn" onclick="copyText('2301875048', this)">Copy</button></td></tr>
             <tr><th>ชื่อบัญชี</th><td>สโมสรนักศึกษาคณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น (MDKKU Student Union)</td></tr>
@@ -737,8 +771,8 @@
 
       <div class="btn-row">
         <button class="btn-primary" id="info-save-btn" onclick="savePersonalInfo()">Save info</button>
-        <button class="btn-secondary hidden" id="info-viewTeamBtn" onclick="openTeamStat()">View team</button>
-        <button class="btn-secondary" id="info-viewUniBtn" onclick="openUniStat()">View university</button>
+        <button class="btn-white hidden" id="info-viewTeamBtn" onclick="openTeamStat()">View team</button>
+        <button class="btn-white" id="info-viewUniBtn" onclick="openUniStat()">View university</button>
       </div>
       <p class="action-hint" id="save-hint">Your information saves by itself a few seconds after you stop typing (you can also click Save info). Documents are saved when you click Upload.</p>
       <div class="msg" id="info-msg"></div>
@@ -839,7 +873,7 @@
         <h2 id="trip-title">Trip details</h2>
         <button type="button" class="btn-secondary btn-small" style="width:auto;" onclick="closeTripDetails()">Close</button>
       </div>
-      <p class="muted" style="margin:6px 0 0;text-align:left;">More information about each trip is coming soon.</p>
+      <p class="muted" id="trip-note" style="margin:6px 0 0;text-align:left;">More information about each trip is coming soon.</p>
       <div id="trip-details"></div>
       <button class="btn-primary" type="button" id="trip-close" onclick="closeTripDetails()" style="width:100%;margin-top:6px;">Close</button>
     </div>
@@ -872,7 +906,8 @@
       (ids || []).forEach(function (id) { var b = document.getElementById(id); if (b) b.disabled = false; });
     }
     var currentPersonalInfo = null;
-    var MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB safety cap
+    var MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // the live limit comes from Page content
+    var uploadMax = function () { return Math.round(MAX_UPLOAD_BYTES / 1024 / 1024 * 10) / 10 + ' MB'; };
 
     function showView(id) {
       if (id !== 'view-info' && autosaveTimer) autoSaveNow(); // leaving the form: save what is waiting
@@ -935,6 +970,7 @@
       updatePaymentInvoice: function (a) { return ['PUT', '/api/payments/' + enc(a[1]) + '/invoice', { invoice: a[2] }, a[0]]; },
       saveCombinedInvoice: function (a) { return ['PUT', '/api/me/combined-invoice', { invoice: a[1] }, a[0]]; },
       requestInvoiceEdit: function (a) { return ['POST', '/api/me/invoice-edit-request', a[1], a[0]]; },
+      setInvoiceSeparate: function (a) { return ['PUT', '/api/me/invoice-separate', { separate: !!a[1] }, a[0]]; },
       getUniversityStat: function (a) { return ['GET', '/api/university', null, a[0]]; },
       addAdvisorTeam: function (a) { return ['POST', '/api/teams', { name: a[1] }, a[0]]; },
       renameAdvisorTeam: function (a) { return ['PATCH', '/api/teams/' + enc(a[1]), { newName: a[2] }, a[0]]; },
@@ -1395,7 +1431,7 @@
       }
 
       // The IFMSA/AMSA certificate section is for delegates only.
-      document.getElementById('ifmsa-section').classList.toggle('hidden', pos !== 'delegate');
+      document.getElementById('ifmsa-section').classList.toggle('hidden', pos !== 'delegate' || !certificateOn());
       document.getElementById('level-wrap').classList.toggle('hidden', pos !== 'observer');
       document.getElementById('enrol-observer-note').classList.toggle('hidden', pos !== 'observer');
       document.getElementById('teams-card').classList.add('hidden');
@@ -1426,6 +1462,9 @@
     }
 
     function fillInfoForm(d) {
+      document.getElementById('info-title').value = d.Title || '';
+      document.getElementById('info-titleOther').value = d.TitleOther || '';
+      showTitleOther();
       document.getElementById('info-name').value = d.Name || '';
       document.getElementById('info-middleName').value = d.MiddleName || '';
       document.getElementById('info-surname').value = d.Surname || '';
@@ -1483,7 +1522,7 @@
 
     var UPLOAD_COLUMN_MAP = { passport: 'PassportFileUrl', enrollment: 'ProofOfEnrollmentFileUrl', ifmsaCert: 'IfmsaCertFileUrl' };
     var UPLOAD_CHECK_MAP = { passport: 'Passport check', enrollment: 'Proof of enrolment check', ifmsaCert: 'IFMSA/AMSA certificate check' };
-    var UPLOAD_LABEL_MAP = { passport: 'passport / Thai ID card', enrollment: 'proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
+    var UPLOAD_LABEL_MAP = { passport: 'passport / Thai ID card', enrollment: 'proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' }; // the certificate name follows Page content
 
     // ---------------- REGISTRATION FEE + PAYMENT (2026-10-18) ----------------
     // Everything here comes from getPaymentStatus on the server: the price,
@@ -1568,7 +1607,7 @@
       document.getElementById('fee-note').insertAdjacentElement('afterend', details); // back to its place before redrawing
       payDetailsInOption = paidDone && canPayNew;
       // The IFMSA/AMSA certificate only lowers the price: not needed once paid (2026-11-01).
-      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone);
+      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone || !certificateOn());
       ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone); });
       details.classList.toggle('hidden', paidDone && !canPayNew);
       document.getElementById('fee-line').textContent = 'Final price: ' + thb(s.price);
@@ -1677,7 +1716,7 @@
         det.classList.remove('hidden');
         d.appendChild(det);
       }
-      var slipLabel = el('label', '', 'Payment slip (PDF, JPG or PNG, max 10 MB) — transfer exactly ' + thb(o.total));
+      var slipLabel = el('label', '', 'Payment slip (PDF, JPG or PNG, max ' + uploadMax() + ') — transfer exactly ' + thb(o.total));
       slipLabel.id = 'slip-label-' + idx;
       d.appendChild(slipLabel);
       var slip = el('input');
@@ -1696,7 +1735,12 @@
       var msg = el('div', 'msg'); msg.id = 'pay-msg-' + idx;
       d.appendChild(msg);
       var comb = paymentStatus && paymentStatus.combinedInvoice;
-      if (comb && comb.needed && !comb.confirmed) {
+      if (paymentStatus && paymentStatus.invoiceClosed) {
+        var cz = el('div', 'inv-section');
+        cz.appendChild(el('h4', '', 'Invoice request'));
+        cz.appendChild(el('p', 'muted', 'Invoice requests closed on ' + paymentStatus.invoiceCloseAt + ' (Thailand time), so this payment is sent without an invoice.'));
+        d.appendChild(cz);
+      } else if (comb && comb.needed && !comb.confirmed) {
         var cw = el('div', 'inv-section');
         cw.appendChild(el('h4', '', 'Invoice request'));
         cw.appendChild(el('p', 'muted', 'You asked for one invoice for all your payments, so this payment will be added to it.'));
@@ -1717,8 +1761,13 @@
       var wrap = el('div', 'inv-section');
       wrap.appendChild(el('h4', '', title || 'Invoice request'));
       var box = el('div', 'inv-confirmed');
-      box.appendChild(el('b', '', '✓ Invoice confirmed by the organizers' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + '.'));
-      box.appendChild(document.createTextNode(' It can no longer be changed here — please contact the organizers if something is wrong.'));
+      if (cur.byDeadline) {
+        box.appendChild(el('b', '', '✓ Invoice locked and confirmed' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + ' (the invoice deadline).'));
+        box.appendChild(document.createTextNode(' It can no longer be changed here — use "Request invoice edit" below if something is wrong.'));
+      } else {
+        box.appendChild(el('b', '', '✓ Invoice confirmed by the organizers' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + '.'));
+        box.appendChild(document.createTextNode(' It can no longer be changed here — please contact the organizers if something is wrong.'));
+      }
       var dl = el('dl');
       var onList = (cur.people || []).filter(function (x) { return (cur.names || []).indexOf(x.key) !== -1; })
         .map(function (x) { return x.name + ' (' + cap(x.role) + ')'; }).join(', ');
@@ -1745,7 +1794,7 @@
         if (cur.editRequestNote) box.appendChild(el('p', 'muted', 'Your message: ' + cur.editRequestNote));
         return box;
       }
-      var open = el('button', 'btn-secondary btn-small', 'Request invoice edit'); open.id = 'inv-edit-open-' + key;
+      var open = el('button', 'btn-white btn-small', 'Request invoice edit'); open.id = 'inv-edit-open-' + key;
       var form = el('div', 'hidden');
       var lbl = el('label', '', 'What should change? (optional)'); lbl.setAttribute('for', 'inv-edit-note-' + key);
       var ta = el('textarea'); ta.id = 'inv-edit-note-' + key; ta.rows = 2; ta.maxLength = 500; ta.value = defaultNote || '';
@@ -1769,7 +1818,7 @@
           }
         });
       };
-      box.appendChild(el('p', 'muted', 'Need a change? The organizers can unlock the invoice for you.'));
+      box.appendChild(el('p', 'muted', 'Need a change? Send a request: if the organizers accept it, the invoice is unlocked for you to change.'));
       box.appendChild(open);
       form.appendChild(lbl); form.appendChild(ta); row.appendChild(send); form.appendChild(row);
       box.appendChild(form);
@@ -1784,6 +1833,7 @@
       var wrap = el('div', 'inv-section');
       wrap.appendChild(el('h4', '', opts.title || 'Invoice request'));
       if (hint) wrap.appendChild(el('p', 'muted', hint));
+      if (cur.reopened) wrap.appendChild(el('div', 'held-note', 'The organizers accepted your edit request and unlocked this invoice. Change it and save — they will confirm it again.'));
 
       var invLabel = el('label');
       invLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;';
@@ -1806,7 +1856,7 @@
         inv.appendChild(l);
       });
       var tplWrap = el('div', cur.option === 'Custom' ? '' : 'hidden'); tplWrap.id = 'inv-tpl-wrap-' + prefix;
-      tplWrap.appendChild(el('label', '', 'Your invoice template (PDF, JPG or PNG, max 10 MB)'));
+      tplWrap.appendChild(el('label', '', 'Your invoice template (PDF, JPG or PNG, max ' + uploadMax() + ')'));
       if (cur.hasTemplate) tplWrap.appendChild(el('p', 'muted', 'A template is already uploaded. Choose a new file only to replace it.'));
       var tpl = el('input'); tpl.type = 'file'; tpl.id = 'inv-tpl-' + prefix; tpl.accept = FILE_ACCEPT;
       tplWrap.appendChild(tpl);
@@ -1865,10 +1915,13 @@
       people.forEach(function (p, i) {
         var l = el('label');
         var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-name-' + prefix + '-' + i; cb.setAttribute('data-key', p.key);
-        cb.checked = p.key in before ? before[p.key] : (checkedKeys ? checkedKeys.indexOf(p.key) !== -1 : true);
+        // Observers who paid for themselves are never ticked by default (2026-11-06); greyed when they can't be added.
+        cb.checked = p.eligible === false ? !!(checkedKeys && checkedKeys.indexOf(p.key) !== -1) : (p.key in before ? before[p.key] : (checkedKeys ? checkedKeys.indexOf(p.key) !== -1 : !p.extra));
+        if (p.eligible === false) { cb.disabled = true; l.style.opacity = '0.6'; }
         l.appendChild(cb);
         l.appendChild(document.createTextNode(p.name + ' '));
         l.appendChild(el('span', 'role', '(' + cap(p.role) + ')'));
+        if (p.note) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'inv-extra-note', '— ' + p.note)); }
         box.appendChild(l);
       });
     }
@@ -1974,7 +2027,7 @@
       var tot = document.getElementById('opt-total-' + idx);
       if (tot) tot.textContent = 'Total: ' + thb(o.total + extra);
       var lbl = document.getElementById('slip-label-' + idx);
-      if (lbl) lbl.textContent = 'Payment slip (PDF, JPG or PNG, max 10 MB) — transfer exactly ' + thb(o.total + extra);
+      if (lbl) lbl.textContent = 'Payment slip (PDF, JPG or PNG, max ' + uploadMax() + ') — transfer exactly ' + thb(o.total + extra);
       renderInvoiceNames('o' + idx, optionPeople(o, idx), null);
       var pb = document.getElementById('pay-btn-' + idx);
       if (pb && o.needsObserver && !busyActions['pay-' + idx]) pb.disabled = pickedObservers(idx).length === 0;
@@ -2003,15 +2056,25 @@
         var m = el('div', 'msg'); m.id = 'addslip-msg-' + idx;
         d.appendChild(m);
       }
-      if (p.invoice && p.invoice.combined) {
+      if (p.invoice && p.invoice.heldBy) {
+        var hw = el('div', 'inv-section');
+        hw.appendChild(el('h4', '', 'Invoice request'));
+        hw.appendChild(el('div', 'held-note', p.invoice.heldText));
+        d.appendChild(hw);
+      } else if (p.invoice && p.invoice.combined) {
         var cw = el('div', 'inv-section');
         cw.appendChild(el('h4', '', 'Invoice request'));
         cw.appendChild(el('p', 'muted', 'This payment is part of your combined invoice below.'));
         d.appendChild(cw);
       } else if (p.invoice && p.invoice.confirmed) {
         d.appendChild(buildInvoiceBox('p' + idx, p.invoice, null, { editTarget: { paymentId: p.id }, editKey: 'p' + idx }));
+      } else if (p.invoice && paymentStatus && paymentStatus.invoiceClosed && !p.invoice.reopened) {
+        var zw = el('div', 'inv-section');
+        zw.appendChild(el('h4', '', 'Invoice request'));
+        zw.appendChild(el('p', 'muted', 'Invoice requests closed on ' + paymentStatus.invoiceCloseAt + ' (Thailand time). A new invoice can no longer be requested.'));
+        d.appendChild(zw);
       } else if (p.invoice) {
-        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, 'You can add, change or cancel the invoice request until the organizers confirm it.'));
+        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, p.invoice.reopened ? '' : 'You can add, change or cancel the invoice request until the organizers confirm it.'));
         var srow = el('div', 'btn-row');
         var sb = el('button', 'btn-secondary btn-small', 'Save invoice request'); sb.id = 'inv-save-p' + idx;
         sb.onclick = function () { saveInvoice(p.id, idx, !!p.invoice.hasTemplate); };
@@ -2020,7 +2083,37 @@
         var im = el('div', 'msg'); im.id = 'inv-msg-p' + idx;
         d.appendChild(im);
       }
+      if (p.type === 'Individual' && p.invoice && !p.invoice.heldBy && !p.invoice.confirmed && paymentStatus && paymentStatus.invoiceSeparate && !(paymentStatus.invoiceClosed && !p.invoice.reopened)) d.appendChild(separateInvoiceBox(paymentStatus.invoiceSeparate));
       return d;
+    }
+
+    /**
+     * Observers who paid for themselves (2026-11-06): an advisor from their
+     * university can put them on the advisor's combined invoice, unless this is ticked.
+     */
+    function separateInvoiceBox(sep) {
+      var w = el('div', 'inv-section');
+      var l = el('label');
+      l.style.cssText = 'display:flex;align-items:flex-start;gap:8px;font-weight:400;font-size:14px;';
+      var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-separate'; cb.checked = !!sep.on; cb.style.marginTop = '3px';
+      l.appendChild(cb);
+      l.appendChild(document.createTextNode("Keep my invoice separate — don't let an advisor from my university add me to their combined invoice."));
+      w.appendChild(l);
+      var m = el('div', 'msg'); m.id = 'inv-separate-msg';
+      w.appendChild(m);
+      cb.onchange = function () {
+        if (!beginAction('inv-separate', ['inv-separate'])) { cb.checked = !cb.checked; return; }
+        callServer('setInvoiceSeparate', [sessionToken, cb.checked], {
+          quiet: true, msgElId: 'inv-separate-msg',
+          onFinish: function () { endAction('inv-separate', ['inv-separate']); },
+          onSuccess: function (res) {
+            if (!checkRes(res, 'inv-separate-msg')) return;
+            if (!res.success) { cb.checked = !cb.checked; setMsg('inv-separate-msg', res.message, true); return; }
+            setMsg('inv-separate-msg', res.on ? 'Saved: your invoice stays separate.' : 'Saved: an advisor from your university may add you to their combined invoice.', false);
+          }
+        });
+      };
+      return w;
     }
 
     function startCountdowns() {
@@ -2051,7 +2144,7 @@
       var ext = (file.name.split('.').pop() || '').toLowerCase();
       if (['pdf', 'jpg', 'jpeg', 'png'].indexOf(ext) === -1) return 'The ' + what + ' must be a PDF, JPG or PNG file.';
       if (file.size === 0) return 'The ' + what + ' file is empty.';
-      if (file.size > MAX_UPLOAD_BYTES) return 'The ' + what + ' file is larger than 10 MB.';
+      if (file.size > MAX_UPLOAD_BYTES) return 'The ' + what + ' file is larger than ' + uploadMax() + '.';
       return '';
     }
 
@@ -2407,6 +2500,8 @@
      */
     function collectInfoFields(university) {
       var fields = {
+        Title: document.getElementById('info-title').value,
+        TitleOther: document.getElementById('info-title').value === 'Other' ? document.getElementById('info-titleOther').value.trim() : '',
         Name: document.getElementById('info-name').value.trim(),
         MiddleName: document.getElementById('info-middleName').value.trim(),
         Surname: document.getElementById('info-surname').value.trim(),
@@ -2506,7 +2601,7 @@
       var ext = (file.name.split('.').pop() || '').toLowerCase();
       if (['pdf', 'jpg', 'jpeg', 'png'].indexOf(ext) === -1) { alert('Please choose a PDF, JPG or PNG file.'); return; }
       if (file.size === 0) { alert('That file is empty — please choose another one.'); return; }
-      if (file.size > MAX_UPLOAD_BYTES) { alert('That file is larger than 10 MB — please upload a smaller file.'); return; }
+      if (file.size > MAX_UPLOAD_BYTES) { alert('That file is larger than ' + uploadMax() + ' — please upload a smaller file.'); return; }
 
       var lockIds = ['upload-btn-' + key, 'delete-' + key, 'file-' + key];
       if (!beginAction('upload-' + key, lockIds)) return; // already uploading this document
@@ -2614,12 +2709,11 @@
       var eduRow = (p.highestLevelOfEducation !== undefined)
         ? '<dt>Highest level of education</dt><dd>' + esc(p.highestLevelOfEducation) + '</dd>'
         : '<dt>Educational year</dt><dd>' + esc(p.educationYear) + '</dd>';
-      var contactRow = (p.contactInformation !== undefined)
-        ? '<dt>Contact information</dt><dd>' + esc(p.contactInformation) + '</dd>'
-        : '';
+      // Everyone's telephone and other contact (2026-11-06); the emergency telephone is never sent.
+      var contactRow = '<dt>Telephone</dt><dd>' + (esc(p.phone) || '—') + '</dd><dt>Other contact</dt><dd>' + (esc(p.otherContact || p.contactInformation) || '—') + '</dd>';
       return '<h3>' + title + leaderBadge + '</h3>' +
         '<dl>' +
-        '<dt>Name</dt><dd>' + esc(p.name) + ' ' + esc(p.middleName) + ' ' + esc(p.surname) + (p.nickname ? ' ("' + esc(p.nickname) + '")' : '') + '</dd>' +
+        '<dt>Name</dt><dd>' + (p.title ? esc(p.title) + ' ' : '') + esc(p.name) + ' ' + esc(p.middleName) + ' ' + esc(p.surname) + (p.nickname ? ' ("' + esc(p.nickname) + '")' : '') + '</dd>' +
         eduRow +
         '<dt>University</dt><dd>' + esc(p.university) + '</dd>' +
         '<dt>Country</dt><dd>' + esc(p.country) + '</dd>' +
@@ -2695,11 +2789,15 @@
       if (!isoText || isNaN(d)) return '';
       return d.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+    // An announcement with an end time disappears at that moment, also without a reload (2026-11-06).
+    var shownAnnouncements = [];
+    setInterval(function () { if (shownAnnouncements.some(function (a) { return a.endAt && Date.parse(a.endAt) <= Date.now(); })) renderAnnouncements(shownAnnouncements); }, 30000);
     function renderAnnouncements(list) {
       var box = document.getElementById('announcements');
       box.textContent = '';
-      list.forEach(function (a) {
-        var c = el('div', 'announce');
+      shownAnnouncements = list;
+      list.filter(function (a) { return !a.endAt || Date.parse(a.endAt) > Date.now(); }).forEach(function (a) {
+        var c = el('div', 'announce' + (a.color ? ' c-' + a.color : ''));
         c.appendChild(el('h3', '', '📢 ' + a.title));
         c.appendChild(el('div', 'meta', 'From the organizers · ' + when(a.at)));
         c.appendChild(el('div', 'body', a.body));
@@ -2732,8 +2830,8 @@
           c.appendChild(b);
         });
         // Close / reopen; edit / delete before the organizers reply (2026-11-05)
-        var acts = el('div', 'tactions');
-        var link = function (text, fn, danger) { var x = el('button', 'btn-link', text); x.type = 'button'; if (danger) x.style.color = 'var(--danger)'; x.onclick = fn; return x; };
+        var acts = el('div', 'tactions ticket-actions');
+        var link = function (text, fn, danger) { var x = el('button', 'btn-box' + (danger ? ' red' : ''), text); x.type = 'button'; x.onclick = fn; return x; };
         if (tk.status === 'closed') {
           acts.appendChild(link('Reopen question', function () { changeTicket(tk.id, 'reopen'); }));
           c.appendChild(acts);
@@ -2748,8 +2846,16 @@
         }
         acts.appendChild(link(tk.replied ? 'Close question (I got my answer)' : 'Close question', function () { changeTicket(tk.id, 'close'); }));
         c.appendChild(acts);
+        // One message at a time (2026-11-06): a reply box only after the organizers have answered.
+        if (!tk.canReply) {
+          c.appendChild(el('div', 'ticket-wait', tk.replied ? 'Your reply was sent. Please wait for the organizers to answer before writing more here. For something else, open a new question ticket.'
+            : 'Waiting for the organizers to reply. Meanwhile you can edit or delete your question — or open a new question ticket for something else.'));
+          var mw = el('div', 'msg'); mw.id = 'ticket-reply-msg-' + tk.id; c.appendChild(mw);
+          list.appendChild(c);
+          return;
+        }
         var ta = el('textarea'); ta.rows = 2; ta.maxLength = 2000; ta.setAttribute('data-ticket', tk.id); ta.id = 'ticket-reply-' + tk.id;
-        ta.placeholder = tk.status === 'answered' ? 'Need more help? Reply here — it goes back to the organizers.' : 'Add to your question…';
+        ta.placeholder = 'Need more help? Reply here — it goes back to the organizers.';
         if (typing[tk.id]) ta.value = typing[tk.id];
         var row = el('div', 'btn-row');
         var b2 = el('button', 'btn-secondary btn-small', 'Send reply'); b2.id = 'ticket-reply-btn-' + tk.id;
@@ -2840,7 +2946,7 @@
           res.people.forEach(function (p) {
             var c = el('div', 'card team-panel uni-card');
             c.appendChild(el('div', 'role', p.role));
-            var nm = el('div', 'pname', [p.name, p.middleName, p.surname].filter(Boolean).join(' ') || 'Name not filled in yet');
+            var nm = el('div', 'pname', [p.name, p.middleName, p.surname].filter(Boolean).length ? [p.title, p.name, p.middleName, p.surname].filter(Boolean).join(' ') : 'Name not filled in yet');
             if (p.nickname) nm.appendChild(document.createTextNode(' ("' + p.nickname + '")'));
             if (p.me) nm.appendChild(el('span', 'you', 'You'));
             c.appendChild(nm);
@@ -2852,6 +2958,8 @@
             row('Country', p.country);
             row('Religion', p.religion);
             row('Email', p.email);
+            row('Telephone', p.phone);
+            row('Other contact', p.otherContact);
             c.appendChild(dl);
             grid.appendChild(c);
           });
@@ -2888,7 +2996,7 @@
         TRIP_DETAILS.forEach(function (t, i) {
           var item = el('div', 'trip-item' + (i % 2 ? ' flip' : ''));
           var pic = el('div', 'trip-pic');
-          var img = el('img'); img.src = tripPicture(t.key, t.colors[0], t.colors[1]); img.alt = 'Trip ' + t.key;
+          var img = el('img'); img.src = t.image || tripPicture(t.key, t.colors[0], t.colors[1]); img.alt = 'Trip ' + (t.label || t.key);
           pic.appendChild(img);
           var txt = el('div', 'trip-text');
           txt.appendChild(el('p', 'kicker', t.kicker));
@@ -2910,6 +3018,149 @@
       document.getElementById('tos-close').focus();
     }
     function closeTos() { document.getElementById('tos-overlay').classList.add('hidden'); }
+    /**
+     * Page content (2026-11-06): the prices, the payment details, the terms
+     * of service, the trips and the lists on the form are set by the
+     * organizers, so the page draws them instead of having them written in.
+     * Until /api/config answers, what is in the HTML is shown.
+     */
+    var siteContent = null;
+    function applySiteContent(c) {
+      siteContent = c;
+      if (c.event && c.event.title) { document.title = c.event.title; var br = document.querySelector('.topbar .brand'); if (br) br.textContent = c.event.title; }
+      if (c.uploadMaxMb) MAX_UPLOAD_BYTES = Math.round(c.uploadMaxMb * 1024 * 1024);
+      fillBankTable('pd-th', (c.bank && c.bank.thaiRows) || []);
+      fillBankTable('pd-intl', (c.bank && c.bank.intlRows) || []);
+      fillTos('tos-list-en', (c.tos && c.tos.en) || []);
+      fillTos('tos-list-th', (c.tos && c.tos.th) || []);
+      var pd = document.getElementById('reg-pdpa-text');
+      if (pd && c.pdpa) pd.textContent = c.pdpa;
+      fillChoices('info-title', (c.lists && c.lists.titles) || [], 'Choose…');
+      fillChoices('emergency-relation', (c.lists && c.lists.emergencyRelations) || [], 'Choose…');
+      fillFoodPrefs((c.lists && c.lists.foodPreferences) || []);
+      fillShirt((c.lists && c.lists.shirtRows) || []);
+      applyCertificate(c.certificate || {});
+      applyTrips(c.trips || {});
+      if (c.event && c.event.title) {
+        var lbl = document.getElementById('tos-open-label');
+        if (lbl) lbl.textContent = c.event.title;
+      }
+      // Whatever is already on the screen keeps its saved values.
+      if (currentPersonalInfo) fillInfoForm(currentPersonalInfo);
+      updateRequiredNotice();
+    }
+    function fillBankTable(id, rows) {
+      var t = document.getElementById(id);
+      if (!t || !rows.length) return;
+      t.textContent = '';
+      rows.forEach(function (r) {
+        var tr = el('tr');
+        tr.appendChild(el('th', '', r[0]));
+        var td = el('td');
+        var how = String(r[2] || '').toLowerCase();
+        if (how === 'copy' || how === 'mono') {
+          var sp = el('span', 'mono', r[1]);
+          td.appendChild(sp);
+          if (how === 'copy') {
+            var b = el('button', 'copy-btn', 'Copy'); b.type = 'button';
+            b.onclick = (function (text, btn) { return function () { copyText(text, btn); }; })(r[1], b);
+            td.appendChild(b);
+          }
+        } else td.textContent = r[1];
+        tr.appendChild(td);
+        t.appendChild(tr);
+      });
+    }
+    function fillTos(id, items) {
+      var ol = document.getElementById(id);
+      if (!ol || !items.length) return;
+      ol.textContent = '';
+      items.forEach(function (it) {
+        var li = el('li');
+        li.appendChild(el('b', '', it[0]));
+        li.appendChild(document.createTextNode(it[1]));
+        ol.appendChild(li);
+      });
+    }
+    function fillChoices(id, list, placeholder) {
+      var sel = document.getElementById(id);
+      if (!sel || !list.length) return;
+      var had = sel.value;
+      sel.textContent = '';
+      var o0 = el('option', '', placeholder); o0.value = ''; sel.appendChild(o0);
+      list.forEach(function (x) { var o = el('option', '', x); o.value = x; sel.appendChild(o); });
+      if (had && list.indexOf(had) !== -1) sel.value = had;
+    }
+    function fillFoodPrefs(list) {
+      var box = document.getElementById('info-foodPref-group');
+      if (!box || !list.length) return;
+      var on = getCheckedFoodPrefs();
+      box.textContent = '';
+      list.forEach(function (x) {
+        var l = el('label');
+        l.style.cssText = 'display:flex; align-items:center; gap:6px; font-weight:400; font-size:14px; margin:0;';
+        var cb = el('input'); cb.type = 'checkbox'; cb.className = 'food-pref-cb'; cb.value = x;
+        cb.checked = on.indexOf(x) !== -1;
+        cb.onchange = onFoodPrefChange;
+        l.appendChild(cb); l.appendChild(document.createTextNode(' ' + x));
+        box.appendChild(l);
+      });
+    }
+    function fillShirt(rows) {
+      if (!rows.length) return;
+      var sel = document.getElementById('info-shirtSize');
+      if (sel) {
+        var had = sel.value;
+        sel.textContent = '';
+        var o0 = el('option', '', 'Select your size…'); o0.value = ''; sel.appendChild(o0);
+        rows.forEach(function (r) { var o = el('option', '', r[0]); o.value = r[0]; sel.appendChild(o); });
+        if (had && rows.some(function (r) { return r[0] === had; })) sel.value = had;
+      }
+      var tb = document.getElementById('size-chart-rows');
+      if (tb) {
+        tb.textContent = '';
+        rows.forEach(function (r) {
+          var tr = el('tr');
+          [r[0], r[1], r[2]].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
+          tb.appendChild(tr);
+        });
+      }
+    }
+    function certificateOn() { return !siteContent || !siteContent.certificate || siteContent.certificate.on !== false; }
+    function applyCertificate(cert) {
+      var box = document.getElementById('ifmsa-section');
+      if (!box) return;
+      box.classList.toggle('hidden', cert.on === false || !currentUser || currentUser.position !== 'delegate');
+      var lbl = document.getElementById('ifmsa-label');
+      if (lbl && cert.name) lbl.textContent = cert.name;
+      var note = document.getElementById('ifmsa-note');
+      if (note && cert.note) note.textContent = cert.note;
+      if (cert.name) {
+        UPLOAD_LABEL_MAP.ifmsaCert = cert.name;
+        UPLOAD_CHECK_MAP.ifmsaCert = 'IFMSA/AMSA certificate check'; // the organizer Sheet column name does not change
+      }
+    }
+    function applyTrips(trips) {
+      TRIP_DETAILS.forEach(function (t) {
+        var x = trips[t.key];
+        if (!x) return;
+        if (x.kicker) t.kicker = x.kicker;
+        if (x.text) t.text = x.text;
+        t.image = x.image || '';
+        t.label = x.name || ('Option ' + t.key);
+        var btn = document.getElementById('trip-btn-' + t.key);
+        if (btn) {
+          var seats = document.getElementById('trip-seats-' + t.key);
+          btn.textContent = t.label;
+          if (seats) btn.appendChild(seats);
+        }
+      });
+      var note = document.getElementById('trip-note');
+      if (note && trips.note) note.textContent = trips.note;
+      var box = document.getElementById('trip-details');
+      if (box) box.textContent = ''; // drawn again with the new texts
+    }
+
     function setTosLang(lang) {
       var th = lang === 'th';
       document.getElementById('tos-list-en').classList.toggle('hidden', th);
@@ -3035,6 +3286,8 @@
       var box = document.getElementById('info-required');
       if (!box || !currentUser) return;
       var missing = [];
+      var tl = document.getElementById('info-title').value;
+      if (!tl || (tl === 'Other' && !document.getElementById('info-titleOther').value.trim())) missing.push('your title (Mr., Ms., …)');
       if (!readPhone('phone')) missing.push('your telephone number');
       if (!readPhone('emergency')) missing.push('an emergency contact telephone');
       else if (!document.getElementById('emergency-relation').value) missing.push('who the emergency number belongs to');
@@ -3050,6 +3303,11 @@
         updateRequiredNotice();
       });
       document.getElementById('emergency-relation').addEventListener('change', function () { showRelationOther(); updateRequiredNotice(); });
+      document.getElementById('info-title').addEventListener('change', function () { showTitleOther(); updateRequiredNotice(); });
+      document.getElementById('info-titleOther').addEventListener('input', updateRequiredNotice);
+    }
+    function showTitleOther() {
+      document.getElementById('info-titleOther').classList.toggle('hidden', document.getElementById('info-title').value !== 'Other');
     }
     function showRelationOther() {
       var other = document.getElementById('emergency-relation').value === 'Other';
@@ -3066,13 +3324,21 @@
       if (!c || !c.available) return;
       var card = el('div', 'combined-card');
       card.appendChild(el('h3', '', 'One invoice for all your payments'));
-      var list = (c.payments || []).map(function (x) { return x.id + ' (' + thb(x.total) + ')'; }).join(', ');
+      var list = (c.payments || []).map(function (x) { return x.id + (x.of ? ' — ' + x.of + ', paid individually' : '') + ' (' + thb(x.total) + ')'; }).join(', ');
       card.appendChild(el('p', 'muted', (c.confirmed ? 'Covers ' : 'Would cover ') + list + ' — total ' + thb(c.total) + '.' +
         (c.confirmed ? '' : ' Payments you submit later are added automatically. Your separate invoice requests are switched off while this is on.')));
       if (c.confirmed) {
         card.appendChild(confirmedInvoiceBox(c, 'Combined invoice', { editTarget: { combined: true }, editKey: 'c' }));
         box.appendChild(card);
         return;
+      }
+      if (s.invoiceClosed && !c.reopened) {
+        card.appendChild(el('p', 'muted', 'Invoice requests closed on ' + s.invoiceCloseAt + ' (Thailand time), so a combined invoice can no longer be requested.'));
+        box.appendChild(card);
+        return;
+      }
+      if ((c.people || []).some(function (x) { return x.extra; })) {
+        card.appendChild(el('p', 'muted', 'Observers from your university who paid for themselves are listed with "Paid individually" and are not ticked. Tick them to add their payment to this invoice; their own invoice request is then switched off.'));
       }
       if (c.blockedBy && c.blockedBy.length) {
         card.appendChild(el('p', 'muted', 'Not available yet: the invoice for payment ' + c.blockedBy.join(', ') + ' is already confirmed by the organizers. ' +
@@ -3510,6 +3776,7 @@
         onSuccess: function (res) {
           var el = document.getElementById('reg-closed-banner');
           if (!res || !res.success) return;
+          if (res.content) applySiteContent(res.content);
           var text = '';
           if (res.registrationClosed) text = 'Registration closed on ' + res.closesAt + ' (Thailand time). If you already have an account you can still log in.';
           else if (!res.registrationOpen) text = 'Registration opens on ' + res.opensAt + ' (Thailand time). If you already have an account you can still log in.';

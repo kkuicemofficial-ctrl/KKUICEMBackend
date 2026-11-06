@@ -246,6 +246,40 @@
     .q-item { grid-template-columns: 220px minmax(0, 1fr); }
     .q-item textarea, .ann-form textarea { width: 100%; margin-top: 8px; font-family: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
     @media (max-width: 760px) { .q-item { grid-template-columns: 1fr; } }
+    /* 2026-11-06 (v6.5): Page content */
+    .content-sec { margin-bottom: 18px; }
+    .content-sec > h2 { margin: 0 0 2px; font-size: 17px; }
+    .content-sec > .sub { margin: 0 0 10px; }
+    .cfield { padding: 10px 0; border-top: 1px solid var(--border); display: grid; grid-template-columns: 240px 1fr 110px; gap: 14px; align-items: start; }
+    .cfield:first-of-type { border-top: 0; }
+    .cfield .clabel { font-weight: 600; font-size: 13.5px; padding-top: 7px; }
+    .cfield .chelp { font-weight: 400; color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .cfield textarea { width: 100%; font-family: inherit; font-size: 13.5px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+    .cfield textarea.rows { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
+    .cfield .ccheck { font-size: 12px; padding-top: 9px; }
+    @media (max-width: 900px) { .cfield { grid-template-columns: 1fr; } .cfield .ccheck { padding-top: 0; } }
+    .cpreview { margin-top: 8px; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; background: var(--sand, #fbf7f0); }
+    .cpreview .pv-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
+    .cpreview table { border-collapse: collapse; }
+    .cpreview th { text-align: left; padding: 2px 14px 2px 0; font-weight: 600; font-size: 13px; white-space: nowrap; vertical-align: top; }
+    .cpreview td { padding: 2px 0; font-size: 13px; }
+    .cpreview ol { margin: 0; padding-left: 18px; font-size: 13px; }
+    .cpreview ol li { margin-bottom: 4px; }
+    .cpreview ol b { display: block; }
+    /* 2026-11-06 (v6.4) */
+    .btn-box { background: #fff; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+    .btn-box:hover { background: var(--sand, #f4efe6); }
+    .btn-box.red { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .btn-box.red:hover { filter: brightness(0.92); background: var(--danger); }
+    .who-bar .btn-box { font-size: 12.5px; }
+    .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .swatch { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px 4px 5px; font-size: 12.5px; cursor: pointer; background: #fff; }
+    .swatch i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.12); }
+    .swatch input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .swatch.on { border-color: var(--text); box-shadow: 0 0 0 1px var(--text) inset; }
+    .ann-page-opts { margin: 8px 0 0 24px; padding: 10px 12px; border-left: 3px solid var(--border); }
+    .ann-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: 0; border: 1px solid rgba(0,0,0,0.15); }
+    .danger-zone { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
   </style>
 </head>
 <body>
@@ -254,9 +288,9 @@
       <div class="brand" id="brand" role="link" tabindex="0">ICEMKKU <small>Organizer</small></div>
       <div class="who-bar hidden" id="who-bar">
         <span><b id="who-name"></b> · <span id="who-account"></span></span>
-        <button class="btn-link" id="who-change">Not you?</button>
-        <button class="btn-link" id="pw-open">Change password</button>
-        <button class="btn-link" id="logout">Log out</button>
+        <button class="btn-box" id="who-change">Not you?</button>
+        <button class="btn-box" id="pw-open">Change password</button>
+        <button class="btn-box red" id="logout">Log out</button>
       </div>
     </div>
     <div class="brand-stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
@@ -374,6 +408,15 @@
           <span class="muted small" id="ann-count" style="padding-bottom:9px;"></span>
         </div>
         <label class="chk" for="ann-page"><input type="checkbox" id="ann-page" checked> Show on their registration page</label>
+        <div class="ann-page-opts" id="ann-page-opts">
+          <span class="f" style="display:block;font-weight:600;font-size:13px;">Banner colour (event theme)</span>
+          <div class="swatches" id="ann-colors"></div>
+          <div class="row" style="gap:10px;align-items:center;margin-top:10px;">
+            <label class="f" for="ann-end" style="margin:0;">Stop showing on (optional)</label>
+            <input type="datetime-local" id="ann-end" style="width:auto;">
+            <span class="muted small">Thailand time. Blank = until you click "Stop showing".</span>
+          </div>
+        </div>
         <label class="chk" for="ann-email"><input type="checkbox" id="ann-email" checked> Send by email</label>
         <div class="row" style="gap:14px;align-items:center;margin-top:8px;">
           <label class="chk" for="ann-when-now" style="margin-top:0;"><input type="radio" name="ann-when" id="ann-when-now" checked> Send now</label>
@@ -388,11 +431,11 @@
       <div class="table-wrap"><table><thead><tr><th>When</th><th>Title and message</th><th>To</th><th>Email</th><th>On their page</th><th></th></tr></thead><tbody id="ann-rows"></tbody></table></div>
     </div>
 
-    <!-- QUESTIONS (2026-11-04): master accounts -->
+    <!-- QUESTIONS (2026-11-04): every organizer account sees them; full and master accounts answer (2026-11-06) -->
     <div class="view" id="v-questions">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <div class="section-head">
-        <div><h1>Questions from registrants</h1><p class="sub" style="margin:0;">Non-urgent questions. Your answer appears on their registration page and they get an email saying it was answered. Answered questions move to History; a reply from the registrant brings it back.</p></div>
+        <div><h1>Questions from registrants</h1><p class="sub" style="margin:0;">Non-urgent questions. Your answer appears on their registration page and they get an email saying it was answered. Answered questions move to History; a reply from the registrant brings it back. Registrants write one message at a time, so a question always waits for your answer.</p></div>
       </div>
       <div class="chips" id="q-chips"></div>
       <div class="items" id="q-list"></div>
@@ -531,11 +574,24 @@
       <div id="exp-preview"></div>
     </div>
 
+    <!-- PAGE CONTENT (2026-11-06): master accounts only -->
+    <div class="view" id="v-content">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <h1>Page content</h1>
+      <p class="sub">What the registration page and the emails say: prices, payment details, terms of service, trips, the choices on the form, the Google Drive folders and a few limits. Master accounts only; these are not in the organizer Sheet.</p>
+      <div id="content-sections"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn-primary" id="content-save">Save</button>
+        <button class="btn-secondary" data-go="home">Back to the menu</button>
+      </div>
+      <div class="msg" id="content-msg"></div>
+    </div>
+
     <!-- PARAMETERS -->
     <div class="view" id="v-params">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <h1>Parameters setting</h1>
-      <p class="sub">Times are Thailand time. Changes also appear in the Settings tab of the organizer Sheet.</p>
+      <p class="sub">Times are Thailand time. Changes also appear in the Settings tab of the organizer Sheet. Prices, payment details, the terms of service, the trips and the switches are on the <b>Page content</b> screen.</p>
       <div class="table-wrap params"><table><thead><tr><th>Key</th><th>Value</th><th>Notes</th><th>Server check</th></tr></thead><tbody id="param-rows"></tbody></table></div>
       <div class="row" style="margin-top:14px;">
         <button class="btn-primary" id="params-save">Save</button>
@@ -571,7 +627,10 @@
     var POLL_MS = 30 * 1000;
     var LEAVE_MS = 3000; // a verified notification stays 3 s before moving to History
     var SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-    var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
+var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enrolment', ifmsaCert: 'IFMSA/AMSA certificate' };
+    /** The certificate name as the organizers set it (Page content). */
+    function docLabel(key) { return key === 'ifmsaCert' && D && D.certificate && D.certificate.name ? D.certificate.name : (DOC_LABEL)[key]; }
+    function certificateOn() { return !D || !D.certificate || D.certificate.on !== false; }
     var CHECK_LABEL = { verified: 'Verified', notVerified: 'Not verified' };
     var PAY_LABEL = { pending: 'Pending', verified: 'Verified', notVerified: 'Not verified', cancelled: 'Cancelled' };
     var TYPE_LABEL = { team: 'Team payment', university: 'University payment', individual: 'Individual payment' };
@@ -625,7 +684,24 @@
     }
     function setMsg(id, text, isErr) { var m = $(id); m.textContent = text || ''; m.className = 'msg' + (text ? (isErr ? ' error' : ' success') : ''); }
     function canEdit() { return !!D && (D.me.role === 'full' || D.me.role === 'master'); }
-    function isMaster() { return !!D && D.me.role === 'master'; } // ICEMmasteraccount: may edit registrants' information
+    function isMaster() { return !!D && D.me.role === 'master'; } // master accounts: may edit (and delete) registrants
+    // Announcement banner colours = the event theme (Ramayana ICEM PANTONE page), 2026-11-06.
+    var ANN_COLORS = [['', 'Default', '#eef4fa', '#225589'], ['blue', 'Sky blue', '#e8f1f5', '#7FACBF'], ['navy', 'Navy', '#e7eef6', '#215386'], ['green', 'Sage green', '#eef5ec', '#9FBD97'],
+      ['red', 'Rose red', '#fbeeee', '#D07272'], ['yellow', 'Gold', '#fdf6e6', '#E6B865'], ['brown', 'Brown', '#f2efea', '#605743']];
+    function annColor(key) { return ANN_COLORS.filter(function (c) { return c[0] === (key || ''); })[0] || ANN_COLORS[0]; }
+    /** Round colour buttons; returns { el, value() }. */
+    function colorPicker(name, current) {
+      var wrap = h('div', { cls: 'swatches' });
+      var pick = current || '';
+      ANN_COLORS.forEach(function (c) {
+        var r = h('input', { type: 'radio', name: name, value: c[0], id: name + '-' + (c[0] || 'default') });
+        r.checked = c[0] === pick;
+        var lab = h('label', { cls: 'swatch' + (r.checked ? ' on' : ''), for: r.id, title: c[1] }, r, h('i', { style: 'background:' + c[3] + ';' }), c[1]);
+        r.addEventListener('change', function () { pick = c[0]; Array.prototype.forEach.call(wrap.querySelectorAll('.swatch'), function (x) { x.classList.toggle('on', x === lab); }); });
+        add(wrap, lab);
+      });
+      return { el: wrap, value: function () { return pick; } };
+    }
     var myDivision = '';     // division accounts: fixed in "Who's in?" (2026-11-01)
     function pill(text, kind) { return h('span', { cls: 'pill ' + kind, text: text }); }
     function checkPill(check) { return check === 'verified' ? pill('Verified', 'ok') : check === 'notVerified' ? pill('Not verified', 'bad') : pill('Not checked yet', 'wait'); }
@@ -703,7 +779,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden && token && D) loadData(true); });
 
     // ---------------- views ----------------
-    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'accounts', 'announce', 'questions', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
+    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'accounts', 'content', 'announce', 'questions', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
     function showView(name) {
       VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('active', v === name); });
       window.scrollTo(0, 0);
@@ -727,7 +803,7 @@
     window.addEventListener('hashchange', route);
     function renderCurrent() {
       if (!D) return;
-      var r = { home: renderHome, accounts: renderAccounts, announce: renderAnnounce, questions: renderQuestions, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams }[current];
+      var r = { home: renderHome, accounts: renderAccounts, announce: renderAnnounce, questions: renderQuestions, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams, content: renderContent }[current];
       if (r) r();
     }
 
@@ -838,7 +914,7 @@
     function docControl(p, key) {
       var d = p.docs[key];
       var box = h('div', { cls: 'doc' });
-      var head = h('div', { cls: 'dh' }, h('b', { text: DOC_LABEL[key] }));
+      var head = h('div', { cls: 'dh' }, h('b', { text: docLabel(key) }));
       if (!d.url) { add(head, pill('No file', 'none')); add(box, head); return box; }
       add(head, [checkPill(d.check), h('a', { href: d.url, target: '_blank', rel: 'noopener', text: 'Open file ↗' })]);
       add(box, head);
@@ -890,8 +966,9 @@
       if (p.missing && p.missing.length) row('Missing (required)', p.missing.join(', '), true);
       if (p.editedByOrganizer) row('Edited by organizer', p.editedByOrganizer + (p.editedByOrganizerAt ? ', ' + when(p.editedByOrganizerAt) : ''));
       var docs = h('div', { cls: 'docs' });
-      ['passport', 'enrollment', 'ifmsaCert'].forEach(function (k) { if (k !== 'ifmsaCert' || p.position === 'delegate') add(docs, docControl(p, k)); });
+      ['passport', 'enrollment', 'ifmsaCert'].forEach(function (k) { if (k !== 'ifmsaCert' || (p.position === 'delegate' && certificateOn())) add(docs, docControl(p, k)); });
       var edit = isMaster() ? h('button', { cls: 'btn-secondary btn-small edit-btn', text: 'Edit info', onclick: function () { openEditPerson(p.email); } }) : null;
+      if (p.titleText) kv.insertBefore(h('dd', { text: p.titleText }), kv.firstChild), kv.insertBefore(h('dt', { text: 'Title' }), kv.firstChild);
       return h('div', { cls: 'panel' }, edit, roleText ? h('div', { cls: 'role', text: roleText }) : null, h('div', { cls: 'pname', text: nameOf(p) }), kv, docs);
     }
     function openPerson(email) {
@@ -905,7 +982,32 @@
             return h('button', { cls: 'btn-secondary btn-small', text: 'Open team ' + t, onclick: function () { go('team', t); } });
           })));
         }
+        if (isMaster()) add(body, h('div', { cls: 'danger-zone' }, h('button', { cls: 'btn-danger btn-small', id: 'person-delete', text: 'Delete this account', onclick: function () { deletePerson(p); } }),
+          h('span', { cls: 'muted small', style: 'margin-left:10px;', text: 'Master accounts only. Not possible while they are in a payment that is not Cancelled.' })));
       });
+    }
+
+    /** Deletes ONE registrant account after a confirmation (master accounts, 2026-11-06). */
+    function deletePerson(p) {
+      if (p.paymentId && p.paymentStatus !== 'cancelled') {
+        toast(nameOf(p) + ' is in payment ' + p.paymentId + '. Set that payment to Cancelled first, then delete the account.', true);
+        return;
+      }
+      var input = h('input', { type: 'text', id: 'delete-person-email', autocomplete: 'off', placeholder: p.email });
+      input.addEventListener('input', function () { $('confirm-yes').disabled = input.value.trim().toLowerCase() !== p.email.toLowerCase(); });
+      confirmBox('Delete the account of ' + nameOf(p) + '?', [
+        h('p', { text: p.email + ' — ' + positionText(p) + (teamsOfPerson(p).length ? ', team ' + teamsOfPerson(p).join(' and ') : '') + '.' }),
+        h('p', { text: 'Their registration, personal information and question tickets are deleted, and their uploaded documents go to the Drive trash. This cannot be undone from the site.' +
+          (p.roleInTeam === 'leader' ? ' They are the team leader: the delegate who joined the team first becomes leader.' : '') }),
+        h('label', { cls: 'f', for: 'delete-person-email', text: 'Type their email address to confirm' }), input
+      ], 'Delete account', function () {
+        api('POST', '/api/admin/registrants/delete', { email: p.email, confirm: input.value.trim() }).then(function (res) {
+          if (!res.success) { toast(res.message, true); return; }
+          toast('Deleted: ' + res.name + (res.note ? ' — ' + res.note : '') + '.');
+          closeModal(); loadData(true);
+        }, function (err) { toast(err.message, true); });
+      }, true);
+      setTimeout(function () { input.focus(); }, 50);
     }
 
     // ---------------- "none" detection for the high alert list ----------------
@@ -981,16 +1083,16 @@
           h('div', null, h('b', { text: 'Invoice edit requested' }), ' ', pill('Waiting', 'wait'), ' ', h('b', { text: thb(r.total) })),
           h('div', { cls: 'small', text: (r.kind === 'combined' ? 'Combined invoice for ' : 'Invoice for ') + r.ids.join(', ') + ' · confirmed by ' + (r.confirmedBy || 'an organizer') + ', ' + when(r.confirmedAt) }),
           r.editRequestNote ? h('div', { cls: 'small', style: 'margin-top:4px;' }, h('span', { cls: 'muted', text: 'Their message: ' }), r.editRequestNote) : h('div', { cls: 'small muted', text: 'No message.' }),
-          h('div', { cls: 'small muted', text: 'Undo confirm unlocks the invoice so they can change it (or combine their payments). Dismiss keeps it as it is.' })));
+          h('div', { cls: 'small muted', text: 'Accept unlocks the invoice so they can change it (or combine their payments)' + (D.invoiceClosed ? ' — also after the InvoiceEditDeadline; confirm it again once they have changed it' : '') + '. Decline keeps it as it is.' })));
         if (canEdit()) {
           add(actions, [
-            h('button', { cls: 'btn-primary btn-small', text: 'Undo confirm (unlock)', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, false); } }),
-            h('button', { cls: 'btn-secondary btn-small', text: 'Dismiss', onclick: function (e) {
+            h('button', { cls: 'btn-primary btn-small', text: 'Accept (unlock)', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, false); } }),
+            h('button', { cls: 'btn-secondary btn-small', text: 'Decline', onclick: function (e) {
               e.target.disabled = true;
               var body = r.kind === 'payment' ? { paymentId: r.ids[0] } : { email: r.payerEmail };
               api('POST', '/api/admin/invoices/dismiss-edit-request', body).then(function (res) {
                 if (!res.success) { toast(res.message, true); e.target.disabled = false; return; }
-                toast('Request dismissed — the invoice stays confirmed.'); loadData(true);
+                toast('Request declined — the invoice stays confirmed.'); loadData(true);
               }, function (err) { toast(err.message, true); e.target.disabled = false; });
             } })
           ]);
@@ -1000,7 +1102,7 @@
         var p = it.p, d = it.d;
         add(el, personBlock(p));
         add(el, h('div', null,
-          h('div', null, h('b', { text: DOC_LABEL[it.key] }), ' ', checkPill(d.check)),
+          h('div', null, h('b', { text: docLabel(it.key) }), ' ', checkPill(d.check)),
           h('div', null, h('a', { href: d.url, target: '_blank', rel: 'noopener', text: 'Open file in Google Drive ↗' })),
           p.position === 'observer' ? h('div', { cls: 'small muted', text: 'Study level chosen: ' + (p.observerLevel || 'not chosen') }) : null));
         if (canEdit()) {
@@ -1030,7 +1132,7 @@
           add(actions, [
             h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: pay.status === 'verified' || !!done, onclick: function (e) { e.target.disabled = true; setPayment(pay, 'verified', function () { markDone('✓ Verified by ' + D.me.who, !inHistory); renderNotifs(); }); } }),
             h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: pay.status === 'notVerified' || !!done, onclick: function (e) { e.target.disabled = true; setPayment(pay, 'notVerified', function () { renderNotifs(); if (inHistory) openHistory(); }); } }),
-            h('button', { cls: 'btn-link small', text: pay.status === 'cancelled' ? 'Restore payment' : 'Cancel payment', disabled: !!done, onclick: function () {
+            h('button', { cls: pay.status === 'cancelled' ? 'btn-link small' : 'btn-box red', text: pay.status === 'cancelled' ? 'Restore payment' : 'Cancel payment', disabled: !!done, onclick: function () {
               if (pay.status === 'cancelled') { setPayment(pay, 'pending', function () { renderNotifs(); if (inHistory) openHistory(); }); return; }
               confirmBox('Cancel payment ' + pay.id + '?', h('p', { text: 'Everyone in this payment is released and can pay again (for example after a team change). The slip stays in Drive. You can restore it later from History.' }),
                 'Cancel payment', function () { setPayment(pay, 'cancelled', function () { renderNotifs(); if (inHistory) openHistory(); }); });
@@ -1095,6 +1197,7 @@
         tile('Announcements', annSummary(), 'announce'),
         tile('All status export', 'Choose the columns and who to include', 'export'),
         tile('Parameters', lockText, 'params'),
+        isMaster() ? tile('Page content', 'Prices, payment details, terms of service, trips, form choices, Drive folders', 'content') : null,
         D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null
       ]);
       show('cleanup-banner', !!D.locks.cleanupAt);
@@ -1196,7 +1299,7 @@
     function showCleanupPw() { var w = $('cleanup-pw-wrap'); if (w) w.classList.remove('hidden'); }
 
     // ---------------- announcements (2026-11-04; edit and schedule 2026-11-05) ----------------
-    var annBuilt = false;
+    var annBuilt = false, annPicker = null;
     function annSummary() {
       var l = D.announcements || [];
       var sch = l.filter(function (a) { return a.status === 'scheduled'; }).length;
@@ -1222,6 +1325,9 @@
         $('ann-aud').addEventListener('change', updateAnnCount);
         $('ann-team').addEventListener('change', updateAnnCount);
         $('ann-send').addEventListener('click', sendAnnouncement);
+        annPicker = colorPicker('ann-color', '');
+        add($('ann-colors'), annPicker.el);
+        $('ann-page').addEventListener('change', function () { show('ann-page-opts', $('ann-page').checked); });
         ['ann-when-now', 'ann-when-later'].forEach(function (id) { $(id).addEventListener('change', function () {
           $('ann-at').disabled = !$('ann-when-later').checked;
           $('ann-send').textContent = $('ann-when-later').checked ? 'Schedule announcement' : 'Send announcement';
@@ -1242,34 +1348,50 @@
           api('POST', path, body).then(function (res) { if (!res.success) toast(res.message, true); else if (done) toast(done); loadData(true); }, function (err) { toast(err.message, true); });
         }; };
         var scheduled = a.status === 'scheduled';
+        var showing = !scheduled && a.page && !a.hidden && !a.ended;
         if (canEdit()) {
           add(acts, h('button', { cls: 'btn-secondary btn-small', text: 'Edit', onclick: function () { openEditAnnouncement(a); } }));
           if (scheduled) {
-            add(acts, h('button', { cls: 'btn-link small', text: 'Send now', onclick: post('/api/admin/announcements/send-now', { id: a.id }, 'Sent.') }));
+            add(acts, h('button', { cls: 'btn-box', text: 'Send now', onclick: function (e) {
+              var how = [a.page ? 'shown on their registration page' : '', a.email ? 'emailed' : ''].filter(Boolean).join(' and ');
+              confirmBox('Send it now?', h('p', { text: '"' + a.title + '" will be ' + how + ' to "' + a.audienceLabel + '" right now, instead of on ' + when(a.sendAt) + '.' + (a.email ? ' Emails cannot be taken back.' : '') }), 'Send now', function () {
+                post('/api/admin/announcements/send-now', { id: a.id }, 'Sent.')(e);
+              });
+            } }));
             add(acts, h('button', { cls: 'btn-link small', style: 'color:var(--danger);', text: 'Cancel', onclick: function () {
               confirmBox('Cancel this scheduled announcement?', h('p', { text: '"' + a.title + '" will not be sent.' }), 'Cancel it', function () {
                 api('POST', '/api/admin/announcements/edit', { id: a.id, cancel: true }).then(function (res) { toast(res.success ? 'Cancelled.' : res.message, !res.success); loadData(true); });
               });
             } }));
-          } else if (a.page) add(acts, h('button', { cls: 'btn-link small', text: a.hidden ? 'Show again' : 'Stop showing', onclick: post('/api/admin/announcements/hide', { id: a.id, hidden: !a.hidden }) }));
+          } else if (a.page && !a.ended) add(acts, h('button', { cls: 'btn-box' + (a.hidden ? '' : ' red'), text: a.hidden ? 'Show again' : 'Stop showing', onclick: post('/api/admin/announcements/hide', { id: a.id, hidden: !a.hidden }) }));
+          // Delete: only when not in use (not showing on anyone's page any more)
+          if (!scheduled && !showing) add(acts, h('button', { cls: 'btn-link small', style: 'color:var(--danger);', text: 'Delete', onclick: function () {
+            confirmBox('Delete this announcement?', h('p', { text: '"' + a.title + '" is removed from this list' + (a.page ? ' and can no longer be shown again' : '') + '. Emails already sent are not affected.' }), 'Delete', function () {
+              api('POST', '/api/admin/announcements/delete', { id: a.id }).then(function (res) { toast(res.success ? 'Deleted.' : res.message, !res.success); loadData(true); }, function (err) { toast(err.message, true); });
+            });
+          } }));
         }
+        var col = annColor(a.color);
         add(tb, h('tr', null,
           h('td', { cls: 'small' }, scheduled ? pill('Scheduled', 'wait') : null, scheduled ? h('div', { text: 'for ' + when(a.sendAt) }) : h('div', { text: when(a.sentAt) }),
             h('div', { cls: 'muted', text: a.createdBy || '' }), a.editedAt ? h('div', { cls: 'muted', text: 'edited ' + when(a.editedAt) + (a.editedBy ? ' by ' + a.editedBy : '') }) : null),
           h('td', null, h('b', { text: a.title }), h('div', { cls: 'ann-body', text: a.body })),
           h('td', { cls: 'small', text: a.audienceLabel + (scheduled ? '' : ' (' + a.recipients + ')') }),
           h('td', { cls: 'small', text: !a.email ? '—' : scheduled ? 'Yes' : a.emailed + ' sent' + (a.emailFailed.length ? ', ' + a.emailFailed.length + ' failed' : '') }),
-          h('td', null, !a.page ? '—' : scheduled ? 'Yes' : a.hidden ? pill('Hidden', 'none') : pill('Shown', 'ok')), h('td', null, acts)));
+          h('td', { cls: 'small' }, !a.page ? '—' : [scheduled ? 'Yes' : a.hidden ? pill('Hidden', 'none') : a.ended ? pill('Ended', 'none') : pill('Shown', 'ok'),
+            h('div', { style: 'margin-top:4px;' }, h('span', { cls: 'ann-dot', style: 'background:' + col[3] + ';' }), col[1]),
+            a.endAt ? h('div', { cls: 'muted', text: (a.ended ? 'ended ' : 'until ') + when(a.endAt) }) : null]), h('td', null, acts)));
       });
     }
     function sendAnnouncement() {
       setMsg('ann-msg', '');
       var body = { title: $('ann-title').value.trim(), body: $('ann-body').value.trim(), audience: { type: $('ann-aud').value, team: $('ann-team').value }, email: $('ann-email').checked, page: $('ann-page').checked };
+      if (body.page) { body.color = annPicker ? annPicker.value() : ''; if ($('ann-end').value) body.endAt = fromLocal($('ann-end').value); }
       var later = $('ann-when-later').checked;
       if (later) { if (!$('ann-at').value) { setMsg('ann-msg', 'Choose the date and time to send it.', true); return; } body.sendAt = fromLocal($('ann-at').value); }
       if (!body.title || !body.body) { setMsg('ann-msg', 'Please write a title and the message.', true); return; }
       if (!body.email && !body.page) { setMsg('ann-msg', 'Choose "Show on their registration page", "Send by email", or both.', true); return; }
-      var how = [body.page ? 'shown on their page' : '', body.email ? 'emailed' : ''].filter(Boolean).join(' and ');
+      var how = [body.page ? 'shown on their page' + (body.endAt ? ' until ' + body.endAt : '') : '', body.email ? 'emailed' : ''].filter(Boolean).join(' and ');
       confirmBox(later ? 'Schedule this announcement?' : 'Send this announcement?', h('p', { text: '"' + body.title + '" will be ' + how + (later ? ' on ' + body.sendAt + ' (Thailand time) to the people in "' + $('ann-aud').selectedOptions[0].text.replace('…', '') + '" at that time (' + $('ann-count').textContent.replace(' right now', ' now') + ').' : ' to ' + $('ann-count').textContent.replace(' right now', '') + '. Emails cannot be taken back.') }), later ? 'Schedule' : 'Send', function () {
         $('ann-send').disabled = true;
         api('POST', '/api/admin/announcements', body).then(function (res) {
@@ -1277,7 +1399,7 @@
           if (!res.success) { setMsg('ann-msg', res.message, true); return; }
           if (res.scheduled) { setMsg('ann-msg', 'Scheduled for ' + res.sendAt + ' (Thailand time). You can still edit or cancel it below.', false); $('ann-title').value = ''; $('ann-body').value = ''; loadData(true); return; }
           setMsg('ann-msg', 'Sent to ' + res.recipients + ' people' + (body.email ? ' (' + res.emailed + ' emails' + (res.failed.length ? ', failed: ' + res.failed.join(', ') : '') + ')' : '') + '.', !!res.failed.length);
-          $('ann-title').value = ''; $('ann-body').value = '';
+          $('ann-title').value = ''; $('ann-body').value = ''; $('ann-end').value = '';
           loadData(true);
         }, function (err) { $('ann-send').disabled = false; setMsg('ann-msg', err.message, true); });
       });
@@ -1292,9 +1414,11 @@
         var email = h('input', { type: 'checkbox', id: 'ea-email' }); email.checked = !!a.email;
         var resend = h('input', { type: 'checkbox', id: 'ea-resend' });
         var at = h('input', { type: 'datetime-local', id: 'ea-at', value: toLocal(a.sendAt) });
+        var end = h('input', { type: 'datetime-local', id: 'ea-end', value: toLocal(a.endAt), style: 'width:auto;' });
+        var picker = colorPicker('ea-color', a.color || '');
         var out = h('div', { cls: 'msg', id: 'ea-msg' });
         var save = h('button', { cls: 'btn-primary', id: 'ea-save', text: 'Save changes', onclick: function () {
-          var b = { id: a.id, title: title.value.trim(), body: msg.value.trim() };
+          var b = { id: a.id, title: title.value.trim(), body: msg.value.trim(), color: picker.value(), endAt: fromLocal(end.value) };
           if (scheduled) Object.assign(b, { audience: a.audience, page: page.checked, email: email.checked, sendAt: fromLocal(at.value) });
           else b.resend = resend.checked;
           save.disabled = true;
@@ -1308,6 +1432,8 @@
         add(body, h('div', { cls: 'ann-form', style: 'max-width:640px;' },
           h('label', { cls: 'f', for: 'ea-title', text: 'Title' }), title,
           h('label', { cls: 'f', for: 'ea-body', text: 'Message' }), msg,
+          (a.page || scheduled) ? h('div', null, h('label', { cls: 'f', text: 'Banner colour on their page' }), picker.el,
+            h('label', { cls: 'f', for: 'ea-end', text: 'Stop showing on (optional, Thailand time)' }), end) : null,
           scheduled ? [h('label', { cls: 'chk', for: 'ea-page' }, page, ' Show on their registration page'), h('label', { cls: 'chk', for: 'ea-email' }, email, ' Send by email'),
             h('label', { cls: 'f', for: 'ea-at', text: 'Send on (Thailand time) — to: ' + a.audienceLabel }), at]
             : [h('p', { cls: 'muted small', text: 'Their registration page shows the new version straight away.' + (a.page ? '' : ' (This one was email only.)') }),
@@ -1317,7 +1443,7 @@
       modalRender = null;
     }
 
-    // ---------------- questions (master accounts, 2026-11-04) ----------------
+    // ---------------- questions (2026-11-04; every account sees them, full / master answer since 2026-11-06) ----------------
     var qFilter = 'open';
     function questionsOn() { return !!D && Array.isArray(D.tickets) && !!D.locks.ticketsOn; }
     function waitingQuestions() { return questionsOn() ? D.tickets.filter(function (q) { return q.status === 'open'; }).length : 0; }
@@ -1356,9 +1482,11 @@
           e.target.disabled = true;
           api('POST', '/api/admin/tickets/' + encodeURIComponent(q.id) + '/reply', { done: true }).then(function (res) { if (!res.success) toast(res.message, true); loadData(true); }, function (err) { toast(err.message, true); });
         } }) : null;
+        var answerArea = canEdit() ? [ta, h('div', { cls: 'row', style: 'margin-top:8px;' }, send, done)]
+          : h('p', { cls: 'muted small', style: 'margin-top:8px;', text: 'View-only account: you can read the questions; full and master accounts answer them.' });
         add(box, h('div', { cls: 'item q-item' }, personBlock(p, q.email),
           h('div', null, h('div', { cls: 'small muted', text: 'Question ' + q.id + ' · asked ' + when(q.createdAt) }),
-            q.status === 'closed' ? h('div', null, pill('Closed by the registrant' + (q.closedAt ? ' · ' + when(q.closedAt) : ''), 'none')) : null, thread, ta, h('div', { cls: 'row', style: 'margin-top:8px;' }, send, done))));
+            q.status === 'closed' ? h('div', null, pill('Closed by the registrant' + (q.closedAt ? ' · ' + when(q.closedAt) : ''), 'none')) : null, thread, answerArea)));
       });
     }
 
@@ -1504,6 +1632,7 @@
         add(form, [
           h('p', { cls: 'muted small', style: 'margin-top:0;', text: 'Saved straight away for ' + p.email + ', also after the InfoEditDeadline. Your name is noted on the change. Documents and payments are not changed here.' }),
           h('div', { cls: 'grid2' },
+            field('Title', 'Title', p.title, { options: [['', '—'], 'Mr.', 'Ms.', 'Mrs.', 'Miss', 'Dr.', 'Prof.', 'Mx.', ['Other', 'Other (type below)']] }), field('TitleOther', 'Title (if Other)', p.titleOther),
             field('Name', 'Name', p.firstName), field('MiddleName', 'Middle name', p.middleName),
             field('Surname', 'Surname', p.lastName), field('Nickname', 'Nickname', p.nickname),
             edu, field('University', 'University', p.university, { hint: p.paymentId ? 'In a payment: a different university is not saved.' : '' }),
@@ -1525,6 +1654,7 @@
           Object.keys(inputs).forEach(function (k) { var i = inputs[k]; fields[k] = i.type === 'checkbox' ? i.checked : i.value.trim(); });
           fields.FoodPreference = Array.prototype.slice.call(form.querySelectorAll('input[data-food]:checked')).map(function (c) { return c.getAttribute('data-food'); }).join(', ');
           if (fields.EmergencyRelation !== 'Other') fields.EmergencyRelationOther = '';
+          if (fields.Title !== 'Other') fields.TitleOther = '';
           save.disabled = true;
           api('PUT', '/api/admin/people/info', { email: p.email, fields: fields }).then(function (res) {
             save.disabled = false;
@@ -1631,7 +1761,7 @@
     // ---------------- observers ----------------
     function observers() { return D.people.filter(function (p) { return p.position === 'observer'; }); }
     function observerExport() {
-      var cols = [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Nickname', 'nickname'], ['Email', 'email'],
+      var cols = [['Title', 'titleText'], ['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Nickname', 'nickname'], ['Email', 'email'],
         ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Highest education', 'highestLevel'], ['Study level', 'observerLevel'],
         ['Telephone', 'phone'], ['Other contact', 'otherContact'], ['Emergency telephone', 'emergencyPhone'], ['Emergency contact is', 'emergencyWho'], ['Food preference', function (p) { return (p.foodPreferences || []).join(', '); }], ['Food preference (other)', 'foodPreferenceOther'],
         ['Food/drug allergy', 'allergy'], ['Underlying disease', 'disease'], ['Medication', 'medication'], ['Shirt size', 'shirtSize'], ['Special needs', 'special'],
@@ -1783,7 +1913,7 @@
       var body = r.kind === 'payment' ? { paymentId: r.ids[0], confirm: yes, updatedAt: r.updatedAt } : { email: r.payerEmail, confirm: yes, updatedAt: r.updatedAt };
       return api('POST', '/api/admin/invoices/confirm', body).then(function (res) {
         if (!res.success) { toast(res.message, true); if (res.changed) loadData(true); return; }
-        toast(yes ? 'Invoice confirmed — it is now locked for the registrant.' : 'Confirmation undone — the registrant can edit it again.');
+        toast(yes ? 'Invoice confirmed — it is now locked for the registrant.' : 'Unlocked — the registrant can edit it again' + (D.invoiceClosed ? ' (confirm it again when they are done).' : '.'));
         loadData(true);
       }, function (err) { toast(err.message, true); });
     }
@@ -1801,7 +1931,7 @@
         var acts = h('div', { cls: 'acts' });
         if (canEdit()) {
           if (!r.confirmedAt) add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Confirm', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, true); } }));
-          else add(acts, h('button', { cls: 'btn-link small', text: 'Undo confirm', onclick: function () {
+          else add(acts, h('button', { cls: 'btn-link small', text: r.editRequestedAt ? 'Accept edit (unlock)' : 'Undo confirm', onclick: function () {
             confirmBox('Undo the confirmation?', h('p', { text: 'The registrant will be able to change this invoice request again. Use this when they asked for a correction.' }), 'Undo confirm', function () { confirmInvoice(r, false); });
           } }));
         }
@@ -1810,7 +1940,11 @@
             h('div', { cls: 'inv-meta', text: [r.payerEmail, p && p.phone].filter(Boolean).join(' · ') }),
             r.updatedAt ? h('div', { cls: 'inv-meta', text: 'last changed ' + when(r.updatedAt) }) : null),
           h('td', null, h('b', { text: r.kind === 'combined' ? 'Combined invoice' : 'One payment' }), h('div', { cls: 'small', text: r.ids.join(', ') }),
-            r.later && r.later.length ? h('div', { cls: 'inv-warn', text: r.later.join(', ') + ' paid after this was confirmed — not in this invoice' }) : null),
+            r.later && r.later.length ? h('div', { cls: 'inv-warn', text: r.later.join(', ') + ' paid after this was confirmed — not in this invoice' }) : null,
+            r.kind === 'combined' ? (function () {
+              var own = D.payments.filter(function (q) { return r.ids.indexOf(q.id) !== -1 && q.payerEmail !== r.payerEmail; });
+              return own.length ? h('div', { cls: 'inv-meta', text: 'Includes ' + own.map(function (q) { return q.id + ' (' + (q.payerName || q.payerEmail) + ', paid individually)'; }).join(', ') }) : null;
+            })() : null),
           h('td', { cls: 'num', text: thb(r.total) }),
           h('td', null, h('div', null, h('b', { text: r.billTo || '—' })), h('div', { cls: 'inv-meta', text: r.address || '' }),
             r.taxId ? h('div', { cls: 'inv-meta', text: 'Tax ID ' + r.taxId }) : null, r.phone ? h('div', { cls: 'inv-meta', text: 'Tel. ' + r.phone }) : null,
@@ -1827,7 +1961,7 @@
     // ---------------- all status export (2026-10-31) ----------------
     var EXPORT_KEY = 'icemkku.exportColumns';
     var EXPORT_GROUPS = [
-      ['Basic', [['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Full name', function (p) { return p.fullName; }], ['Nickname', 'nickname'], ['Email', 'email'],
+      ['Basic', [['Title', 'titleText'], ['Name', 'firstName'], ['Middle name', 'middleName'], ['Surname', 'lastName'], ['Full name', function (p) { return p.fullName; }], ['Nickname', 'nickname'], ['Email', 'email'],
         ['Position', function (p) { return cap(p.position); }], ['Role in team', function (p) { return cap(p.roleInTeam); }], ['Team', 'teamName'], ['Second team (advisors)', 'secondTeamName'],
         ['University', 'university'], ['Country', 'country'], ['Religion', 'religion'], ['Educational year', 'educationYear'], ['Highest education', 'highestLevel'], ['Study level (observers)', 'observerLevel'],
         ['Missing required items', function (p) { return (p.missing || []).join(', '); }]]],
@@ -1910,6 +2044,84 @@
       add(box, table(t.headers, t.rows.slice(0, 8), { empty: 'Nobody matches these choices.' }));
     }
 
+    // ---------------- page content (2026-11-06, master accounts only) ----------------
+    var contentDirty = false, contentChecks = {};
+    function renderContent(fromSave) {
+      if (!isMaster()) { go('home'); return; }
+      if (contentDirty && !fromSave) return; // don't wipe what is being typed
+      if (fromSave) { contentChecks = {}; fromSave.forEach(function (s) { s.fields.forEach(function (f) { contentChecks[f.key] = f.check; }); }); }
+      var sections = fromSave || D.content || [];
+      var box = clear($('content-sections'));
+      sections.forEach(function (sec) {
+        var card = h('div', { cls: 'card content-sec' }, h('h2', { text: sec.name }), sec.help ? h('p', { cls: 'sub', text: sec.help }) : null);
+        sec.fields.forEach(function (f) { add(card, contentField(f)); });
+        add(box, card);
+      });
+      $('content-save').disabled = false;
+    }
+    function contentField(f) {
+      var id = 'cf-' + f.key.replace(/\W/g, '-');
+      var input;
+      if (f.type === 'switch') {
+        input = h('select', { id: id, 'data-key': f.key }, h('option', { value: 'On', text: 'On' }), h('option', { value: 'Off', text: 'Off' }));
+        input.value = f.value === 'Off' ? 'Off' : 'On';
+      } else if (f.type === 'choice') {
+        input = h('select', { id: id, 'data-key': f.key }, f.choices.map(function (c, i) { return h('option', { value: c, text: (f.choiceLabels && f.choiceLabels[i]) || c }); }));
+        input.value = f.value;
+      } else if (f.type === 'rows' || f.type === 'long') {
+        input = h('textarea', { id: id, 'data-key': f.key, cls: f.type === 'rows' ? 'rows' : null, rows: f.type === 'rows' ? Math.min(12, Math.max(3, String(f.value || '').split('\n').length + 1)) : 4 });
+        input.value = f.value || '';
+      } else if (f.type === 'num') {
+        input = h('input', { type: 'number', step: '1', min: '0', id: id, 'data-key': f.key, value: f.value });
+      } else {
+        input = h('input', { type: 'text', id: id, 'data-key': f.key, value: f.value || '' });
+      }
+      var check = contentChecks[f.key] || f.check || 'OK';
+      var preview = h('div');
+      var redraw = function () { clear(preview); var pv = contentPreview(f.key, input.value); if (pv) add(preview, pv); };
+      input.addEventListener('input', function () { contentDirty = true; redraw(); });
+      input.addEventListener('change', function () { contentDirty = true; redraw(); });
+      redraw();
+      return h('div', { cls: 'cfield' },
+        h('div', { cls: 'clabel' }, f.label, f.help ? h('div', { cls: 'chelp', text: f.help }) : null),
+        h('div', null, input, preview),
+        h('div', { cls: 'ccheck ' + (check === 'OK' ? 'check-ok' : 'check-bad'), text: check }));
+    }
+    /** What the registrants will see, drawn from what is being typed. */
+    function contentPreview(key, value) {
+      var lines = String(value || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).map(function (x) { return x.split('|').map(function (y) { return y.trim(); }); });
+      if (key === 'bank.thaiRows' || key === 'bank.intlRows') {
+        var tb = h('table', null, lines.map(function (r) { return h('tr', null, h('th', { text: r[0] || '' }), h('td', { text: (r[1] || '') + (String(r[2] || '').toLowerCase() === 'copy' ? '  [Copy]' : '') })); }));
+        return h('div', { cls: 'cpreview' }, h('div', { cls: 'pv-title', text: 'How the registrants see it' }), tb);
+      }
+      if (key === 'tos.en' || key === 'tos.th') {
+        return h('div', { cls: 'cpreview' }, h('div', { cls: 'pv-title', text: 'How the registrants see it' }),
+          h('ol', null, lines.map(function (r) { return h('li', null, h('b', { text: r[0] || '' }), r[1] || ''); })));
+      }
+      if (key === 'lists.shirtRows') {
+        return h('div', { cls: 'cpreview' }, h('div', { cls: 'pv-title', text: 'Size chart' }),
+          h('table', null, [h('tr', null, h('th', { text: 'Size' }), h('th', { text: 'Chest' }), h('th', { text: 'Length' }))].concat(
+            lines.map(function (r) { return h('tr', null, h('th', { text: r[0] || '' }), h('td', { text: (r[1] || '—') + ' / ' + (r[2] || '—') })); }))));
+      }
+      return null;
+    }
+    $('content-save').addEventListener('click', function () {
+      var values = {};
+      Array.prototype.forEach.call(document.querySelectorAll('#content-sections [data-key]'), function (i) { values[i.getAttribute('data-key')] = i.value; });
+      $('content-save').disabled = true;
+      setMsg('content-msg', '');
+      api('PUT', '/api/admin/content', { values: values }).then(function (res) {
+        $('content-save').disabled = false;
+        if (!res.content) { setMsg('content-msg', res.message || 'Could not save.', true); return; }
+        contentDirty = false;
+        D.content = res.content;
+        renderContent(res.content);
+        setMsg('content-msg', res.message + (res.changed && res.changed.length ? ' Changed: ' + res.changed.join(', ') : ''), !res.success);
+        if (res.success) toast('Page content saved.');
+        loadData(true);
+      }, function (err) { $('content-save').disabled = false; setMsg('content-msg', err.message, true); });
+    });
+
     // ---------------- parameters ----------------
     function toLocalInput(v) { return v ? v.replace(' ', 'T') : ''; }
     function renderParams(notesFromSave) {
@@ -1933,12 +2145,13 @@
         var cell = h('td', null, input);
         if (s.date && s.key !== 'EarlyBirdDeadline' && canEdit() && (!isCleanup || isMaster())) add(cell, h('button', { cls: 'btn-link small', style: 'margin-top:4px;', text: 'Clear', onclick: function () { input.value = ''; paramsDirty = true; if (isCleanup) showCleanupPw(); } }));
         if (isCleanup) add(cell, h('div', { id: 'cleanup-pw-wrap', cls: 'hidden', style: 'margin-top:8px;' },
-          h('label', { cls: 'f', for: 'cleanup-pw', style: 'margin-top:0;', text: 'Your password (' + D.me.username + ') to change the clean-up date' }),
+          h('label', { cls: 'f', for: 'cleanup-pw', style: 'margin-top:0;', text: 'Password of ICEMmasteraccount — needed to set, change or clear the clean-up date' }),
           h('input', { type: 'password', id: 'cleanup-pw', autocomplete: 'current-password' })));
         if (isCleanup && !isMaster()) add(cell, h('div', { cls: 'muted small', style: 'margin-top:4px;', text: 'Only a master account can change it.' }));
         var keyCell = h('td', { cls: 'key', text: s.key });
         if (s.key === 'DataCleanupDate') add(keyCell, h('span', { cls: 'key-sub', text: 'Automatic clean-up — deletes everything' }));
         if (s.key === 'InfoEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Payment deadline + info edit deadline' }));
+        if (s.key === 'InvoiceEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Invoices locked + confirmed' }));
         if (s.key === 'RegistrationCloses') add(keyCell, h('span', { cls: 'key-sub', text: 'Registration end date' }));
         add(tb, h('tr', null, keyCell, cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?Thailand time, yyyy-MM-dd HH:mm\./, ' Thailand time.') : s.note }),
           h('td', { cls: check === 'OK' ? 'check-ok' : 'check-bad', text: check })));
@@ -1954,7 +2167,7 @@
       var cp = $('cleanup-pw');
       var cleanupInput = $('param-DataCleanupDate');
       if (cleanupInput && cleanupInput.value !== (cleanupInput.getAttribute('data-was') || '')) {
-        if (!cp || !cp.value) { setMsg('params-msg', 'Type your password under DataCleanupDate to change the automatic clean-up date.', true); return; }
+        if (!cp || !cp.value) { setMsg('params-msg', 'Type the ICEMmasteraccount password under DataCleanupDate to set, change or clear the automatic clean-up date.', true); return; }
         if (cleanupInput.value && !confirm('Automatic clean-up on ' + cleanupInput.value.replace('T', ' ') + ': EVERYTHING of this year\'s registration will be deleted then. Continue?')) return;
       }
       $('params-save').disabled = true;
