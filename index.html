@@ -393,12 +393,12 @@
     <!-- LANDING -->
     <div class="view active" id="view-landing">
       <h1>Welcome</h1>
-      <p class="sub">Register a new account or log in to continue your submission.</p>
+      <p class="sub" id="landing-sub">Register a new account or log in to continue your submission.</p>
       <div class="banner hidden" id="reg-closed-banner"></div>
       <div class="msg" id="landing-msg"></div>
       <div class="landing-buttons">
-        <button class="btn-primary" onclick="showView('view-register')">Register</button>
-        <button class="btn-secondary" onclick="showView('view-login')">Login</button>
+        <button class="btn-primary" id="landing-register-btn" onclick="showView('view-register')">Register</button>
+        <button class="btn-secondary" id="landing-login-btn" onclick="showView('view-login')">Login</button>
       </div>
     </div>
 
@@ -3771,6 +3771,15 @@
 
     // Shows "Registration opens on …" on the landing page when the organizers
     // have set a RegistrationOpens time that hasn't arrived yet.
+    function applyRegistrationClosed(closed, at) {
+      var reg = document.getElementById('landing-register-btn'), login = document.getElementById('landing-login-btn');
+      reg.classList.toggle('hidden', closed);
+      login.className = closed ? 'btn-primary' : 'btn-secondary';
+      document.getElementById('landing-sub').textContent = closed
+        ? 'Registration closed' + (at ? ' on ' + at + ' (Thailand time)' : '') + '. Please log in with the account you registered.'
+        : 'Register a new account or log in to continue your submission.';
+    }
+
     function loadPublicConfig() {
       callServer('getPublicConfig', [], {
         onSuccess: function (res) {
@@ -3778,7 +3787,9 @@
           if (!res || !res.success) return;
           if (res.content) applySiteContent(res.content);
           var text = '';
-          if (res.registrationClosed) text = 'Registration closed on ' + res.closesAt + ' (Thailand time). If you already have an account you can still log in.';
+          // After RegistrationCloses (2026-11-07): no Register button, and the welcome text only asks people to log in.
+          applyRegistrationClosed(!!res.registrationClosed, res.closesAt);
+          if (res.registrationClosed) text = '';
           else if (!res.registrationOpen) text = 'Registration opens on ' + res.opensAt + ' (Thailand time). If you already have an account you can still log in.';
           else if (res.closesAt) text = 'Registration closes on ' + res.closesAt + ' (Thailand time).';
           if (text) { el.textContent = text; el.className = 'banner deadline-alert'; }

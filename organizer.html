@@ -1201,7 +1201,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null
       ]);
       show('cleanup-banner', !!D.locks.cleanupAt);
-      $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (Thailand time): every registrant account, payment, file, announcement, question and the history will be deleted. Export what you need before then. A master account can change it in Parameters.' : '';
+      $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (Thailand time): every registrant account, payment, file, announcement, question and the history will be deleted. Organizer accounts, Parameters and Page content stay. Export what you need before then. A master account can change it in Parameters.' : '';
       renderNotifs();
       if ($('search-q').value.trim()) runSearch();
     }
@@ -2099,9 +2099,9 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
           h('ol', null, lines.map(function (r) { return h('li', null, h('b', { text: r[0] || '' }), r[1] || ''); })));
       }
       if (key === 'lists.shirtRows') {
-        return h('div', { cls: 'cpreview' }, h('div', { cls: 'pv-title', text: 'Size chart' }),
+        return h('div', { cls: 'cpreview' }, h('div', { cls: 'pv-title', text: 'Size chart (inches)' }),
           h('table', null, [h('tr', null, h('th', { text: 'Size' }), h('th', { text: 'Chest' }), h('th', { text: 'Length' }))].concat(
-            lines.map(function (r) { return h('tr', null, h('th', { text: r[0] || '' }), h('td', { text: (r[1] || '—') + ' / ' + (r[2] || '—') })); }))));
+            lines.map(function (r) { return h('tr', null, h('th', { text: r[0] || '' }), h('td', { text: r[1] || '—' }), h('td', { text: r[2] || '—' })); }))));
       }
       return null;
     }
