@@ -121,6 +121,12 @@
     .msg { font-size: 13px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; display: none; }
     .msg.error { display: block; background: var(--danger-soft); color: var(--danger); }
     .msg.success { display: block; background: var(--ok-soft); color: var(--ok); }
+    /* 2026-11-07: pre-ICEM exam deposits */
+    .deposit-box { border-radius: 8px; padding: 12px 14px; margin: 10px 0; font-size: 14px; line-height: 1.5; border: 1px solid #c8d9e8; background: #eef4fa; }
+    .deposit-box.success { border-color: #b9d8c2; background: var(--ok-soft); color: var(--ok); }
+    .deposit-box.warn { border-color: #e7b3b3; background: var(--danger-soft); color: var(--danger); font-weight: 600; }
+    .deposit-box b { display: block; margin-bottom: 2px; }
+    .stage-tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #e7eef6; color: #215386; font-size: 11.5px; font-weight: 700; vertical-align: 2px; }
     .upload-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
     .upload-status { font-size: 12px; color: var(--muted); }
     .upload-status.done { color: var(--ok); font-weight: 600; }
@@ -737,6 +743,7 @@
             <tr><th>Branch code</th><td class="mono">0871</td></tr>
           </table>
         </div>
+        <div class="deposit-box hidden" id="deposit-box"></div>
         <div class="msg" id="payment-covered"></div>
         <div id="payment-options"></div>
         <div id="my-payments"></div>
@@ -1356,7 +1363,8 @@
       document.querySelectorAll('input[type=file]').forEach(function (i) { i.value = ''; });
       Object.keys(UPLOAD_COLUMN_MAP).forEach(function (key) { setUploadStatus(key, null, ''); });
       ['info-msg', 'trip-msg', 'payment-msg', 'teams-msg', 'team-msg'].forEach(function (id) { var m = document.getElementById(id); if (m) clearMsg(id); });
-      ['payment-options', 'my-payments', 'teams-list', 'fee-line', 'fee-note'].forEach(function (id) { var x = document.getElementById(id); if (x) x.textContent = ''; });
+      ['payment-options', 'my-payments', 'teams-list', 'fee-line', 'fee-note', 'deposit-box'].forEach(function (id) { var x = document.getElementById(id); if (x) x.textContent = ''; });
+      document.getElementById('deposit-box').className = 'deposit-box hidden';
       var cov = document.getElementById('payment-covered'); if (cov) { cov.textContent = ''; cov.className = 'msg'; }
       ['payment-section', 'teams-card', 'trip-section', 'info-team-banner'].forEach(function (id) { var x = document.getElementById(id); if (x) x.classList.add('hidden'); });
       document.getElementById('payment-section').classList.remove('overdue');
@@ -1601,18 +1609,24 @@
       // (2026-10-21); the "paid" status stays. The bank details stay whenever
       // a NEW payment can still be made — e.g. an advisor who already paid
       // and now pays for an observer who registered later (2026-11-01).
-      var paidDone = !!(s.paymentVerified || (s.covered && s.covered.status === 'Verified'));
+      var dep = s.deposit;
+      var depWaiting = !!dep && ['initialPending', 'waitingResults', 'secondPending'].indexOf(dep.state) !== -1;
+      var paidDone = !!(s.paymentVerified || (s.covered && s.covered.status === 'Verified' && !dep));
       var canPayNew = (s.options || []).some(function (o) { return o.available; });
       var details = document.getElementById('payment-image');
       document.getElementById('fee-note').insertAdjacentElement('afterend', details); // back to its place before redrawing
       payDetailsInOption = paidDone && canPayNew;
       // The IFMSA/AMSA certificate only lowers the price: not needed once paid (2026-11-01).
-      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone || !certificateOn());
-      ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone); });
-      details.classList.toggle('hidden', paidDone && !canPayNew);
-      document.getElementById('fee-line').textContent = 'Final price: ' + thb(s.price);
+      // An initial deposit is paid in the early bird: the certificate (a discount after it) no longer matters.
+      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone || !certificateOn() || (!!dep && dep.state !== 'notPaid'));
+      ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone || (depWaiting && !canPayNew)); });
+      details.classList.toggle('hidden', (paidDone || depWaiting) && !canPayNew);
+      document.getElementById('fee-line').textContent = dep && dep.state === 'notPaid' ? 'Initial deposit: ' + thb(dep.initial) + ' per delegate'
+        : dep && dep.state === 'owesSecond' ? 'Second deposit: ' + thb(dep.second) + ' per delegate' : 'Final price: ' + thb(s.price);
       var note;
       if (s.price === null) note = s.priceBasis;
+      else if (dep && dep.state === 'owesSecond') note = dep.deadlineAt ? 'Please pay by ' + dep.deadlineAt + ' (Thailand time).' : '';
+      else if (dep && dep.state === 'notPaid') note = 'Initial deposits can be paid until ' + s.earlyBirdEnds + ' (Thailand time), the end of the early-bird period.';
       else if (s.covered) note = 'Fixed when the payment was submitted.';
       else note = s.priceBasis + '. ' + (s.earlyBird ? 'Early-bird price for payments submitted until ' + s.earlyBirdEnds + ' (Thailand time).' : 'The early-bird period has ended.') +
         (s.priceProvisional ? ' This price is confirmed once the organizers verify your proof of enrolment.' : '');
@@ -1622,7 +1636,15 @@
       var cov = document.getElementById('payment-covered');
       cov.textContent = '';
       cov.className = 'msg';
-      if (s.covered) {
+      // Pre-ICEM exam deposits (2026-11-07): one notice instead of the usual "your fee is in payment …".
+      var depBox = document.getElementById('deposit-box');
+      depBox.textContent = '';
+      depBox.className = 'deposit-box' + (dep ? ' ' + (dep.kind === 'info' ? '' : dep.kind) : ' hidden');
+      if (dep) {
+        depBox.appendChild(el('b', '', dep.state === 'notPaid' ? 'Pre-ICEM exam' : dep.state === 'winner' ? 'Pre-ICEM exam: winning team' : 'Pre-ICEM exam deposits'));
+        depBox.appendChild(document.createTextNode(dep.text));
+      }
+      if (s.covered && !(dep && dep.state !== 'notPaid')) {
         var c = s.covered;
         cov.className = 'msg ' + (c.status === 'Not verified' ? 'error' : 'success');
         cov.appendChild(document.createTextNode('Your registration fee (' + thb(c.myPrice) + ') is in payment ' + c.id + ' — ' +
@@ -1670,10 +1692,12 @@
     }
 
     function renderOption(o, idx) {
-      var d = el('div', 'pay-option');
+      var d = el('div', 'pay-option' + (o.stage ? ' stage-' + o.stage : ''));
       d.appendChild(el('h3', '', o.title));
       // One payment deadline for everyone (2026-11-01) = InfoEditDeadline.
-      if (o.window && o.window.mode === 'early' && o.available) {
+      if (o.window && o.window.mode === 'early' && o.available && o.stage === 'initial') {
+        d.appendChild(el('p', 'deadline-alert', 'Pay the initial deposit before ' + o.window.earlyEnds + ' (Thailand time). After that, the team pays the full regular price instead.'));
+      } else if (o.window && o.window.mode === 'early' && o.available) {
         d.appendChild(el('p', 'deadline-alert', 'Pay before ' + o.window.earlyEnds + ' (Thailand time) to get the early-bird price.' +
           (o.window.payByText ? ' Payment deadline: ' + o.window.payByText + '.' : '')));
       } else if (o.window && o.window.mode === 'deadline' && o.available) {
@@ -2038,6 +2062,7 @@
       var h = el('h3');
       h.appendChild(document.createTextNode('Your payment ' + p.id + ' — ' + thb(p.total) + ' — '));
       h.appendChild(statusSpan(p.status));
+      if (p.stage) h.appendChild(el('span', 'stage-tag', p.stage === 'initial' ? 'Initial deposit' : 'Second deposit'));
       if (p.late) h.appendChild(el('span', 'late-tag', 'Late'));
       d.appendChild(h);
       if (p.late) d.appendChild(el('p', 'muted', 'Sent after the payment deadline, so it is marked late for the organizers.'));
@@ -2178,7 +2203,7 @@
       readAsBase64(slipFile, function (slip) {
         readAsBase64(inv.tplFile, function (tpl) {
           if (inv.invoice.needed) inv.invoice.template = tpl;
-          var req = { type: o.type, teams: o.teams, expectedTotal: total, slip: slip, invoice: inv.invoice,
+          var req = { type: o.type, stage: o.stage || '', teams: o.teams, expectedTotal: total, slip: slip, invoice: inv.invoice,
             observers: picked.map(function (x) { return x.id; }) };
           callServer('submitPayment', [sessionToken, req], {
             buttonIds: ['pay-btn-' + idx],

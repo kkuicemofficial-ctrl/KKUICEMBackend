@@ -535,6 +535,7 @@
       <div class="section-head">
         <div><h1>Financial view</h1><p class="sub" style="margin:0;">Every payment: who paid for whom, the slips and their status. Below: everyone who has not paid yet.</p></div>
       </div>
+      <div id="fin-deposits"></div>
       <div class="stats" id="fin-stats"></div>
       <div class="section-head"><h2>Payments</h2><div class="exports" id="fin-export"></div></div>
       <div class="chips" id="fin-chips"></div>
@@ -634,6 +635,11 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     var CHECK_LABEL = { verified: 'Verified', notVerified: 'Not verified' };
     var PAY_LABEL = { pending: 'Pending', verified: 'Verified', notVerified: 'Not verified', cancelled: 'Cancelled' };
     var TYPE_LABEL = { team: 'Team payment', university: 'University payment', individual: 'Individual payment' };
+    // Pre-ICEM exam deposits (2026-11-07)
+    var STAGE_LABEL = { initial: 'Initial deposit', second: 'Second deposit' };
+    var DEP_LABEL = { initialPending: 'Initial deposit sent', waitingResults: 'Initial deposit paid — waiting for the exam results', winner: 'Pre-ICEM winner — fully paid',
+      owesSecond: 'Owes the second deposit', secondPending: 'Second deposit sent', paid: 'Both deposits paid' };
+    function payLabel(pay) { return (TYPE_LABEL[pay.type] || pay.type || 'Payment') + (pay.stage ? ' · ' + STAGE_LABEL[pay.stage] : ''); }
 
     var token = '';
     var D = null;            // everything from /api/admin/data
@@ -962,6 +968,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       row('Special needs', p.special, !!p.special);
       if (p.position === 'delegate') row('Trip', p.trip ? 'Option ' + p.trip : '');
       add(kv, [h('dt', { text: 'Payment' }), h('dd', null, payPill(p.paymentStatus), p.paymentId ? ' ' + p.paymentId : '')]);
+      if (p.deposit) row('Pre-ICEM deposits', DEP_LABEL[p.deposit.state] + ' (initial ' + p.deposit.initialId + (p.deposit.secondId ? ', second ' + p.deposit.secondId : '') + ')', p.deposit.state === 'owesSecond');
       row('Registered', when(p.createdAt));
       if (p.missing && p.missing.length) row('Missing (required)', p.missing.join(', '), true);
       if (p.editedByOrganizer) row('Edited by organizer', p.editedByOrganizer + (p.editedByOrganizerAt ? ', ' + when(p.editedByOrganizerAt) : ''));
@@ -1123,7 +1130,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         }));
         var slips = h('div', { cls: 'row', style: 'gap:10px;' }, pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: (pay.slipUrls.length > 1 ? 'Slip ' + (i + 1) : 'Payment slip') + ' ↗' }); }));
         add(el, h('div', null,
-          h('div', null, h('b', { text: (TYPE_LABEL[pay.type] || 'Payment') + ' ' + pay.id }), ' ', payPill(pay.status), pay.late ? [' ', pill('Late', 'bad')] : null, ' ', h('b', { text: thb(pay.total) })),
+          h('div', null, h('b', { text: payLabel(pay) + ' ' + pay.id }), ' ', payPill(pay.status), pay.late ? [' ', pill('Late', 'bad')] : null, ' ', h('b', { text: thb(pay.total) })),
           slips,
           h('div', { cls: 'small', style: 'margin-top:4px;' }, 'Paid for:', paidFor),
           pay.invoice.needed ? h('div', { cls: 'small muted', text: 'Invoice requested: ' + [pay.invoice.billTo, pay.invoice.address, pay.invoice.taxId ? 'Tax ID ' + pay.invoice.taxId : ''].filter(Boolean).join(' · ') + (pay.invoice.templateUrl ? ' (custom template)' : '') }) : null,
@@ -1240,7 +1247,8 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         for (var i = 0; i < 2; i++) lines.push(line('Member', t.members[i]));
         add(grid, h('button', { cls: 'team-card' + (t.paymentComplete ? '' : ' unpaid'), onclick: function () { go('team', t.name); } },
           h('div', { cls: 'name', text: t.name }), lines, h('div', { cls: 'line' }, h('span', { text: 'University' }), t.university || '—'),
-          h('div', { cls: 'line small muted', style: 'margin-top:4px;', text: (t.complete ? 'Complete' : t.delegates + ' of 3 delegates' + (t.advisor ? '' : ', no advisor')) + ' · ' + (t.paymentComplete ? 'paid' : 'payment not complete') })));
+          h('div', { cls: 'line small muted', style: 'margin-top:4px;', text: (t.complete ? 'Complete' : t.delegates + ' of 3 delegates' + (t.advisor ? '' : ', no advisor')) + ' · ' + (t.paymentComplete ? 'paid' : 'payment not complete') }),
+          t.deposit ? h('div', { cls: 'line small', style: 'margin-top:2px;' }, t.deposit === 'winner' ? pill('Pre-ICEM winner', 'ok') : pill(DEP_LABEL[t.deposit], t.deposit === 'owesSecond' ? 'bad' : 'wait')) : null));
       });
       var loose = D.people.filter(function (p) { return p.position === 'advisor' && !p.teamName; });
       var box = clear($('no-team-advisors'));
@@ -1257,7 +1265,9 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       $('team-title').textContent = 'Team ' + t.name;
       $('team-sub').textContent = (t.university || 'University not filled in') + ' · ' + (t.complete ? 'complete team' : t.delegates + ' of 3 delegates' + (t.advisor ? '' : ', no advisor yet'));
       var pays = h('div', { cls: 'row' }, h('b', { text: 'Payment:' }), h('span', { cls: 'status-text ' + (t.paymentComplete ? 'ok' : 'bad'), text: t.paymentComplete ? 'Complete' : 'Payment not complete' }));
-      t.payments.forEach(function (x) { add(pays, h('span', null, x.id + ' ', payPill(x.status))); });
+      t.payments.forEach(function (x) { add(pays, h('span', null, x.id + (x.stage ? ' (' + STAGE_LABEL[x.stage].toLowerCase() + ')' : '') + ' ', payPill(x.status))); });
+      if (t.deposit) add(pays, t.deposit === 'winner' ? pill('Pre-ICEM winner', 'ok') : pill(DEP_LABEL[t.deposit], t.deposit === 'owesSecond' ? 'bad' : 'wait'));
+      else if (t.winnerListed && D.deposits && D.deposits.on) add(pays, h('span', { cls: 'muted small', text: 'Listed in PreIcemWinners' + (D.deposits.open ? ', but paid no initial deposit' : ' (shown to the team from ' + D.deposits.opensAt + ')') }));
       add($('team-pay'), pays);
       if (t.advisor) add(panels, personPanel(byEmail[t.advisor], t.advisorExtra ? 'Advisor (their second team)' : 'Advisor'));
       if (t.leader) add(panels, personPanel(byEmail[t.leader], 'Team leader'));
@@ -1767,7 +1777,8 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         ['Food/drug allergy', 'allergy'], ['Underlying disease', 'disease'], ['Medication', 'medication'], ['Shirt size', 'shirtSize'], ['Special needs', 'special'],
         ['Proof of enrolment file', function (p) { return p.docs.enrollment.url; }], ['Proof of enrolment check', function (p) { return CHECK_LABEL[p.docs.enrollment.check] || ''; }],
         ['Passport file', function (p) { return p.docs.passport.url; }], ['Passport check', function (p) { return CHECK_LABEL[p.docs.passport.check] || ''; }],
-        ['Payment ID', 'paymentId'], ['Payment status', function (p) { return PAY_LABEL[p.paymentStatus] || 'Not paid'; }], ['Registered', function (p) { return when(p.createdAt); }]];
+        ['Payment ID', 'paymentId'], ['Payment status', function (p) { return PAY_LABEL[p.paymentStatus] || 'Not paid'; }],
+        ['Pre-ICEM deposits', function (p) { return p.deposit ? DEP_LABEL[p.deposit.state] : ''; }], ['Registered', function (p) { return when(p.createdAt); }]];
       return {
         headers: cols.map(function (c) { return c[0]; }),
         rows: observers().map(function (p) { return cols.map(function (c) { return typeof c[1] === 'function' ? c[1](p) : p[c[1]]; }); })
@@ -1789,7 +1800,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     // ---------------- financial view (2026-10-31) ----------------
     var finFilter = 'all';
     function unpaidPeople() {
-      return D.people.filter(function (p) { return !p.paymentId; });
+      return D.people.filter(function (p) { return !p.paymentId || (p.deposit && p.deposit.state === 'owesSecond'); });
     }
     function whyUnpaid(p) {
       var miss = p.missing && p.missing.length ? 'Missing: ' + p.missing.join(', ') : '';
@@ -1797,6 +1808,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       return miss ? miss + (base === 'Can pay now' || base === 'Team can pay now' ? '' : ' · ' + base) : base;
     }
     function whyUnpaidBase(p) {
+      if (p.deposit && p.deposit.state === 'owesSecond') return 'Second deposit not paid yet (' + thb(p.deposit.secondPrice) + ')' + (D.deposits && D.deposits.deadlineAt ? ' — due ' + D.deposits.deadlineAt : '');
       if (p.position === 'observer') {
         var d = p.docs.enrollment;
         if (!p.observerLevel) return 'Study level not chosen';
@@ -1815,7 +1827,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         var payer = byEmail[pay.payerEmail];
         return {
           pay: pay,
-          cells: [pay.id + ' · ' + (TYPE_LABEL[pay.type] || pay.type), payer ? nameOf(payer) : pay.payerName || pay.payerEmail,
+          cells: [pay.id + ' · ' + payLabel(pay), payer ? nameOf(payer) : pay.payerName || pay.payerEmail,
             pay.people.map(function (x) { var q = byEmail[x.email]; return (q ? nameOf(q) : x.name || x.email) + ' (' + x.role + (x.team ? ', ' + x.team : '') + '): ' + thb(x.price); }).join('\n'),
             thb(pay.total), pay.slipUrls.join('\n'), (PAY_LABEL[pay.status] || pay.status) + (pay.statusBy ? ' — ' + pay.statusBy : ''), when(pay.submittedAt), pay.late ? 'Late' : '']
         };
@@ -1834,6 +1846,19 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       var cnt = function (st) { return D.payments.filter(function (x) { return x.status === st; }).length; };
       var unpaid = unpaidPeople();
       var stat = function (n, l, bad) { return h('div', { cls: 'stat' + (bad ? ' bad' : '') }, h('div', { cls: 'n', text: n }), h('div', { cls: 'l', text: l })); };
+      // Pre-ICEM exam deposits (2026-11-07)
+      var dbox = clear($('fin-deposits'));
+      if (D.deposits && D.deposits.on) {
+        var dt = D.teams.filter(function (x) { return x.deposit; });
+        var count = function (st) { return dt.filter(function (x) { return x.deposit === st; }).length; };
+        add(dbox, h('div', { cls: 'card', style: 'margin-bottom:14px;' },
+          h('b', { text: 'Pre-ICEM exam deposits' }),
+          h('p', { cls: 'small', style: 'margin:6px 0 0;', text: 'Initial deposit ' + thb(D.deposits.amount) + ' per delegate · second deposit ' + thb(D.deposits.second) + ' per delegate' +
+            (D.deposits.opensAt ? ' · results / second deposit from ' + D.deposits.opensAt : ' · SecondDepositOpens not set') + (D.deposits.deadlineAt ? ' · due ' + D.deposits.deadlineAt : '') }),
+          h('p', { cls: 'small', style: 'margin:4px 0 0;', text: dt.length + ' teams paid an initial deposit: ' + count('winner') + ' winners, ' + count('waitingResults') + ' waiting for the results, ' +
+            count('owesSecond') + ' owe the second deposit, ' + (count('secondPending') + count('paid')) + ' sent the second deposit' + (count('initialPending') ? ', ' + count('initialPending') + ' with the initial deposit still to check' : '') + '.' }),
+          h('p', { cls: 'small muted', style: 'margin:4px 0 0;', text: 'Winners (PreIcemWinners in Parameters): ' + (D.deposits.winners.length ? D.deposits.winners.join(', ') : 'none yet') + (D.deposits.open ? '' : ' — hidden from the teams until ' + (D.deposits.opensAt || 'SecondDepositOpens is set')) })));
+      }
       add(clear($('fin-stats')), [
         stat(thb(sum('verified')), cnt('verified') + ' verified payments'),
         stat(thb(sum('pending')), cnt('pending') + ' waiting for a check'),
@@ -1861,7 +1886,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
           else add(acts, h('button', { cls: 'btn-link small', text: 'Restore', onclick: function () { setPayment(pay, 'pending', renderFinance); } }));
         }
         add(tb, h('tr', null,
-          h('td', null, h('b', { text: pay.id }), h('div', { cls: 'muted small', text: (TYPE_LABEL[pay.type] || pay.type) + ' · ' + when(pay.submittedAt) })),
+          h('td', null, h('b', { text: pay.id }), h('div', { cls: 'muted small', text: payLabel(pay) + ' · ' + when(pay.submittedAt) })),
           h('td', null, payer ? h('button', { cls: 'btn-link', style: 'text-align:left;', text: nameOf(payer), onclick: function () { openPerson(payer.email); } }) : (pay.payerName || pay.payerEmail),
             payer && payer.phone ? h('div', { cls: 'muted small', text: payer.phone }) : null),
           h('td', null, h('ul', { cls: 'people' }, pay.people.map(function (x) { var q = byEmail[x.email]; return h('li', { text: (q ? nameOf(q) : x.name || x.email) + ' — ' + x.role + (x.team ? ', ' + x.team : '') + ': ' + thb(x.price) }); }))),
@@ -1974,6 +1999,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         ['Proof of enrolment file', function (p) { return p.docs.enrollment.url; }], ['Proof of enrolment check', function (p) { return CHECK_LABEL[p.docs.enrollment.check] || ''; }],
         ['IFMSA/AMSA certificate file', function (p) { return p.docs.ifmsaCert.url; }], ['IFMSA/AMSA certificate check', function (p) { return CHECK_LABEL[p.docs.ifmsaCert.check] || ''; }]]],
       ['Payment', [['Payment ID', 'paymentId'], ['Payment status', function (p) { return PAY_LABEL[p.paymentStatus] || 'Not paid'; }],
+        ['Pre-ICEM deposits', function (p) { return p.deposit ? DEP_LABEL[p.deposit.state] : ''; }],
         ['Paid by', function (p) { var pay = payOf(p); var q = pay && byEmail[pay.payerEmail]; return pay ? (q ? nameOf(q) : pay.payerName) : ''; }],
         ['Registration fee', function (p) { var pay = payOf(p); var x = pay && pay.people.filter(function (y) { return y.email === p.email; })[0]; return x ? x.price : ''; }],
         ['Paid late', function (p) { var pay = payOf(p); return pay && pay.late ? 'Late' : ''; }],
@@ -2152,6 +2178,9 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         if (s.key === 'DataCleanupDate') add(keyCell, h('span', { cls: 'key-sub', text: 'Automatic clean-up — deletes everything' }));
         if (s.key === 'InfoEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Payment deadline + info edit deadline' }));
         if (s.key === 'InvoiceEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Invoices locked + confirmed' }));
+        if (s.key === 'InitialDeposit') add(keyCell, h('span', { cls: 'key-sub', text: 'Pre-ICEM exam · THB per delegate · blank = off' }));
+        if (s.key === 'SecondDepositOpens') add(keyCell, h('span', { cls: 'key-sub', text: 'Exam results out' }));
+        if (s.key === 'PreIcemWinners') add(keyCell, h('span', { cls: 'key-sub', text: 'Team names, commas' }));
         if (s.key === 'RegistrationCloses') add(keyCell, h('span', { cls: 'key-sub', text: 'Registration end date' }));
         add(tb, h('tr', null, keyCell, cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?Thailand time, yyyy-MM-dd HH:mm\./, ' Thailand time.') : s.note }),
           h('td', { cls: check === 'OK' ? 'check-ok' : 'check-bad', text: check })));
