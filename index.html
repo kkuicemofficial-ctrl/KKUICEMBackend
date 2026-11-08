@@ -1639,7 +1639,9 @@
       document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || !certificateOn() || !s.certUpload);
       ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone || (depWaiting && !canPayNew)); });
       // The bank details: for whoever pays (not delegates), until their own fee is paid (a new payment shows them in its box).
-      details.classList.toggle('hidden', !s.canPay || ((paidDone || depWaiting) && !canPayNew) || (paidDone && canPayNew));
+      // v8.2: an observer sees them only once they can pay (proof of enrolment verified), or to top up a payment that was not verified.
+      var obsWaiting = currentUser.position === 'observer' && !canPayNew && !(s.covered && s.covered.status === 'Not verified');
+      details.classList.toggle('hidden', !s.canPay || obsWaiting || ((paidDone || depWaiting) && !canPayNew) || (paidDone && canPayNew));
       document.getElementById('fee-line').textContent = dep && dep.state === 'notPaid' ? 'Initial deposit: ' + thb(dep.initial) + ' per delegate'
         : dep && dep.state === 'owesSecond' ? 'Second deposit: ' + thb(dep.second) + ' per delegate' : (s.canPay ? 'Your price: ' : 'Your registration fee: ') + thb(s.price);
       var note;
