@@ -201,6 +201,23 @@
     .pay-table .num { text-align: right; white-space: nowrap; }
     .pay-table tr.excluded td { color: var(--muted); }
     .pay-total { font-weight: 700; text-align: right; margin-top: 8px; font-size: 15px; }
+    /* v8.0: the advisor's tick-box list and the invoice requests */
+    .sel-table th.tick, .sel-table td.tick { width: 28px; text-align: center; }
+    .sel-table td.tick input { width: auto; margin: 2px 0 0; }
+    .sel-table tr.locked td { background: #f4f8fb; }
+    .sel-table .sel-tag { color: var(--muted); font-weight: 400; }
+    .sel-table .sel-name label { font-weight: 400; font-size: 13px; margin: 0; cursor: pointer; display: inline; }
+    .sel-table td.sel-note { white-space: normal; max-width: 280px; font-size: 12.5px; text-align: right; }
+    .sel-members { margin-top: 4px; font-size: 12.5px; }
+    .sel-members summary { cursor: pointer; color: var(--steel, #215386); }
+    .sel-members ul { margin: 4px 0 0; padding-left: 18px; }
+    .inv-status { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #fdf6e6; color: #8a6514; }
+    .inv-status.inv-confirmed { background: var(--ok-soft); color: var(--ok); }
+    .inv-status.inv-completed { background: #e7eef6; color: #215386; }
+    .inv-dl { display: grid; grid-template-columns: 140px 1fr; gap: 2px 10px; margin: 8px 0 0; font-size: 13px; }
+    .inv-dl dt { color: var(--muted); }
+    .inv-dl dd { margin: 0; overflow-wrap: anywhere; }
+    .inv-sep { margin: 10px 0 4px; }
     .countdown { font-weight: 700; }
     .inv-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
     .inv-section h4 { margin: 0 0 4px; font-size: 14px; }
@@ -624,7 +641,7 @@
 
         <div class="row2">
           <div>
-            <label>Food preference</label>
+            <label id="food-pref-label">Food preference</label>
             <div id="info-foodPref-group" style="display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px;">
               <label style="display:flex; align-items:center; gap:6px; font-weight:400; font-size:14px; margin:0;"><input type="checkbox" class="food-pref-cb" value="Regular" onchange="onFoodPrefChange()"> Regular</label>
               <label style="display:flex; align-items:center; gap:6px; font-weight:400; font-size:14px; margin:0;"><input type="checkbox" class="food-pref-cb" value="Halal" onchange="onFoodPrefChange()"> Halal</label>
@@ -684,7 +701,7 @@
       <div class="card">
         <h2 style="margin-top:0;">Documents</h2>
 
-        <label>Passport information/Thai ID card<span class="req">required</span></label>
+        <label id="passport-label">Passport information/Thai ID card<span class="req">required</span></label>
         <div class="upload-row">
           <input type="file" id="file-passport" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
           <button class="btn-secondary btn-small" id="upload-btn-passport" onclick="uploadDoc('passport')">Upload</button>
@@ -693,7 +710,7 @@
         </div>
         <p class="action-hint">After choosing a file, click Upload.</p>
 
-        <label>Proof of enrolment<span class="req" id="enrol-req">required</span></label>
+        <label id="enrol-label">Proof of enrolment<span class="req" id="enrol-req">required</span></label>
         <div class="upload-row">
           <input type="file" id="file-enrollment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
           <button class="btn-secondary btn-small" id="upload-btn-enrollment" onclick="uploadDoc('enrollment')">Upload</button>
@@ -747,7 +764,7 @@
         <div class="msg" id="payment-covered"></div>
         <div id="payment-options"></div>
         <div id="my-payments"></div>
-        <div id="combined-invoice" class="hidden"></div>
+        <div id="invoice-section" class="hidden"></div>
         <div class="msg" id="payment-msg"></div>
       </div>
 
@@ -974,8 +991,8 @@
       getPaymentStatus: function (a) { return ['GET', '/api/payments/status', null, a[0]]; },
       submitPayment: function (a) { return ['POST', '/api/payments', a[1], a[0]]; },
       addPaymentSlip: function (a) { return ['POST', '/api/payments/' + enc(a[1]) + '/slips', { data: a[2], fileName: a[3] }, a[0]]; },
-      updatePaymentInvoice: function (a) { return ['PUT', '/api/payments/' + enc(a[1]) + '/invoice', { invoice: a[2] }, a[0]]; },
-      saveCombinedInvoice: function (a) { return ['PUT', '/api/me/combined-invoice', { invoice: a[1] }, a[0]]; },
+      saveInvoice: function (a) { return ['POST', '/api/invoices', a[1], a[0]]; },
+      deleteInvoice: function (a) { return ['POST', '/api/invoices/delete', { code: a[1] }, a[0]]; },
       requestInvoiceEdit: function (a) { return ['POST', '/api/me/invoice-edit-request', a[1], a[0]]; },
       setInvoiceSeparate: function (a) { return ['PUT', '/api/me/invoice-separate', { separate: !!a[1] }, a[0]]; },
       getUniversityStat: function (a) { return ['GET', '/api/university', null, a[0]]; },
@@ -988,7 +1005,7 @@
       saveTripSelection: function (a) { return ['PUT', '/api/trip', { option: a[1] }, a[0]]; },
       getUniversityList: function (a) { return ['GET', '/api/universities', null, a[0]]; },
       checkUniversity: function (a) { return ['POST', '/api/universities/check', { name: a[1] }, a[0]]; },
-      savePersonalInfo: function (a) { return ['PUT', '/api/me/info', { fields: a[1] }, a[0]]; },
+      savePersonalInfo: function (a) { return ['PUT', '/api/me/info', { fields: a[1], manual: !!a[2] }, a[0]]; },
       uploadFile: function (a) { return ['POST', '/api/me/documents/' + enc(a[1]), { data: a[2], fileName: a[3] }, a[0]]; },
       deleteUploadedFile: function (a) { return ['DELETE', '/api/me/documents/' + enc(a[1]), null, a[0]]; }
     };
@@ -1274,6 +1291,7 @@
           storeToken(res.token, remember);
           currentPersonalInfo = res.personalInfo;
           currentLocks = res.locks || {};
+          if (res.required) window.lastRequired = res.required;
           enterSession();
           routeToInfoForm();
         }
@@ -1424,7 +1442,8 @@
 
     function routeToInfoForm() {
       var pos = currentUser.position;
-      document.getElementById('enrol-req').classList.toggle('hidden', pos === 'advisor'); // advisors: proof of enrolment not required
+      document.getElementById('enrol-req').classList.toggle('hidden', pos === 'advisor'); // until the server says (Parameters → Required information)
+      if (window.lastRequired) applyRequiredMarks(window.lastRequired);
       var banner = document.getElementById('info-team-banner');
 
       if (pos === 'delegate') {
@@ -1438,8 +1457,8 @@
         banner.classList.add('hidden');
       }
 
-      // The IFMSA/AMSA certificate section is for delegates only.
-      document.getElementById('ifmsa-section').classList.toggle('hidden', pos !== 'delegate' || !certificateOn());
+      // The certificate section: delegates only, after the early bird (v8.0) — the payment details decide (certUpload).
+      document.getElementById('ifmsa-section').classList.toggle('hidden', pos !== 'delegate' || !certificateOn() || !(paymentStatus && paymentStatus.certUpload));
       document.getElementById('level-wrap').classList.toggle('hidden', pos !== 'observer');
       document.getElementById('enrol-observer-note').classList.toggle('hidden', pos !== 'observer');
       document.getElementById('teams-card').classList.add('hidden');
@@ -1574,6 +1593,8 @@
             return;
           }
           paymentStatus = res;
+          if (res.required) window.lastRequired = res.required;
+          if (currentUser.position === 'delegate') document.getElementById('ifmsa-section').classList.toggle('hidden', !certificateOn() || !res.certUpload);
           serverOffsetMs = new Date(res.serverNow).getTime() - Date.now();
           renderPaymentSection(res);
           renderTeamsCard(res);
@@ -1598,17 +1619,15 @@
       document.getElementById('level-help').classList.toggle('hidden', !!s.levelLocked);
     }
 
-    var payDetailsInOption = false; // the bank details moved into a new payment's box (see renderOption)
+    var payDetailsInOption = false; // the bank details move into the payment box once the person's own fee is paid
+    // v8.0 (2026-11-07): delegates see their price and payment only (their advisor pays);
+    // advisors tick who they pay for; observers pay for themselves. Invoices are their own requests.
     function renderPaymentSection(s) {
       var section = document.getElementById('payment-section');
       section.classList.remove('hidden');
       clearMsg('payment-msg');
       paymentDirtyAt = 0; // freshly drawn: nothing typed or chosen here yet
 
-      // Once the payment is Verified the price line is no longer needed
-      // (2026-10-21); the "paid" status stays. The bank details stay whenever
-      // a NEW payment can still be made — e.g. an advisor who already paid
-      // and now pays for an observer who registered later (2026-11-01).
       var dep = s.deposit;
       var depWaiting = !!dep && ['initialPending', 'waitingResults', 'secondPending'].indexOf(dep.state) !== -1;
       var paidDone = !!(s.paymentVerified || (s.covered && s.covered.status === 'Verified' && !dep));
@@ -1616,27 +1635,27 @@
       var details = document.getElementById('payment-image');
       document.getElementById('fee-note').insertAdjacentElement('afterend', details); // back to its place before redrawing
       payDetailsInOption = paidDone && canPayNew;
-      // The IFMSA/AMSA certificate only lowers the price: not needed once paid (2026-11-01).
-      // An initial deposit is paid in the early bird: the certificate (a discount after it) no longer matters.
-      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || paidDone || !certificateOn() || (!!dep && dep.state !== 'notPaid'));
+      // The certificate upload (v8.0): only after the early bird, not for those who paid during it.
+      document.getElementById('ifmsa-section').classList.toggle('hidden', currentUser.position !== 'delegate' || !certificateOn() || !s.certUpload);
       ['fee-line', 'fee-note'].forEach(function (id) { document.getElementById(id).classList.toggle('hidden', paidDone || (depWaiting && !canPayNew)); });
-      details.classList.toggle('hidden', (paidDone || depWaiting) && !canPayNew);
+      // The bank details: for whoever pays (not delegates), until their own fee is paid (a new payment shows them in its box).
+      details.classList.toggle('hidden', !s.canPay || ((paidDone || depWaiting) && !canPayNew) || (paidDone && canPayNew));
       document.getElementById('fee-line').textContent = dep && dep.state === 'notPaid' ? 'Initial deposit: ' + thb(dep.initial) + ' per delegate'
-        : dep && dep.state === 'owesSecond' ? 'Second deposit: ' + thb(dep.second) + ' per delegate' : 'Final price: ' + thb(s.price);
+        : dep && dep.state === 'owesSecond' ? 'Second deposit: ' + thb(dep.second) + ' per delegate' : (s.canPay ? 'Your price: ' : 'Your registration fee: ') + thb(s.price);
       var note;
       if (s.price === null) note = s.priceBasis;
-      else if (dep && dep.state === 'owesSecond') note = dep.deadlineAt ? 'Please pay by ' + dep.deadlineAt + ' (Thailand time).' : '';
-      else if (dep && dep.state === 'notPaid') note = 'Initial deposits can be paid until ' + s.earlyBirdEnds + ' (Thailand time), the end of the early-bird period.';
+      else if (dep && dep.state === 'owesSecond') note = dep.deadlineAt ? 'Due by ' + dep.deadlineAt + ' (GMT+7, Thailand time).' : '';
+      else if (dep && dep.state === 'notPaid') note = 'Initial deposits are paid until ' + s.earlyBirdEnds + ' (GMT+7, Thailand time), the end of the early-bird period.';
       else if (s.covered) note = 'Fixed when the payment was submitted.';
-      else note = s.priceBasis + '. ' + (s.earlyBird ? 'Early-bird price for payments submitted until ' + s.earlyBirdEnds + ' (Thailand time).' : 'The early-bird period has ended.') +
+      else note = s.priceBasis + '. ' + (s.earlyBird ? 'Early-bird price for payments submitted until ' + s.earlyBirdEnds + ' (GMT+7, Thailand time).' : 'The early-bird period has ended.') +
         (s.priceProvisional ? ' This price is confirmed once the organizers verify your proof of enrolment.' : '');
+      if (s.payNote) note = (note ? note + ' ' : '') + s.payNote;
       document.getElementById('fee-note').textContent = note;
 
       // The payment this person is in.
       var cov = document.getElementById('payment-covered');
       cov.textContent = '';
       cov.className = 'msg';
-      // Pre-ICEM exam deposits (2026-11-07): one notice instead of the usual "your fee is in payment …".
       var depBox = document.getElementById('deposit-box');
       depBox.textContent = '';
       depBox.className = 'deposit-box' + (dep ? ' ' + (dep.kind === 'info' ? '' : dep.kind) : ' hidden');
@@ -1653,23 +1672,23 @@
         cov.appendChild(statusSpan(c.status));
         if (c.status === 'Verified') cov.appendChild(document.createTextNode(' — paid.'));
         if (c.status === 'Not verified') cov.appendChild(document.createTextNode(' — the organizers could not confirm this payment yet; the person who paid will upload another slip.'));
+      } else if (!s.canPay && !dep) {
+        cov.className = 'msg';
+        cov.textContent = 'Not paid yet — your advisor pays the registration fee for your team.';
       }
 
-      // Payment options.
+      // What can be paid now.
       var box = document.getElementById('payment-options');
       box.textContent = '';
-      (s.options || []).forEach(function (o, idx) { box.appendChild(renderOption(o, idx)); });
+      (s.options || []).forEach(function (o, idx) { box.appendChild(renderSelection(o, idx)); });
 
       // Payments I submitted.
       var mine = document.getElementById('my-payments');
       mine.textContent = '';
       (s.myPayments || []).forEach(function (p, idx) { mine.appendChild(renderMyPayment(p, idx)); });
-      (s.myPayments || []).forEach(function (p, idx) {
-        if (p.id === invoiceSavedFor) setMsg('inv-msg-p' + idx, 'Invoice request saved.', false);
-      });
-      invoiceSavedFor = null;
-      renderCombinedInvoice(s);
+      renderInvoices(s);
       renderChecklist(s);
+      applyRequiredMarks(s.required);
 
       section.classList.toggle('overdue', !!s.overdue);
       startCountdowns();
@@ -1691,54 +1710,99 @@
       return t;
     }
 
-    function renderOption(o, idx) {
-      var d = el('div', 'pay-option' + (o.stage ? ' stage-' + o.stage : ''));
-      d.appendChild(el('h3', '', o.title));
-      // One payment deadline for everyone (2026-11-01) = InfoEditDeadline.
-      if (o.window && o.window.mode === 'early' && o.available && o.stage === 'initial') {
-        d.appendChild(el('p', 'deadline-alert', 'Pay the initial deposit before ' + o.window.earlyEnds + ' (Thailand time). After that, the team pays the full regular price instead.'));
-      } else if (o.window && o.window.mode === 'early' && o.available) {
-        d.appendChild(el('p', 'deadline-alert', 'Pay before ' + o.window.earlyEnds + ' (Thailand time) to get the early-bird price.' +
-          (o.window.payByText ? ' Payment deadline: ' + o.window.payByText + '.' : '')));
-      } else if (o.window && o.window.mode === 'deadline' && o.available) {
+    function deadlineLine(o) {
+      if (!o.available || !o.window) return null;
+      if (o.window.mode === 'early' && o.stage !== 'second') {
+        return el('p', 'deadline-alert', (o.notes && o.notes.length && /Pre-ICEM exam/.test(o.notes[0]) ? 'Pay the initial deposits before ' + o.window.earlyEnds + ' (GMT+7, Thailand time). After that, a team pays the full regular price instead.'
+          : 'Pay before ' + o.window.earlyEnds + ' (GMT+7, Thailand time) to get the early-bird price.') + (o.window.payByText ? ' Payment deadline: ' + o.window.payByText + ' (GMT+7, Thailand time).' : ''));
+      }
+      if (o.window.mode === 'deadline') {
         var p = el('p', 'deadline-alert');
         if (o.window.overdue) {
-          p.textContent = 'The payment deadline was ' + o.window.payByText + ' (Thailand time). You can still pay, but your payment will be marked late — please pay as soon as possible.';
+          p.textContent = 'The payment deadline was ' + o.window.payByText + ' (GMT+7, Thailand time). You can still pay, but your payment will be marked late — please pay as soon as possible.';
         } else {
-          p.appendChild(document.createTextNode('Payment deadline: ' + o.window.payByText + ' (Thailand time). '));
+          p.appendChild(document.createTextNode('Payment deadline: ' + o.window.payByText + ' (GMT+7, Thailand time). '));
           var cd = el('span', 'countdown', '…');
           cd.setAttribute('data-payby', o.window.payBy);
           p.appendChild(cd);
         }
-        d.appendChild(p);
+        return p;
       }
+      return null;
+    }
+
+    /**
+     * The advisor's tick-box list (or the observer's own line):
+     * <name> (you) <role> <price>; other advisors (tickable together with at
+     * least one of their teams, v8.1); teams with a drop-down of their
+     * delegates (own teams ticked, can be unticked to pay later); observers
+     * with their study level.
+     */
+    function renderSelection(o, idx) {
+      var d = el('div', 'pay-option' + (o.stage ? ' stage-' + o.stage : ''));
+      d.appendChild(el('h3', '', o.title));
+      var dl = deadlineLine(o);
+      if (dl) d.appendChild(dl);
       (o.notes || []).forEach(function (n) { d.appendChild(el('p', 'muted', n)); });
-      if (o.people && o.people.length) d.appendChild(renderTable(o.people));
-      if (o.observers && o.observers.length) d.appendChild(renderObserverPicker(o, idx));
-      if ((o.people && o.people.length) || (o.observers && o.observers.length)) {
-        var tot = el('div', 'pay-total', 'Total: ' + thb(o.total));
-        tot.id = 'opt-total-' + idx;
-        d.appendChild(tot);
-      }
+      if (o.type === 'Selection' && o.available) d.appendChild(el('p', 'muted', 'You are always in your payment, together with at least one of your own complete teams (they start ticked). With two teams you can untick one to pay for it later — you still have to pay for it. You can also tick other teams, observers and advisors of your university; an advisor is paid together with at least one of their teams. Greyed rows can\'t be ticked — the reason is shown instead of the price.'));
+      var t = el('table', 'pay-table sel-table');
+      var head = el('tr');
+      ['', 'Name', 'Role', 'Price'].forEach(function (h, i) { head.appendChild(el('th', i === 3 ? 'num' : i === 0 ? 'tick' : '', h)); });
+      t.appendChild(head);
+      (o.rows || []).forEach(function (r, j) {
+        var tr = el('tr', (r.locked || r.selectable) ? (r.locked ? 'locked' : '') : 'excluded');
+        var c = el('td', 'tick');
+        if (o.type === 'Selection' && (r.locked || r.selectable)) {
+          var cb = el('input'); cb.type = 'checkbox'; cb.className = 'sel-pick-' + idx; cb.id = 'sel-' + idx + '-' + j;
+          cb.setAttribute('data-key', r.key); cb.setAttribute('data-price', String(r.price || 0));
+          cb.setAttribute('data-kind', r.kind); cb.setAttribute('data-name', r.name || '');
+          if (r.advisorKey) cb.setAttribute('data-adv', r.advisorKey);
+          if (r.teamKeys) cb.setAttribute('data-teams', JSON.stringify(r.teamKeys));
+          cb.checked = !!r.locked || !!r.checked; cb.disabled = !!r.locked || !o.available;
+          if (r.locked) cb.title = 'Always in your payment';
+          cb.onchange = function () { paymentDirtyAt = Date.now(); selectionTicked(idx, this); updateSelectionTotal(idx); };
+          c.appendChild(cb);
+        }
+        tr.appendChild(c);
+        var nameTd = el('td', 'sel-name');
+        var lbl = el(o.type === 'Selection' && (r.locked || r.selectable) ? 'label' : 'span');
+        if (lbl.tagName === 'LABEL') lbl.setAttribute('for', 'sel-' + idx + '-' + j);
+        lbl.appendChild(el('b', '', r.name));
+        if (r.tag) lbl.appendChild(el('span', 'sel-tag', ' ' + r.tag));
+        nameTd.appendChild(lbl);
+        if (r.kind === 'team' && r.members && r.members.length) {
+          var det = el('details', 'sel-members');
+          det.appendChild(el('summary', '', r.members.length + ' delegate' + (r.members.length === 1 ? '' : 's')));
+          var ul = el('ul');
+          r.members.forEach(function (m) { ul.appendChild(el('li', m.note ? 'muted' : '', m.name + ' — ' + (m.note ? m.note : thb(m.price)))); });
+          det.appendChild(ul);
+          nameTd.appendChild(det);
+        }
+        tr.appendChild(nameTd);
+        tr.appendChild(el('td', '', cap(r.kind === 'team' ? (o.stage === 'second' ? 'Team · second deposit' : 'Team') : r.role) + (r.level ? ' · ' + r.level : '')));
+        tr.appendChild(el('td', 'num' + (r.note ? ' sel-note' : ''), r.note ? r.note : thb(r.price)));
+        t.appendChild(tr);
+      });
+      d.appendChild(t);
+      var tot = el('div', 'pay-total', 'Total: ' + thb(o.total));
+      tot.id = 'opt-total-' + idx;
+      d.appendChild(tot);
       if (!o.available) {
         if (o.incomplete && o.incomplete.length) {
-          // Required information (2026-11-04): who still misses what.
           var box = el('div', 'incomplete-box');
-          box.appendChild(el('b', '', 'Before this payment can be sent, everyone it covers needs their required information and documents. Still missing:'));
-          var ul = el('ul');
-          o.incomplete.forEach(function (g) { ul.appendChild(el('li', '', g.name + ': ' + g.missing.join(', '))); });
-          box.appendChild(ul);
+          box.appendChild(el('b', '', 'Before you can pay, fill in your required information and documents. Still missing:'));
+          var ul2 = el('ul');
+          o.incomplete.forEach(function (g) { ul2.appendChild(el('li', '', g.name + ': ' + g.missing.join(', '))); });
+          box.appendChild(ul2);
           d.appendChild(box);
         } else d.appendChild(el('p', 'muted', o.reason));
         return d;
       }
-
       if (payDetailsInOption) {
-        // Already paid for yourself: the bank details go right here, for this new payment.
         payDetailsInOption = false;
-        var det = document.getElementById('payment-image');
-        det.classList.remove('hidden');
-        d.appendChild(det);
+        var det2 = document.getElementById('payment-image');
+        det2.classList.remove('hidden');
+        d.appendChild(det2);
       }
       var slipLabel = el('label', '', 'Payment slip (PDF, JPG or PNG, max ' + uploadMax() + ') — transfer exactly ' + thb(o.total));
       slipLabel.id = 'slip-label-' + idx;
@@ -1747,314 +1811,80 @@
       slip.type = 'file'; slip.id = 'slip-' + idx; slip.accept = FILE_ACCEPT;
       d.appendChild(slip);
       d.appendChild(el('p', 'action-hint', 'After choosing the slip, click Submit payment.'));
-
       var row = el('div', 'btn-row');
       var btn = el('button', 'btn-primary', 'Submit payment');
       btn.id = 'pay-btn-' + idx;
-      btn.onclick = function () { submitPaymentOption(idx); };
-      if (o.needsObserver) btn.disabled = true; // enabled once an observer is ticked
+      btn.onclick = function () { submitSelection(idx); };
+      var anyTicked = (o.rows || []).some(function (r) { return r.locked || (r.selectable && r.checked); });
+      if (o.needsSelection && !anyTicked) btn.disabled = true; // enabled once a row is ticked
       row.appendChild(btn);
-      if (o.needsObserver) row.appendChild(el('span', 'muted', 'Tick at least one observer above.'));
+      if (o.needsSelection) { var hint = el('span', 'muted' + (anyTicked ? ' hidden' : ''), 'Tick at least one row above.'); hint.id = 'pay-hint-' + idx; row.appendChild(hint); }
       d.appendChild(row);
+      if (o.type === 'Selection') { var later = el('p', 'held-note hidden'); later.id = 'pay-later-' + idx; d.appendChild(later); }
       var msg = el('div', 'msg'); msg.id = 'pay-msg-' + idx;
       d.appendChild(msg);
-      var comb = paymentStatus && paymentStatus.combinedInvoice;
-      if (paymentStatus && paymentStatus.invoiceClosed) {
-        var cz = el('div', 'inv-section');
-        cz.appendChild(el('h4', '', 'Invoice request'));
-        cz.appendChild(el('p', 'muted', 'Invoice requests closed on ' + paymentStatus.invoiceCloseAt + ' (Thailand time), so this payment is sent without an invoice.'));
-        d.appendChild(cz);
-      } else if (comb && comb.needed && !comb.confirmed) {
-        var cw = el('div', 'inv-section');
-        cw.appendChild(el('h4', '', 'Invoice request'));
-        cw.appendChild(el('p', 'muted', 'You asked for one invoice for all your payments, so this payment will be added to it.'));
-        d.appendChild(cw);
-      } else {
-        d.appendChild(buildInvoiceBox('o' + idx, null,
-          'Optional. Fill it in now and it is sent with your payment, or add / change it later under "Your payment".', { people: optionPeople(o, idx) }));
-      }
       return d;
     }
 
-    // ---- Invoice request (below the submit button; can be changed after paying) ----
     var FILE_ACCEPT = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
-
-    /** A confirmed invoice: shown, not editable — with "Request invoice edit" (2026-11-01). */
-    function confirmedInvoiceBox(cur, title, opts) {
-      opts = opts || {};
-      var wrap = el('div', 'inv-section');
-      wrap.appendChild(el('h4', '', title || 'Invoice request'));
-      var box = el('div', 'inv-confirmed');
-      if (cur.byDeadline) {
-        box.appendChild(el('b', '', '✓ Invoice locked and confirmed' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + ' (the invoice deadline).'));
-        box.appendChild(document.createTextNode(' It can no longer be changed here — use "Request invoice edit" below if something is wrong.'));
-      } else {
-        box.appendChild(el('b', '', '✓ Invoice confirmed by the organizers' + (cur.confirmedAt ? ' on ' + cur.confirmedAt : '') + '.'));
-        box.appendChild(document.createTextNode(' It can no longer be changed here — please contact the organizers if something is wrong.'));
-      }
-      var dl = el('dl');
-      var onList = (cur.people || []).filter(function (x) { return (cur.names || []).indexOf(x.key) !== -1; })
-        .map(function (x) { return x.name + ' (' + cap(x.role) + ')'; }).join(', ');
-      [['Template', cur.option === 'Custom' ? 'Your own template' : "Organizers' KKU template"], ['Bill to', cur.billTo], ['Address', cur.address], ['Tax ID', cur.taxId],
-        ['Names on the invoice', onList], ['Telephone', cur.phone], ['Other information', cur.note]].forEach(function (r) {
-        if (!r[1]) return;
-        dl.appendChild(el('dt', '', r[0])); dl.appendChild(el('dd', '', r[1]));
-      });
-      box.appendChild(dl);
-      wrap.appendChild(box);
-      if (opts.editTarget) wrap.appendChild(editRequestBox(opts.editTarget, opts.editKey || 'x', cur, ''));
-      return wrap;
-    }
-
-    /**
-     * "Request invoice edit": asks the organizers to unlock a confirmed
-     * invoice (they see it in their Notification center). target =
-     * { paymentId } or { combined: true }.
-     */
-    function editRequestBox(target, key, cur, defaultNote) {
-      var box = el('div', 'edit-request');
-      if (cur && cur.editRequested) {
-        box.appendChild(el('div', 'sent', 'Edit requested on ' + cur.editRequestedAt + ' — waiting for the organizers to unlock this invoice.'));
-        if (cur.editRequestNote) box.appendChild(el('p', 'muted', 'Your message: ' + cur.editRequestNote));
-        return box;
-      }
-      var open = el('button', 'btn-white btn-small', 'Request invoice edit'); open.id = 'inv-edit-open-' + key;
-      var form = el('div', 'hidden');
-      var lbl = el('label', '', 'What should change? (optional)'); lbl.setAttribute('for', 'inv-edit-note-' + key);
-      var ta = el('textarea'); ta.id = 'inv-edit-note-' + key; ta.rows = 2; ta.maxLength = 500; ta.value = defaultNote || '';
-      ta.placeholder = 'e.g. add the observers who paid later, the Tax ID is wrong, …';
-      var row = el('div', 'btn-row');
-      var send = el('button', 'btn-primary btn-small', 'Send request'); send.id = 'inv-edit-send-' + key;
-      var msg = el('div', 'msg'); msg.id = 'inv-edit-msg-' + key;
-      open.onclick = function () { form.classList.remove('hidden'); open.classList.add('hidden'); ta.focus(); };
-      send.onclick = function () {
-        if (!beginAction('inv-edit-' + key, [send.id])) return;
-        var body = { note: ta.value.trim() };
-        if (target.paymentId) body.paymentId = target.paymentId; else body.combined = true;
-        callServer('requestInvoiceEdit', [sessionToken, body], {
-          buttonIds: [send.id],
-          onFinish: function () { endAction('inv-edit-' + key, [send.id]); },
-          msgElId: msg.id,
-          onSuccess: function (res) {
-            if (!checkRes(res, msg.id)) return;
-            if (!res.success) { setMsg(msg.id, res.message, true); return; }
-            refreshPaymentStatus();
-          }
-        });
-      };
-      box.appendChild(el('p', 'muted', 'Need a change? Send a request: if the organizers accept it, the invoice is unlocked for you to change.'));
-      box.appendChild(open);
-      form.appendChild(lbl); form.appendChild(ta); row.appendChild(send); form.appendChild(row);
-      box.appendChild(form);
-      box.appendChild(msg);
-      return box;
-    }
-
-    function buildInvoiceBox(prefix, cur, hint, opts) {
-      cur = cur || {};
-      opts = opts || {};
-      if (cur.confirmed) return confirmedInvoiceBox(cur, opts.title, opts);
-      var wrap = el('div', 'inv-section');
-      wrap.appendChild(el('h4', '', opts.title || 'Invoice request'));
-      if (hint) wrap.appendChild(el('p', 'muted', hint));
-      if (cur.reopened) wrap.appendChild(el('div', 'held-note', 'The organizers accepted your edit request and unlocked this invoice. Change it and save — they will confirm it again.'));
-
-      var invLabel = el('label');
-      invLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;';
-      var invCb = el('input'); invCb.type = 'checkbox'; invCb.id = 'inv-needed-' + prefix; invCb.checked = !!cur.needed;
-      invLabel.appendChild(invCb);
-      invLabel.appendChild(document.createTextNode(opts.label || 'I need an invoice'));
-      wrap.appendChild(invLabel);
-
-      var inv = el('div', 'inv-box' + (cur.needed ? '' : ' hidden')); inv.id = 'inv-box-' + prefix;
-      [['Default', "Default (the organizers' KKU invoice template)"], ['Custom', 'Custom (upload your own invoice template)']].forEach(function (pair) {
-        var l = el('label');
-        l.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;margin-top:4px;';
-        var r = el('input'); r.type = 'radio'; r.name = 'inv-opt-' + prefix; r.value = pair[0];
-        r.checked = (cur.option || 'Default') === pair[0];
-        r.onchange = function () {
-          document.getElementById('inv-tpl-wrap-' + prefix).classList.toggle('hidden', pair[0] !== 'Custom');
-          showInvoiceRequired(prefix, pair[0] === 'Default');
-        };
-        l.appendChild(r); l.appendChild(document.createTextNode(pair[1]));
-        inv.appendChild(l);
-      });
-      var tplWrap = el('div', cur.option === 'Custom' ? '' : 'hidden'); tplWrap.id = 'inv-tpl-wrap-' + prefix;
-      tplWrap.appendChild(el('label', '', 'Your invoice template (PDF, JPG or PNG, max ' + uploadMax() + ')'));
-      if (cur.hasTemplate) tplWrap.appendChild(el('p', 'muted', 'A template is already uploaded. Choose a new file only to replace it.'));
-      var tpl = el('input'); tpl.type = 'file'; tpl.id = 'inv-tpl-' + prefix; tpl.accept = FILE_ACCEPT;
-      tplWrap.appendChild(tpl);
-      inv.appendChild(tplWrap);
-      inv.appendChild(el('p', 'inv-kku-note' + ((cur.option || 'Default') === 'Default' ? '' : ' hidden'), 'The KKU template needs Bill to, Address, Tax ID and the names to print.'));
-      inv.lastChild.id = 'inv-kku-note-' + prefix;
-      var field = function (key, label, required, multi, max) {
-        var l = el('label', '', label);
-        if (required) { var rq = el('span', 'inv-req inv-req-' + prefix, 'required'); l.appendChild(rq); }
-        inv.appendChild(l);
-        var i = el(multi ? 'textarea' : 'input');
-        if (multi) i.rows = 2; else i.type = 'text';
-        i.id = 'inv-' + key + '-' + prefix; i.maxLength = max || 200; i.value = cur[key] || '';
-        inv.appendChild(i);
-        return i;
-      };
-      field('billTo', 'Bill to', true).placeholder = 'Who the invoice is made out to, e.g. Faculty of Medicine, Khon Kaen University';
-      field('address', 'Address', true, true, 500);
-      field('taxId', 'Tax ID', true, false, 50);
-      var nl = el('label', '', 'Names on the invoice'); nl.appendChild(el('span', 'inv-req inv-req-' + prefix, 'required'));
-      inv.appendChild(nl);
-      var names = el('div', 'inv-names'); names.id = 'inv-names-' + prefix;
-      inv.appendChild(names);
-      fillInvoiceNames(names, prefix, opts.people || cur.people || [], cur.people && cur.needed ? cur.names : null);
-      field('phone', 'Telephone (optional)');
-      var note = field('note', 'Other information for the invoice (optional)', false, true, 1000);
-      note.rows = 3;
-      note.placeholder = 'Anything not asked above, or instructions for the finance team — e.g. "I need it as a PDF / picture".';
-      wrap.appendChild(inv);
-      invCb.onchange = function () { inv.classList.toggle('hidden', !invCb.checked); };
-      setTimeout(function () { showInvoiceRequired(prefix, (cur.option || 'Default') === 'Default'); }, 0);
-      return wrap;
-    }
-
-    /** "required" marks: only the KKU template needs the fields. */
-    function showInvoiceRequired(prefix, kku) {
-      document.querySelectorAll('.inv-req-' + prefix).forEach(function (x) { x.classList.toggle('hidden', !kku); });
-      var n = document.getElementById('inv-kku-note-' + prefix);
-      if (n) n.classList.toggle('hidden', !kku);
-    }
-
-    /**
-     * Tick boxes for the names to print: everyone the payment covers, with
-     * their position, ticked unless the person unticked them. checkedKeys =
-     * null ticks everyone; ticks already on the page are kept when redrawn.
-     */
-    function renderInvoiceNames(prefix, people, checkedKeys) {
-      var box = document.getElementById('inv-names-' + prefix);
-      if (box) fillInvoiceNames(box, prefix, people, checkedKeys);
-    }
-    function fillInvoiceNames(box, prefix, people, checkedKeys) {
-      var before = {};
-      box.querySelectorAll('input[data-key]').forEach(function (cb) { before[cb.getAttribute('data-key')] = cb.checked; });
-      box.textContent = '';
-      if (!people.length) { box.appendChild(el('span', 'muted', 'Nobody yet.')); return; }
-      people.forEach(function (p, i) {
-        var l = el('label');
-        var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-name-' + prefix + '-' + i; cb.setAttribute('data-key', p.key);
-        // Observers who paid for themselves are never ticked by default (2026-11-06); greyed when they can't be added.
-        cb.checked = p.eligible === false ? !!(checkedKeys && checkedKeys.indexOf(p.key) !== -1) : (p.key in before ? before[p.key] : (checkedKeys ? checkedKeys.indexOf(p.key) !== -1 : !p.extra));
-        if (p.eligible === false) { cb.disabled = true; l.style.opacity = '0.6'; }
-        l.appendChild(cb);
-        l.appendChild(document.createTextNode(p.name + ' '));
-        l.appendChild(el('span', 'role', '(' + cap(p.role) + ')'));
-        if (p.note) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'inv-extra-note', '— ' + p.note)); }
-        box.appendChild(l);
+    function pickedRows(idx) {
+      return Array.prototype.slice.call(document.querySelectorAll('.sel-pick-' + idx + ':checked')).map(function (cb) {
+        return { key: cb.getAttribute('data-key'), price: Number(cb.getAttribute('data-price')) || 0, locked: cb.disabled };
       });
     }
-
-
-    /** Reads an invoice box. Returns { error } or { invoice, tplFile } (invoice without the file). */
-    function readInvoiceBox(prefix, hasTemplate) {
-      var cb = document.getElementById('inv-needed-' + prefix);
-      if (!cb) return { invoice: { needed: false }, tplFile: null }; // no invoice box (combined invoice)
-      var needed = cb.checked;
-      if (!needed) return { invoice: { needed: false }, tplFile: null };
-      var picked = document.querySelector('input[name="inv-opt-' + prefix + '"]:checked');
-      var option = picked ? picked.value : 'Default'; // ticked but no option chosen -> Default
-      var tplFile = option === 'Custom' ? document.getElementById('inv-tpl-' + prefix).files[0] : null;
-      if (option === 'Custom' && (tplFile || !hasTemplate)) {
-        var e2 = checkPickedFile(tplFile, 'invoice template');
-        if (e2) return { error: e2 };
-      }
-      var val = function (k) { return document.getElementById('inv-' + k + '-' + prefix).value.trim(); };
-      var names = Array.prototype.slice.call(document.querySelectorAll('#inv-names-' + prefix + ' input[data-key]:checked')).map(function (cb) { return cb.getAttribute('data-key'); });
-      var invoice = { needed: true, option: option, billTo: val('billTo'), address: val('address'), taxId: val('taxId'), names: names, phone: val('phone'), note: val('note'), template: null };
-      if (option === 'Default') {
-        var miss = [];
-        if (!invoice.billTo) miss.push('Bill to');
-        if (!invoice.address) miss.push('Address');
-        if (!invoice.taxId) miss.push('Tax ID');
-        if (miss.length) return { error: 'Invoice request: for the KKU template, please fill in ' + miss.join(', ') + '.' };
-        if (!names.length) return { error: 'Invoice request: please tick at least one name to put on the invoice.' };
-      }
-      return { tplFile: tplFile || null, invoice: invoice };
-    }
-
-    function saveInvoice(paymentId, idx, hasTemplate) {
-      var prefix = 'p' + idx, msgId = 'inv-msg-' + prefix;
+    /** v8.1: an advisor (you or another) is paid together with at least one of their teams. */
+    function selectionBoxes(idx) { return Array.prototype.slice.call(document.querySelectorAll('.sel-pick-' + idx)); }
+    function selectionTicked(idx, cb) {
+      var boxes = selectionBoxes(idx), msgId = 'pay-msg-' + idx;
+      var byKey = function (k) { return boxes.filter(function (b) { return b.getAttribute('data-key') === k; })[0]; };
+      var teamsOf = function (b) { try { return JSON.parse(b.getAttribute('data-teams') || '[]'); } catch (e) { return []; } };
       clearMsg(msgId);
-      var r = readInvoiceBox(prefix, hasTemplate);
-      if (r.error) { setMsg(msgId, r.error, true); return; }
-      var invIds = ['inv-save-' + prefix];
-      if (!beginAction('invoice-' + paymentId, invIds)) return;
-      readAsBase64(r.tplFile, function (tpl) {
-        r.invoice.template = tpl;
-        callServer('updatePaymentInvoice', [sessionToken, paymentId, r.invoice], {
-          buttonIds: ['inv-save-' + prefix],
-          onFinish: function () { endAction('invoice-' + paymentId, invIds); },
-          msgElId: msgId,
-          onSuccess: function (res) {
-            if (!checkRes(res, msgId)) return;
-            if (!res.success) { setMsg(msgId, res.message, true); return; }
-            invoiceSavedFor = paymentId; // message shown after the section re-renders
-            refreshPaymentStatus();
-          }
-        });
-      });
-    }
-
-    // Observers from the advisor's university that can be added to a
-    // university payment. Only verified, unpaid observers can be ticked.
-    function renderObserverPicker(o, idx) {
-      var box = el('div', 'inv-section');
-      box.appendChild(el('h4', '', 'Observers from your university'));
-      box.appendChild(el('p', 'muted', 'Tick the observers this payment also covers. Observers you do not tick pay individually.'));
-      var t = el('table', 'pay-table');
-      var head = el('tr');
-      ['', 'Name', 'Study level', 'Price'].forEach(function (h, i) { head.appendChild(el('th', i === 3 ? 'num' : '', h)); });
-      t.appendChild(head);
-      o.observers.forEach(function (ob, j) {
-        var tr = el('tr', ob.eligible ? '' : 'excluded');
-        var c = el('td');
-        if (ob.eligible && o.available) {
-          var cb = el('input'); cb.type = 'checkbox'; cb.className = 'obs-pick-' + idx; cb.id = 'obs-' + idx + '-' + j;
-          cb.setAttribute('data-obs-id', ob.id); cb.setAttribute('data-price', String(ob.price));
-          cb.onchange = function () { updateOptionTotal(idx); };
-          c.appendChild(cb);
+      var kind = cb.getAttribute('data-kind');
+      if (kind === 'advisor' && cb.checked) {
+        var ks = teamsOf(cb);
+        if (ks.length && !ks.some(function (k) { var b = byKey(k); return b && b.checked; })) {
+          ks.forEach(function (k) { var b = byKey(k); if (b && !b.disabled) b.checked = true; });
+          setMsg(msgId, cb.getAttribute('data-name') + ' is paid together with their team, so it was ticked too.', false);
         }
-        tr.appendChild(c);
-        tr.appendChild(el('td', '', ob.name));
-        tr.appendChild(el('td', '', ob.level || '—'));
-        tr.appendChild(el('td', 'num', ob.eligible ? thb(ob.price) : ob.note));
-        t.appendChild(tr);
-      });
-      box.appendChild(t);
-      return box;
+      }
+      if (kind === 'team' && !cb.checked && cb.getAttribute('data-adv')) {
+        var a = byKey(cb.getAttribute('data-adv'));
+        if (a && a.checked) {
+          var still = teamsOf(a).some(function (k) { var b = byKey(k); return b && b.checked; });
+          if (!still) {
+            cb.checked = true;
+            setMsg(msgId, a.getAttribute('data-adv') === null && a.getAttribute('data-kind') === 'me'
+              ? 'You pay together with at least one of your teams, so this one stays ticked. (With two teams, untick the one to pay later.)'
+              : a.getAttribute('data-name') + ' is paid together with at least one of their teams. Untick ' + a.getAttribute('data-name') + ' first.', true);
+          }
+        }
+      }
     }
-
-    /** Everyone a new payment would cover (for the names on the invoice). */
-    function optionPeople(o, idx) {
-      var list = (o.people || []).filter(function (p) { return !p.excluded; }).map(function (p) { return { key: p.key, name: p.name, role: p.role }; });
-      var picked = {};
-      document.querySelectorAll('.obs-pick-' + idx + ':checked').forEach(function (cb) { picked[cb.getAttribute('data-obs-id')] = true; });
-      (o.observers || []).forEach(function (ob) { if (picked[ob.id]) list.push({ key: ob.id, name: ob.name, role: 'observer' }); });
-      return list;
+    function updatePayLater(idx) {
+      var p = document.getElementById('pay-later-' + idx);
+      if (!p) return;
+      var left = selectionBoxes(idx).filter(function (b) { return b.getAttribute('data-kind') === 'team' && b.getAttribute('data-adv') === 'me' && !b.checked && !b.disabled; })
+        .map(function (b) { return b.getAttribute('data-name'); });
+      p.textContent = left.length ? 'Not in this payment: ' + left.join(', ') + ' — you still have to pay for ' + (left.length === 1 ? 'this team' : 'these teams') + ' later.' : '';
+      p.classList.toggle('hidden', !left.length);
     }
-
-    function pickedObservers(idx) {
-      return Array.prototype.slice.call(document.querySelectorAll('.obs-pick-' + idx + ':checked')).map(function (cb) {
-        return { id: cb.getAttribute('data-obs-id'), price: Number(cb.getAttribute('data-price')) || 0 };
-      });
-    }
-
-    function updateOptionTotal(idx) {
+    function selectionTotal(idx) {
       var o = paymentStatus.options[idx];
-      var extra = pickedObservers(idx).reduce(function (sum, x) { return sum + x.price; }, 0);
+      if (o.type !== 'Selection') return o.total;
+      return pickedRows(idx).reduce(function (n, x) { return n + x.price; }, 0);
+    }
+    function updateSelectionTotal(idx) {
+      var o = paymentStatus.options[idx], total = selectionTotal(idx);
       var tot = document.getElementById('opt-total-' + idx);
-      if (tot) tot.textContent = 'Total: ' + thb(o.total + extra);
+      if (tot) tot.textContent = 'Total: ' + thb(total);
       var lbl = document.getElementById('slip-label-' + idx);
-      if (lbl) lbl.textContent = 'Payment slip (PDF, JPG or PNG, max ' + uploadMax() + ') — transfer exactly ' + thb(o.total + extra);
-      renderInvoiceNames('o' + idx, optionPeople(o, idx), null);
+      if (lbl) lbl.textContent = 'Payment slip (PDF, JPG or PNG, max ' + uploadMax() + ') — transfer exactly ' + thb(total);
       var pb = document.getElementById('pay-btn-' + idx);
-      if (pb && o.needsObserver && !busyActions['pay-' + idx]) pb.disabled = pickedObservers(idx).length === 0;
+      var none = pickedRows(idx).length === 0;
+      if (pb && o.needsSelection && !busyActions['pay-' + idx]) pb.disabled = none;
+      var hint = document.getElementById('pay-hint-' + idx);
+      if (hint) hint.classList.toggle('hidden', !none);
+      updatePayLater(idx);
     }
 
     function renderMyPayment(p, idx) {
@@ -2072,7 +1902,7 @@
       if (p.status === 'Not verified') {
         d.appendChild(el('p', 'muted', 'The organizers could not verify this payment. If the amount was short, transfer the remaining amount and upload the new slip here. Both slips are kept.'));
         var row = el('div', 'inline-row');
-        var f = el('input'); f.type = 'file'; f.id = 'addslip-' + idx; f.accept = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
+        var f = el('input'); f.type = 'file'; f.id = 'addslip-' + idx; f.accept = FILE_ACCEPT;
         var b = el('button', 'btn-secondary btn-small', 'Upload another slip'); b.id = 'addslip-btn-' + idx;
         b.onclick = function () { addSlip(p.id, idx); };
         row.appendChild(f); row.appendChild(b);
@@ -2081,64 +1911,7 @@
         var m = el('div', 'msg'); m.id = 'addslip-msg-' + idx;
         d.appendChild(m);
       }
-      if (p.invoice && p.invoice.heldBy) {
-        var hw = el('div', 'inv-section');
-        hw.appendChild(el('h4', '', 'Invoice request'));
-        hw.appendChild(el('div', 'held-note', p.invoice.heldText));
-        d.appendChild(hw);
-      } else if (p.invoice && p.invoice.combined) {
-        var cw = el('div', 'inv-section');
-        cw.appendChild(el('h4', '', 'Invoice request'));
-        cw.appendChild(el('p', 'muted', 'This payment is part of your combined invoice below.'));
-        d.appendChild(cw);
-      } else if (p.invoice && p.invoice.confirmed) {
-        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, null, { editTarget: { paymentId: p.id }, editKey: 'p' + idx }));
-      } else if (p.invoice && paymentStatus && paymentStatus.invoiceClosed && !p.invoice.reopened) {
-        var zw = el('div', 'inv-section');
-        zw.appendChild(el('h4', '', 'Invoice request'));
-        zw.appendChild(el('p', 'muted', 'Invoice requests closed on ' + paymentStatus.invoiceCloseAt + ' (Thailand time). A new invoice can no longer be requested.'));
-        d.appendChild(zw);
-      } else if (p.invoice) {
-        d.appendChild(buildInvoiceBox('p' + idx, p.invoice, p.invoice.reopened ? '' : 'You can add, change or cancel the invoice request until the organizers confirm it.'));
-        var srow = el('div', 'btn-row');
-        var sb = el('button', 'btn-secondary btn-small', 'Save invoice request'); sb.id = 'inv-save-p' + idx;
-        sb.onclick = function () { saveInvoice(p.id, idx, !!p.invoice.hasTemplate); };
-        srow.appendChild(sb);
-        d.appendChild(srow);
-        var im = el('div', 'msg'); im.id = 'inv-msg-p' + idx;
-        d.appendChild(im);
-      }
-      if (p.type === 'Individual' && p.invoice && !p.invoice.heldBy && !p.invoice.confirmed && paymentStatus && paymentStatus.invoiceSeparate && !(paymentStatus.invoiceClosed && !p.invoice.reopened)) d.appendChild(separateInvoiceBox(paymentStatus.invoiceSeparate));
       return d;
-    }
-
-    /**
-     * Observers who paid for themselves (2026-11-06): an advisor from their
-     * university can put them on the advisor's combined invoice, unless this is ticked.
-     */
-    function separateInvoiceBox(sep) {
-      var w = el('div', 'inv-section');
-      var l = el('label');
-      l.style.cssText = 'display:flex;align-items:flex-start;gap:8px;font-weight:400;font-size:14px;';
-      var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-separate'; cb.checked = !!sep.on; cb.style.marginTop = '3px';
-      l.appendChild(cb);
-      l.appendChild(document.createTextNode("Keep my invoice separate — don't let an advisor from my university add me to their combined invoice."));
-      w.appendChild(l);
-      var m = el('div', 'msg'); m.id = 'inv-separate-msg';
-      w.appendChild(m);
-      cb.onchange = function () {
-        if (!beginAction('inv-separate', ['inv-separate'])) { cb.checked = !cb.checked; return; }
-        callServer('setInvoiceSeparate', [sessionToken, cb.checked], {
-          quiet: true, msgElId: 'inv-separate-msg',
-          onFinish: function () { endAction('inv-separate', ['inv-separate']); },
-          onSuccess: function (res) {
-            if (!checkRes(res, 'inv-separate-msg')) return;
-            if (!res.success) { cb.checked = !cb.checked; setMsg('inv-separate-msg', res.message, true); return; }
-            setMsg('inv-separate-msg', res.on ? 'Saved: your invoice stays separate.' : 'Saved: an advisor from your university may add you to their combined invoice.', false);
-          }
-        });
-      };
-      return w;
     }
 
     function startCountdowns() {
@@ -2181,7 +1954,7 @@
       r.readAsDataURL(file);
     }
 
-    function submitPaymentOption(idx) {
+    function submitSelection(idx) {
       if (busyActions['pay-' + idx]) return; // already sending this payment
       var o = paymentStatus.options[idx];
       var msgId = 'pay-msg-' + idx;
@@ -2189,37 +1962,308 @@
       var slipFile = document.getElementById('slip-' + idx).files[0];
       var err = checkPickedFile(slipFile, 'payment slip');
       if (err) { setMsg(msgId, err, true); return; }
-
-      var inv = readInvoiceBox('o' + idx, false);
-      if (inv.error) { setMsg(msgId, inv.error, true); return; }
-      var picked = pickedObservers(idx);
-      if (o.needsObserver && !picked.length) { setMsg(msgId, 'Please tick at least one observer to include.', true); return; }
-      var total = o.total + picked.reduce(function (sum, x) { return sum + x.price; }, 0);
-      var included = o.people.filter(function (p) { return !p.excluded; }).length + picked.length;
-      if (!confirm('Submit this payment of ' + thb(total) + ' for ' + included + ' ' + (included === 1 ? 'person' : 'people') + '?')) return;
+      var picked = o.type === 'Selection' ? pickedRows(idx) : [];
+      if (o.type === 'Selection' && !picked.length) { setMsg(msgId, 'Please tick at least one row to pay for.', true); return; }
+      var total = selectionTotal(idx);
+      var rows = picked.filter(function (x) { return !x.locked; }).map(function (x) { return x.key; });
+      if (!confirm('Submit this payment of ' + thb(total) + '?')) return;
       var payIds = ['pay-btn-' + idx];
       if (!beginAction('pay-' + idx, payIds)) return;
-
       readAsBase64(slipFile, function (slip) {
-        readAsBase64(inv.tplFile, function (tpl) {
-          if (inv.invoice.needed) inv.invoice.template = tpl;
-          var req = { type: o.type, stage: o.stage || '', teams: o.teams, expectedTotal: total, slip: slip, invoice: inv.invoice,
-            observers: picked.map(function (x) { return x.id; }) };
-          callServer('submitPayment', [sessionToken, req], {
-            buttonIds: ['pay-btn-' + idx],
-            onFinish: function () { endAction('pay-' + idx, payIds); },
-            msgElId: msgId,
-            onSuccess: function (res) {
-              if (!checkRes(res, msgId)) return;
-              if (!res.success) {
-                setMsg(msgId, res.message, true);
-                if (res.priceChanged) refreshPaymentStatus();
-                return;
-              }
-              showModal('Payment ' + res.paymentId + ' (' + thb(res.total) + ') has been submitted. The organizers will check your slip; everyone in this payment will get an email once it is verified.', refreshPaymentStatus);
+        var req = { type: o.type, stage: o.stage || '', rows: rows, expectedTotal: total, slip: slip };
+        callServer('submitPayment', [sessionToken, req], {
+          buttonIds: ['pay-btn-' + idx],
+          onFinish: function () { endAction('pay-' + idx, payIds); },
+          msgElId: msgId,
+          onSuccess: function (res) {
+            if (!checkRes(res, msgId)) return;
+            if (!res.success) {
+              setMsg(msgId, res.message, true);
+              if (res.priceChanged) refreshPaymentStatus();
+              return;
             }
-          });
+            showModal('Payment ' + res.paymentId + ' (' + thb(res.total) + ') has been submitted. The organizers will check your slip; everyone in this payment will get an email once it is verified.', refreshPaymentStatus);
+          }
         });
+      });
+    }
+
+    // ---------------- INVOICE REQUESTS (v8.0) ----------------
+    // Opened after InfoEditDeadline by advisors and observers, for people whose
+    // fee is verified. Each invoice has its own code (INV-…).
+    var invoiceOpenFor = null; // '' = the form for a new invoice is open; a code = that invoice is being edited
+    function renderInvoices(s) {
+      var box = document.getElementById('invoice-section');
+      box.textContent = '';
+      var v = s.invoices;
+      box.classList.toggle('hidden', !v);
+      if (!v) return;
+      var card = el('div', 'combined-card');
+      card.appendChild(el('h3', '', 'Invoice requests'));
+      if (!v.canRequest) {
+        card.appendChild(el('p', 'muted', v.why));
+        (v.onOthers || []).forEach(function (x) { card.appendChild(el('div', 'held-note', 'Your name is on invoice ' + x.code + ' requested by ' + x.by + ' (' + x.status + ').')); });
+        box.appendChild(card);
+        return;
+      }
+      card.appendChild(el('p', 'muted', 'An invoice lists registration fees that are paid and verified. ' +
+        (v.opensAt ? 'Requests open on ' + v.opensAt + ' (GMT+7, Thailand time), after the payment deadline' : 'Requests are open') +
+        (v.closeAt ? ', and close on ' + v.closeAt + ' (GMT+7, Thailand time).' : '.') +
+        (currentUser.position === 'advisor' ? ' You can put anyone from your university on your invoices; each name can be on one invoice only.' : '')));
+      (v.onOthers || []).forEach(function (x) { card.appendChild(el('div', 'held-note', 'Your name is on invoice ' + x.code + ' requested by ' + x.by + ' (' + x.status + ').')); });
+      if (v.separate) card.appendChild(separateBox(v.separate));
+      (v.mine || []).forEach(function (inv) { card.appendChild(invoiceCard(inv)); });
+      if (invoiceOpenFor === '' && v.canCreate) card.appendChild(invoiceForm('new', null, v.names));
+      else if (v.canCreate) {
+        var row = el('div', 'btn-row');
+        var b = el('button', 'btn-primary btn-small', (v.mine && v.mine.length ? 'Open another invoice request' : 'Open invoice request')); b.id = 'inv-open';
+        b.onclick = function () { invoiceOpenFor = ''; renderInvoices(paymentStatus); var f = document.getElementById('inv-billTo-new'); if (f) f.focus(); };
+        row.appendChild(b);
+        card.appendChild(row);
+      } else if (v.why && v.open && !(v.mine && v.mine.length)) card.appendChild(el('p', 'muted', v.why));
+      var m = el('div', 'msg'); m.id = 'inv-msg';
+      card.appendChild(m);
+      box.appendChild(card);
+    }
+
+    /** One of my invoices: shown, with Edit / Delete while it waits, or "Request invoice edit" once confirmed. */
+    function invoiceCard(inv) {
+      var w = el('div', 'inv-section');
+      var h = el('h4');
+      h.appendChild(document.createTextNode('Invoice ' + inv.code + ' — ' + thb(inv.total) + ' — '));
+      h.appendChild(el('span', 'inv-status inv-' + inv.status, inv.statusLabel));
+      w.appendChild(h);
+      if (inv.reopened) w.appendChild(el('div', 'held-note', 'The organizers unlocked this invoice. Change it and save — they will confirm it again. Until then, other advisors of your university may also move names from it to their own invoice.'));
+      if (invoiceOpenFor === inv.code && !inv.locked) { w.appendChild(invoiceForm(inv.code, inv, inv.names)); return w; }
+      var dl = el('dl', 'inv-dl');
+      [['Names', inv.people.map(function (x) { return x.name + ' (' + cap(x.role) + (x.team ? ', ' + x.team : '') + ') ' + thb(x.amount); }).join('; ')],
+        ['Template', inv.option === 'Custom' ? 'Your own template' : "Organizers' KKU template"], ['Bill to', inv.billTo], ['Address', inv.address], ['Tax ID', inv.taxId],
+        ['Telephone', inv.phone], ['Other information', inv.note], ['Requested', inv.createdAt]].forEach(function (r) {
+        if (!r[1]) return;
+        dl.appendChild(el('dt', '', r[0])); dl.appendChild(el('dd', '', r[1]));
+      });
+      w.appendChild(dl);
+      if (inv.locked) {
+        w.appendChild(el('p', 'muted', (inv.byDeadline ? 'Locked and confirmed at the invoice deadline' : 'Confirmed by the organizers') + (inv.confirmedAt ? ' on ' + inv.confirmedAt : '') + '. It can no longer be changed here.'));
+        w.appendChild(editRequestBox({ code: inv.code }, inv.code, inv, ''));
+        return w;
+      }
+      var row = el('div', 'btn-row');
+      var e1 = el('button', 'btn-secondary btn-small', 'Edit'); e1.id = 'inv-edit-' + inv.code;
+      e1.onclick = function () { invoiceOpenFor = inv.code; renderInvoices(paymentStatus); };
+      var d1 = el('button', 'btn-danger btn-small', 'Delete'); d1.id = 'inv-del-' + inv.code;
+      d1.onclick = function () {
+        if (!confirm('Delete invoice request ' + inv.code + '?')) return;
+        callServer('deleteInvoice', [sessionToken, inv.code], { buttonIds: [d1.id], msgElId: 'inv-msg', onSuccess: function (res) {
+          if (!checkRes(res, 'inv-msg')) return;
+          if (!res.success) { setMsg('inv-msg', res.message, true); return; }
+          refreshPaymentStatus();
+        } });
+      };
+      row.appendChild(e1); row.appendChild(d1);
+      w.appendChild(row);
+      return w;
+    }
+
+    /** "Request invoice edit": asks the organizers to unlock a confirmed invoice. */
+    function editRequestBox(target, key, cur, defaultNote) {
+      var box = el('div', 'edit-request');
+      if (cur && cur.editRequested) {
+        box.appendChild(el('div', 'sent', 'Edit requested on ' + cur.editRequestedAt + ' — waiting for the organizers to unlock this invoice.'));
+        if (cur.editRequestNote) box.appendChild(el('p', 'muted', 'Your message: ' + cur.editRequestNote));
+        return box;
+      }
+      var open = el('button', 'btn-white btn-small', 'Request invoice edit'); open.id = 'inv-edit-open-' + key;
+      var form = el('div', 'hidden');
+      var lbl = el('label', '', 'What should change? (optional)'); lbl.setAttribute('for', 'inv-edit-note-' + key);
+      var ta = el('textarea'); ta.id = 'inv-edit-note-' + key; ta.rows = 2; ta.maxLength = 500; ta.value = defaultNote || '';
+      ta.placeholder = 'e.g. add people who paid later, combine it with my other invoice, the Tax ID is wrong, …';
+      var row = el('div', 'btn-row');
+      var send = el('button', 'btn-primary btn-small', 'Send request'); send.id = 'inv-edit-send-' + key;
+      var msg = el('div', 'msg'); msg.id = 'inv-edit-msg-' + key;
+      open.onclick = function () { form.classList.remove('hidden'); open.classList.add('hidden'); ta.focus(); };
+      send.onclick = function () {
+        if (!beginAction('inv-edit-' + key, [send.id])) return;
+        callServer('requestInvoiceEdit', [sessionToken, { code: target.code, note: ta.value.trim() }], {
+          buttonIds: [send.id],
+          onFinish: function () { endAction('inv-edit-' + key, [send.id]); },
+          msgElId: msg.id,
+          onSuccess: function (res) {
+            if (!checkRes(res, msg.id)) return;
+            if (!res.success) { setMsg(msg.id, res.message, true); return; }
+            refreshPaymentStatus();
+          }
+        });
+      };
+      box.appendChild(el('p', 'muted', 'Need a change (or want to combine it with another invoice)? Send a request: if the organizers accept it, the invoice is unlocked for you to change.'));
+      box.appendChild(open);
+      form.appendChild(lbl); form.appendChild(ta); row.appendChild(send); form.appendChild(row);
+      box.appendChild(form);
+      box.appendChild(msg);
+      return box;
+    }
+
+    /** The invoice form (new or editing one). names = who can be on it, with notes for those who can't. */
+    function invoiceForm(prefix, cur, names) {
+      cur = cur || {};
+      var wrap = el('div', 'inv-box');
+      wrap.appendChild(el('h4', '', cur.code ? 'Change invoice ' + cur.code : 'New invoice request'));
+      var nl = el('label', '', 'Names on the invoice'); nl.appendChild(el('span', 'inv-req', 'required'));
+      wrap.appendChild(nl);
+      var nb = el('div', 'inv-names'); nb.id = 'inv-names-' + prefix;
+      if (!names.length) nb.appendChild(el('span', 'muted', 'Nobody yet.'));
+      names.forEach(function (p, i) {
+        var l = el('label');
+        var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-name-' + prefix + '-' + i; cb.setAttribute('data-key', p.key); cb.setAttribute('data-amount', String(p.amount || 0));
+        cb.checked = !!p.checked && p.eligible !== false;
+        if (p.eligible === false || currentUser.position === 'observer') { cb.disabled = true; if (p.eligible === false) l.style.opacity = '0.6'; }
+        cb.onchange = function () { invoiceTotal(prefix); };
+        l.appendChild(cb);
+        l.appendChild(document.createTextNode(p.name + ' '));
+        l.appendChild(el('span', 'role', '(' + cap(p.role) + (p.team ? ', ' + p.team : '') + ')' + (p.amount ? ' ' + thb(p.amount) : '')));
+        if (p.selfPaid && p.eligible !== false) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'inv-extra-note', '— paid for themselves')); }
+        if (p.note) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'inv-extra-note', '— ' + p.note)); }
+        nb.appendChild(l);
+      });
+      wrap.appendChild(nb);
+      var tot = el('div', 'pay-total'); tot.id = 'inv-total-' + prefix;
+      wrap.appendChild(tot);
+      [['Default', "Default (the organizers' KKU invoice template)"], ['Custom', 'Custom (upload your own invoice template)']].forEach(function (pair) {
+        var l = el('label');
+        l.style.cssText = 'display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;margin-top:4px;';
+        var r = el('input'); r.type = 'radio'; r.name = 'inv-opt-' + prefix; r.value = pair[0];
+        r.checked = (cur.option || 'Default') === pair[0];
+        r.onchange = function () {
+          document.getElementById('inv-tpl-wrap-' + prefix).classList.toggle('hidden', pair[0] !== 'Custom');
+          document.querySelectorAll('.inv-req-' + prefix).forEach(function (x) { x.classList.toggle('hidden', pair[0] !== 'Default'); });
+        };
+        l.appendChild(r); l.appendChild(document.createTextNode(pair[1]));
+        wrap.appendChild(l);
+      });
+      var tplWrap = el('div', cur.option === 'Custom' ? '' : 'hidden'); tplWrap.id = 'inv-tpl-wrap-' + prefix;
+      tplWrap.appendChild(el('label', '', 'Your invoice template (PDF, JPG or PNG, max ' + uploadMax() + ')'));
+      if (cur.hasTemplate) tplWrap.appendChild(el('p', 'muted', 'A template is already uploaded. Choose a new file only to replace it.'));
+      var tpl = el('input'); tpl.type = 'file'; tpl.id = 'inv-tpl-' + prefix; tpl.accept = FILE_ACCEPT;
+      tplWrap.appendChild(tpl);
+      wrap.appendChild(tplWrap);
+      var field = function (key, label, required, multi, max) {
+        var l = el('label', '', label);
+        if (required) { var rq = el('span', 'inv-req inv-req-' + prefix + ((cur.option || 'Default') === 'Default' ? '' : ' hidden'), 'required'); l.appendChild(rq); }
+        wrap.appendChild(l);
+        var i = el(multi ? 'textarea' : 'input');
+        if (multi) i.rows = 2; else i.type = 'text';
+        i.id = 'inv-' + key + '-' + prefix; i.maxLength = max || 200; i.value = cur[key] || '';
+        wrap.appendChild(i);
+        return i;
+      };
+      field('billTo', 'Bill to', true).placeholder = 'Who the invoice is made out to, e.g. Faculty of Medicine, Khon Kaen University';
+      field('address', 'Address', true, true, 500);
+      field('taxId', 'Tax ID', true, false, 50);
+      field('phone', 'Telephone (optional)');
+      var note = field('note', 'Other information for the invoice (optional)', false, true, 1000);
+      note.rows = 3;
+      note.placeholder = 'Anything not asked above, or instructions for the finance team — e.g. "I need it as a PDF / picture".';
+      var row = el('div', 'btn-row');
+      var sb = el('button', 'btn-primary btn-small', cur.code ? 'Save invoice' : 'Send invoice request'); sb.id = 'inv-save-' + prefix;
+      sb.onclick = function () { saveInvoiceForm(prefix, cur); };
+      var cb2 = el('button', 'btn-secondary btn-small', 'Close'); cb2.id = 'inv-cancel-' + prefix;
+      cb2.onclick = function () { invoiceOpenFor = null; renderInvoices(paymentStatus); };
+      row.appendChild(sb); row.appendChild(cb2);
+      wrap.appendChild(row);
+      var m = el('div', 'msg'); m.id = 'inv-msg-' + prefix;
+      wrap.appendChild(m);
+      setTimeout(function () { invoiceTotal(prefix); }, 0);
+      return wrap;
+    }
+    function invoiceTotal(prefix) {
+      var n = 0;
+      document.querySelectorAll('#inv-names-' + prefix + ' input[data-key]:checked').forEach(function (cb) { n += Number(cb.getAttribute('data-amount')) || 0; });
+      var t = document.getElementById('inv-total-' + prefix);
+      if (t) t.textContent = 'Invoice total: ' + thb(n);
+    }
+    function saveInvoiceForm(prefix, cur) {
+      var msgId = 'inv-msg-' + prefix;
+      clearMsg(msgId);
+      var picked = document.querySelector('input[name="inv-opt-' + prefix + '"]:checked');
+      var option = picked ? picked.value : 'Default';
+      var tplFile = option === 'Custom' ? document.getElementById('inv-tpl-' + prefix).files[0] : null;
+      if (option === 'Custom' && (tplFile || !cur.hasTemplate)) { var e2 = checkPickedFile(tplFile, 'invoice template'); if (e2) { setMsg(msgId, e2, true); return; } }
+      var val = function (k) { return document.getElementById('inv-' + k + '-' + prefix).value.trim(); };
+      var names = Array.prototype.slice.call(document.querySelectorAll('#inv-names-' + prefix + ' input[data-key]:checked')).map(function (cb) { return cb.getAttribute('data-key'); });
+      var body = { code: cur.code || '', option: option, billTo: val('billTo'), address: val('address'), taxId: val('taxId'), phone: val('phone'), note: val('note'), names: names };
+      if (option === 'Default') {
+        var miss = [];
+        if (!body.billTo) miss.push('Bill to');
+        if (!body.address) miss.push('Address');
+        if (!body.taxId) miss.push('Tax ID');
+        if (miss.length) { setMsg(msgId, 'For the KKU template, please fill in ' + miss.join(', ') + '.', true); return; }
+      }
+      if (!names.length) { setMsg(msgId, 'Please tick at least one name to put on the invoice.', true); return; }
+      var ids = ['inv-save-' + prefix];
+      if (!beginAction('invoice-' + prefix, ids)) return;
+      readAsBase64(tplFile, function (tpl) {
+        body.template = tpl;
+        callServer('saveInvoice', [sessionToken, body], {
+          buttonIds: ids,
+          onFinish: function () { endAction('invoice-' + prefix, ids); },
+          msgElId: msgId,
+          onSuccess: function (res) {
+            if (!checkRes(res, msgId)) return;
+            if (!res.success) { setMsg(msgId, res.message, true); if (res.changed) refreshPaymentStatus(); return; }
+            invoiceOpenFor = null;
+            refreshPaymentStatus();
+            setTimeout(function () { setMsg('inv-msg', res.message, false); }, 700);
+          }
+        });
+      });
+    }
+
+    /** "Keep my invoice separate" (advisors and observers). */
+    function separateBox(sep) {
+      var w = el('div', 'inv-sep');
+      var l = el('label');
+      l.style.cssText = 'display:flex;align-items:flex-start;gap:8px;font-weight:400;font-size:14px;';
+      var cb = el('input'); cb.type = 'checkbox'; cb.id = 'inv-separate'; cb.checked = !!sep.on; cb.style.marginTop = '3px';
+      l.appendChild(cb);
+      l.appendChild(document.createTextNode(currentUser.position === 'advisor'
+        ? 'Keep my invoice separate — other advisors from my university can\'t put me (or the people I paid for) on their invoice.'
+        : 'Keep my invoice separate — an advisor from my university can\'t put me on their invoice.'));
+      w.appendChild(l);
+      var m = el('div', 'msg'); m.id = 'inv-separate-msg';
+      w.appendChild(m);
+      cb.onchange = function () {
+        if (!beginAction('inv-separate', ['inv-separate'])) { cb.checked = !cb.checked; return; }
+        callServer('setInvoiceSeparate', [sessionToken, cb.checked], {
+          quiet: true, msgElId: 'inv-separate-msg',
+          onFinish: function () { endAction('inv-separate', ['inv-separate']); },
+          onSuccess: function (res) {
+            if (!checkRes(res, 'inv-separate-msg')) return;
+            if (!res.success) { cb.checked = !cb.checked; setMsg('inv-separate-msg', res.message, true); return; }
+            setMsg('inv-separate-msg', res.on ? 'Saved: your invoice stays separate.' : 'Saved: an advisor from your university may put you on their invoice.', false);
+          }
+        });
+      };
+      return w;
+    }
+
+    /** The "required" marks on the form follow Parameters → Required information (v8.0). */
+    var REQ_TARGETS = { title: 'info-title', name: 'info-name', surname: 'info-surname', nickname: 'info-nickname', education: 'info-education', observerLevel: 'info-observerLevel',
+      university: 'info-university', country: 'info-country', religion: 'info-religion', phone: 'phone-number', otherContact: 'info-otherContact', emergencyPhone: 'emergency-number',
+      emergencyRelation: 'emergency-relation', food: 'food-pref-label', allergy: 'info-allergy', disease: 'info-disease', medication: 'info-medication', shirtSize: 'info-shirtSize',
+      passport: 'passport-label', enrollment: 'enrol-label' };
+    var requiredKeys = null;
+    function applyRequiredMarks(keys) {
+      if (!Array.isArray(keys)) return;
+      requiredKeys = keys;
+      Object.keys(REQ_TARGETS).forEach(function (k) {
+        var target = document.getElementById(REQ_TARGETS[k]);
+        if (!target) return;
+        var lab = target.tagName === 'LABEL' ? target : (document.querySelector('label[for="' + REQ_TARGETS[k] + '"]') || (target.parentNode && target.parentNode.querySelector('label')));
+        if (!lab) return;
+        var mark = lab.querySelector('.req');
+        var on = keys.indexOf(k) !== -1;
+        if (on && !mark) { mark = el('span', 'req', 'required'); lab.appendChild(mark); }
+        if (mark) mark.classList.toggle('hidden', !on);
       });
     }
 
@@ -2572,7 +2616,7 @@
       cancelAutosaveTimer();
       var fields = collectInfoFields(university);
 
-      callServer('savePersonalInfo', [sessionToken, fields], {
+      callServer('savePersonalInfo', [sessionToken, fields, true], {
         buttonIds: ['info-save-btn'],
         msgElId: 'info-msg',
         onSuccess: function (res) {
@@ -2757,8 +2801,8 @@
       var lc = data.leaderChange || { open: true, until: '' };
       var note = document.getElementById('leader-change-note');
       note.textContent = lc.open
-        ? (lc.until ? 'Deadline: the team leader can be changed until ' + lc.until + ' (Thailand time).' : '')
-        : 'The team leader can no longer be changed (the deadline was ' + lc.until + ', Thailand time). Please contact the organizers if needed.';
+        ? (lc.until ? 'Deadline: the team leader can be changed until ' + lc.until + ' (GMT+7, Thailand time).' : '')
+        : 'The team leader can no longer be changed (the deadline was ' + lc.until + ', GMT+7, Thailand time). Please contact the organizers if needed.';
       note.classList.toggle('hidden', !note.textContent);
       var iAmDelegate = currentUser.position === 'delegate' && lc.open;
       document.getElementById('panel-leader').innerHTML = panelHtml('Team leader', data.leader, { isLeader: true, showAssign: false });
@@ -3155,7 +3199,7 @@
     function applyCertificate(cert) {
       var box = document.getElementById('ifmsa-section');
       if (!box) return;
-      box.classList.toggle('hidden', cert.on === false || !currentUser || currentUser.position !== 'delegate');
+      box.classList.toggle('hidden', cert.on === false || !currentUser || currentUser.position !== 'delegate' || !(paymentStatus && paymentStatus.certUpload));
       var lbl = document.getElementById('ifmsa-label');
       if (lbl && cert.name) lbl.textContent = cert.name;
       var note = document.getElementById('ifmsa-note');
@@ -3311,12 +3355,13 @@
       var box = document.getElementById('info-required');
       if (!box || !currentUser) return;
       var missing = [];
+      var need = function (k) { return !requiredKeys || requiredKeys.indexOf(k) !== -1; };
       var tl = document.getElementById('info-title').value;
-      if (!tl || (tl === 'Other' && !document.getElementById('info-titleOther').value.trim())) missing.push('your title (Mr., Ms., …)');
-      if (!readPhone('phone')) missing.push('your telephone number');
-      if (!readPhone('emergency')) missing.push('an emergency contact telephone');
-      else if (!document.getElementById('emergency-relation').value) missing.push('who the emergency number belongs to');
-      if (!document.getElementById('info-shirtSize').value) missing.push('your shirt size');
+      if (need('title') && (!tl || (tl === 'Other' && !document.getElementById('info-titleOther').value.trim()))) missing.push('your title (Mr., Ms., …)');
+      if (need('phone') && !readPhone('phone')) missing.push('your telephone number');
+      if (need('emergencyPhone') && !readPhone('emergency')) missing.push('an emergency contact telephone');
+      else if (need('emergencyRelation') && readPhone('emergency') && !document.getElementById('emergency-relation').value) missing.push('who the emergency number belongs to');
+      if (need('shirtSize') && !document.getElementById('info-shirtSize').value) missing.push('your shirt size');
       box.textContent = missing.length ? 'Still needed: ' + missing.join(', ') + '. Your other answers are saved meanwhile.' : '';
       box.classList.toggle('hidden', !missing.length || !!currentLocks.infoLocked);
     }
@@ -3338,69 +3383,6 @@
       var other = document.getElementById('emergency-relation').value === 'Other';
       var box = document.getElementById('emergency-relation-other');
       box.classList.toggle('hidden', !other);
-    }
-
-    // ---------------- ONE INVOICE FOR ALL MY PAYMENTS (2026-10-31) ----------------
-    function renderCombinedInvoice(s) {
-      var box = document.getElementById('combined-invoice');
-      box.textContent = '';
-      var c = s.combinedInvoice;
-      box.classList.toggle('hidden', !c || !c.available);
-      if (!c || !c.available) return;
-      var card = el('div', 'combined-card');
-      card.appendChild(el('h3', '', 'One invoice for all your payments'));
-      var list = (c.payments || []).map(function (x) { return x.id + (x.of ? ' — ' + x.of + ', paid individually' : '') + ' (' + thb(x.total) + ')'; }).join(', ');
-      card.appendChild(el('p', 'muted', (c.confirmed ? 'Covers ' : 'Would cover ') + list + ' — total ' + thb(c.total) + '.' +
-        (c.confirmed ? '' : ' Payments you submit later are added automatically. Your separate invoice requests are switched off while this is on.')));
-      if (c.confirmed) {
-        card.appendChild(confirmedInvoiceBox(c, 'Combined invoice', { editTarget: { combined: true }, editKey: 'c' }));
-        box.appendChild(card);
-        return;
-      }
-      if (s.invoiceClosed && !c.reopened) {
-        card.appendChild(el('p', 'muted', 'Invoice requests closed on ' + s.invoiceCloseAt + ' (Thailand time), so a combined invoice can no longer be requested.'));
-        box.appendChild(card);
-        return;
-      }
-      if ((c.people || []).some(function (x) { return x.extra; })) {
-        card.appendChild(el('p', 'muted', 'Observers from your university who paid for themselves are listed with "Paid individually" and are not ticked. Tick them to add their payment to this invoice; their own invoice request is then switched off.'));
-      }
-      if (c.blockedBy && c.blockedBy.length) {
-        card.appendChild(el('p', 'muted', 'Not available yet: the invoice for payment ' + c.blockedBy.join(', ') + ' is already confirmed by the organizers. ' +
-          'Use "Request invoice edit" on that payment above (for example: "please unlock it so I can combine all my payments into one invoice"); once the organizers unlock it, you can combine your payments here.'));
-        box.appendChild(card);
-        return;
-      }
-      card.appendChild(buildInvoiceBox('c', c, '', { title: 'Combined invoice', label: 'Combine all my payments into one invoice' }));
-      var row = el('div', 'btn-row');
-      var b = el('button', 'btn-secondary btn-small', 'Save combined invoice'); b.id = 'inv-save-c';
-      b.onclick = saveCombinedInvoice;
-      row.appendChild(b);
-      card.appendChild(row);
-      var m = el('div', 'msg'); m.id = 'inv-msg-c';
-      card.appendChild(m);
-      box.appendChild(card);
-    }
-    function saveCombinedInvoice() {
-      clearMsg('inv-msg-c');
-      var c = paymentStatus && paymentStatus.combinedInvoice;
-      var r = readInvoiceBox('c', !!(c && c.hasTemplate));
-      if (r.error) { setMsg('inv-msg-c', r.error, true); return; }
-      if (!beginAction('invoice-combined', ['inv-save-c'])) return;
-      readAsBase64(r.tplFile, function (tpl) {
-        r.invoice.template = tpl;
-        callServer('saveCombinedInvoice', [sessionToken, r.invoice], {
-          buttonIds: ['inv-save-c'],
-          onFinish: function () { endAction('invoice-combined', ['inv-save-c']); },
-          msgElId: 'inv-msg-c',
-          onSuccess: function (res) {
-            if (!checkRes(res, 'inv-msg-c')) return;
-            if (!res.success) { setMsg('inv-msg-c', res.message, true); return; }
-            refreshPaymentStatus();
-            setTimeout(function () { var m = document.getElementById('inv-msg-c'); if (m) setMsg('inv-msg-c', r.invoice.needed ? 'Combined invoice request saved.' : 'Combined invoice switched off.', false); }, 600);
-          }
-        });
-      });
     }
 
     // ---------------- ORGANIZERS AND EDIT LOCKS (2026-10-26) ----------------
@@ -3434,11 +3416,11 @@
       document.getElementById('info-save-btn').classList.toggle('hidden', on);
       var banner = document.getElementById('info-lock-banner');
       if (on) {
-        banner.textContent = 'Your personal information and documents were locked on ' + currentLocks.infoLockAt + ' (Thailand time), so they can no longer be changed. Please contact the organizers if something needs to change. Payments still work (marked late).';
+        banner.textContent = 'Your personal information and documents were locked on ' + currentLocks.infoLockAt + ' (GMT+7, Thailand time), so they can no longer be changed. Please contact the organizers if something needs to change. Payments still work (marked late).';
         cancelAutosaveTimer();
         setAutosaveStatus('');
       } else if (currentLocks.infoLockAt) {
-        banner.textContent = 'Deadline: ' + currentLocks.infoLockAt + ' (Thailand time). Please pay and finish your information and documents by then — after it they can no longer be changed.';
+        banner.textContent = 'Deadline: ' + currentLocks.infoLockAt + ' (GMT+7, Thailand time). Please pay and finish your information and documents by then — after it they can no longer be changed.';
       }
       banner.className = 'banner deadline-alert' + (currentLocks.infoLockAt ? '' : ' hidden');
       document.getElementById('save-hint').classList.toggle('hidden', on);
@@ -3448,9 +3430,9 @@
       var note = document.getElementById('trip-lock-note');
       if (res.tripLocked) {
         ['A', 'B', 'C'].forEach(function (o) { document.getElementById('trip-btn-' + o).disabled = true; });
-        note.textContent = 'Trip selection closed on ' + res.tripLockAt + ' (Thailand time). Please contact the organizers if you need to change it.';
+        note.textContent = 'Trip selection closed on ' + res.tripLockAt + ' (GMT+7, Thailand time). Please contact the organizers if you need to change it.';
       } else {
-        note.textContent = res.tripLockAt ? 'Deadline: choose or change your trip by ' + res.tripLockAt + ' (Thailand time).' : '';
+        note.textContent = res.tripLockAt ? 'Deadline: choose or change your trip by ' + res.tripLockAt + ' (GMT+7, Thailand time).' : '';
       }
       note.classList.toggle('hidden', !note.textContent);
     }
@@ -3801,7 +3783,7 @@
       reg.classList.toggle('hidden', closed);
       login.className = closed ? 'btn-primary' : 'btn-secondary';
       document.getElementById('landing-sub').textContent = closed
-        ? 'Registration closed' + (at ? ' on ' + at + ' (Thailand time)' : '') + '. Please log in with the account you registered.'
+        ? 'Registration closed' + (at ? ' on ' + at + ' (GMT+7, Thailand time)' : '') + '. Please log in with the account you registered.'
         : 'Register a new account or log in to continue your submission.';
     }
 
@@ -3815,8 +3797,8 @@
           // After RegistrationCloses (2026-11-07): no Register button, and the welcome text only asks people to log in.
           applyRegistrationClosed(!!res.registrationClosed, res.closesAt);
           if (res.registrationClosed) text = '';
-          else if (!res.registrationOpen) text = 'Registration opens on ' + res.opensAt + ' (Thailand time). If you already have an account you can still log in.';
-          else if (res.closesAt) text = 'Registration closes on ' + res.closesAt + ' (Thailand time).';
+          else if (!res.registrationOpen) text = 'Registration opens on ' + res.opensAt + ' (GMT+7, Thailand time). If you already have an account you can still log in.';
+          else if (res.closesAt) text = 'Registration closes on ' + res.closesAt + ' (GMT+7, Thailand time).';
           if (text) { el.textContent = text; el.className = 'banner deadline-alert'; }
         },
         onFailure: function () {}

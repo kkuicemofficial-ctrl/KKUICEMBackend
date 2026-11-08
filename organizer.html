@@ -73,7 +73,33 @@
     .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
     .btn-secondary:hover:not(:disabled) { background: var(--sand); }
     .btn-danger { background: var(--danger); color: #fff; }
-    .btn-link { background: none; border: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; }
+    /* v8.0: every button is a rounded box (theme colours or white); delete / remove / cancel / stop are red with white text */
+    .btn-link { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12.5px; }
+    .btn-link:hover:not(:disabled) { background: var(--accent-soft); }
+    .btn-link.name-link { text-align: left; color: var(--text); padding: 3px 8px; font-size: 13px; }
+    .btn-danger:hover:not(:disabled) { filter: brightness(0.92); }
+    .btn-green { background: #3f7a3a; color: #fff; border-radius: 999px; }
+    .btn-green:hover:not(:disabled) { background: #2f6a2b; }
+    .btn-undo { background: var(--danger); color: #fff; border-radius: 999px; }
+    .btn-undo:hover:not(:disabled) { filter: brightness(0.92); }
+    .btn-gold { background: var(--gold); color: #2b2412; }
+    .btn-gold:hover:not(:disabled) { filter: brightness(0.95); }
+    .pill.rule { background: var(--accent-soft); color: var(--accent); }
+    .rule-tags { margin-bottom: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .chg { font-size: 13px; margin: 2px 0; overflow-wrap: anywhere; }
+    .check-wait { color: var(--warn); }
+    .param-warn { margin-top: 6px; font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 4px 8px; }
+    .notify-rule { margin-bottom: 12px; }
+    .nr-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .nr-items { display: flex; flex-wrap: wrap; gap: 12px 26px; margin-top: 4px; }
+    .nr-group { display: flex; flex-direction: column; gap: 3px; min-width: 210px; }
+    .nr-group label { display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 13px; }
+    .nr-group input, label.inline input { width: auto; margin: 0; }
+    label.inline { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 600; }
+    .grid2 { display: grid; grid-template-columns: 1fr 220px; gap: 12px; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+    .doc-cell .checks { margin-top: 4px; }
+    .inv-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .btn-small { padding: 5px 10px; font-size: 12.5px; }
     a { color: var(--accent); }
     .back { margin-bottom: 14px; }
@@ -358,9 +384,10 @@
         <div>
           <div class="section-head">
             <h2>Notification center<span class="count" id="notif-count">0</span></h2>
-            <button class="btn-secondary" id="history-open">History</button>
+            <div class="row"><button class="btn-primary" id="notify-open">+ notification</button><button class="btn-secondary" id="history-open">History</button></div>
           </div>
-          <p class="muted small" style="margin:0 0 10px;">IFMSA/AMSA certificates, observers' proof of enrolment, payment slips and invoice edit requests waiting for you, oldest first. Verified items move to History.</p>
+          <p class="muted small" style="margin:0 0 10px;">What your notifications watch (set them up with "+ notification"), oldest first. Done moves an item to History.</p>
+          <div class="chips" id="notif-chips"></div>
           <div class="items" id="notifs"></div>
         </div>
       </div>
@@ -414,7 +441,7 @@
           <div class="row" style="gap:10px;align-items:center;margin-top:10px;">
             <label class="f" for="ann-end" style="margin:0;">Stop showing on (optional)</label>
             <input type="datetime-local" id="ann-end" style="width:auto;">
-            <span class="muted small">Thailand time. Blank = until you click "Stop showing".</span>
+            <span class="muted small">GMT+7, Thailand time. Blank = until you click "Stop showing".</span>
           </div>
         </div>
         <label class="chk" for="ann-email"><input type="checkbox" id="ann-email" checked> Send by email</label>
@@ -422,7 +449,7 @@
           <label class="chk" for="ann-when-now" style="margin-top:0;"><input type="radio" name="ann-when" id="ann-when-now" checked> Send now</label>
           <label class="chk" for="ann-when-later" style="margin-top:0;"><input type="radio" name="ann-when" id="ann-when-later"> Schedule for</label>
           <input type="datetime-local" id="ann-at" disabled style="width:auto;">
-          <span class="muted small">Thailand time. Sent within 5 minutes of that time, to the people in the group then.</span>
+          <span class="muted small">GMT+7, Thailand time. Sent within 5 minutes of that time, to the people in the group then.</span>
         </div>
         <div class="row" style="margin-top:14px;"><button class="btn-primary" id="ann-send">Send announcement</button></div>
         <div class="msg" id="ann-msg"></div>
@@ -549,11 +576,45 @@
     <div class="view" id="v-invoice">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <div class="section-head">
-        <div><h1>Invoice view</h1><p class="sub" style="margin:0;">Invoice requests from payers. <b>Confirm</b> once the invoice is made: the request is then locked on the registrant's page. <b>Undo confirm</b> unlocks it.</p></div>
+        <div><h1>Invoice view</h1><p class="sub" style="margin:0;">Invoice requests from advisors and observers, each with its own code. <b>Confirm</b> locks the request on the registrant's page, <b>Complete</b> marks that finance has made the invoice, <b>Undo confirm</b> unlocks it again (also after Complete).</p><p class="muted small" id="inv-window" style="margin:6px 0 0;"></p></div>
         <div class="exports" id="inv-export"></div>
       </div>
       <div class="chips" id="inv-chips"></div>
-      <div class="table-wrap"><table><thead><tr><th>Requested by</th><th>Covers</th><th class="num">Amount</th><th>Bill to · address · tax ID · names</th><th>Template</th><th>Other information</th><th>Status</th><th></th></tr></thead><tbody id="inv-rows"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Invoice code</th><th>Requested by</th><th>Names on the invoice</th><th class="num">Amount</th><th>Bill to · address · tax ID · template · note</th><th>Status</th><th></th></tr></thead><tbody id="inv-rows"></tbody></table></div>
+    </div>
+
+    <!-- DOCUMENT VIEW (v8.0) -->
+    <div class="view" id="v-docs">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <div class="section-head">
+        <div><h1>Document view</h1><p class="sub" style="margin:0;" id="doc-sub"></p></div>
+        <div class="exports" id="doc-export"></div>
+      </div>
+      <div class="chips" id="doc-chips"></div>
+      <div class="table-wrap"><table><thead id="doc-head"></thead><tbody id="doc-rows"></tbody></table></div>
+    </div>
+
+    <!-- NOTIFICATION SETTINGS (v8.0) -->
+    <div class="view" id="v-notify">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <h1>Notification settings</h1>
+      <p class="sub">Each notification watches one position: choose what to watch (their registration information, uploads, payment slips, invoice requests) and who gets an email. Everything it catches also appears in the Notification center. Changes a registrant's page saves by itself are sent about 5–10 minutes after their last change, all in one email; a click on Save, an upload, a payment slip or an invoice request is sent right away.</p>
+      <div id="notify-rules"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn-secondary" id="notify-add">+ notification</button>
+        <button class="btn-primary" id="notify-save">Save notification settings</button>
+      </div>
+      <div class="msg" id="notify-msg"></div>
+    </div>
+
+    <!-- BACKEND SETTING (v8.0, master accounts only) -->
+    <div class="view" id="v-backend">
+      <button class="btn-secondary back" data-go="home">← Back to the menu</button>
+      <h1>Backend setting</h1>
+      <p class="sub">Master accounts only. Every change saves by itself, except the clean-up date, which needs the ICEMmasteraccount password.</p>
+      <div class="table-wrap params"><table><thead><tr><th>Key</th><th>Value</th><th>Notes</th><th>Server check</th></tr></thead><tbody id="backend-rows"></tbody></table></div>
+      <div class="msg" id="backend-msg"></div>
+      <div id="backend-sections" style="margin-top:16px;"></div>
     </div>
 
     <!-- ALL STATUS EXPORT -->
@@ -575,16 +636,13 @@
       <div id="exp-preview"></div>
     </div>
 
-    <!-- PAGE CONTENT (2026-11-06): master accounts only -->
+    <!-- PAGE CONTENT (v8.0: every account sees it, full and master edit; autosave) -->
     <div class="view" id="v-content">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <h1>Page content</h1>
-      <p class="sub">What the registration page and the emails say: prices, payment details, terms of service, trips, the choices on the form, the Google Drive folders and a few limits. Master accounts only; these are not in the organizer Sheet.</p>
+      <p class="sub" id="content-sub"></p>
       <div id="content-sections"></div>
-      <div class="row" style="margin-top:14px;">
-        <button class="btn-primary" id="content-save">Save</button>
-        <button class="btn-secondary" data-go="home">Back to the menu</button>
-      </div>
+      <div class="row" style="margin-top:14px;"><button class="btn-secondary" data-go="home">Back to the menu</button></div>
       <div class="msg" id="content-msg"></div>
     </div>
 
@@ -592,12 +650,13 @@
     <div class="view" id="v-params">
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <h1>Parameters setting</h1>
-      <p class="sub">Times are Thailand time. Changes also appear in the Settings tab of the organizer Sheet. Prices, payment details, the terms of service, the trips and the switches are on the <b>Page content</b> screen.</p>
+      <p class="sub">Times are GMT+7, Thailand time. Every change saves by itself. The dates should go RegistrationOpens → EarlyBirdDeadline → SecondDepositOpens → InfoEditDeadline / TripSelectionDeadline → InvoiceEditDeadline; a date out of that order is saved, with a warning. Prices, texts and trips are on the <b>Page content</b> screen.</p>
       <div class="table-wrap params"><table><thead><tr><th>Key</th><th>Value</th><th>Notes</th><th>Server check</th></tr></thead><tbody id="param-rows"></tbody></table></div>
-      <div class="row" style="margin-top:14px;">
-        <button class="btn-primary" id="params-save">Save</button>
-        <button class="btn-secondary" data-go="home">Back to the menu</button>
-      </div>
+      <h2 style="margin-top:22px;">Required information</h2>
+      <p class="sub" style="margin-bottom:8px;">What each position must fill in before they can be paid for (and the "required" marks on their form). Saves when you tick.</p>
+      <div id="req-grid"></div>
+      <div class="msg" id="req-msg"></div>
+      <div class="row" style="margin-top:14px;"><button class="btn-secondary" data-go="home">Back to the menu</button></div>
       <div class="msg" id="params-msg"></div>
     </div>
   </div>
@@ -613,7 +672,7 @@
       <h2 id="confirm-title" style="margin-bottom:8px;"></h2>
       <div id="confirm-body"></div>
       <div class="row" style="margin-top:16px;justify-content:flex-end;">
-        <button class="btn-secondary" id="confirm-no">Cancel</button>
+        <button class="btn-secondary" id="confirm-no">Go back</button>
         <button class="btn-danger" id="confirm-yes"></button>
       </div>
     </div>
@@ -664,6 +723,11 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         else e.setAttribute(k, v === true ? '' : v);
       });
       for (var i = 2; i < arguments.length; i++) add(e, arguments[i]);
+      // v8.0: delete / remove / cancel / stop buttons are red boxes with white text
+      if (tag === 'button' && /^(Delete|Remove|Cancel|Stop)\b/.test(e.textContent) && !/btn-danger|btn-undo/.test(e.className)) {
+        e.className = e.className.replace(/\b(btn-link|btn-secondary|btn-box|btn-primary)\b/g, '').replace(/\bsmall\b/, 'btn-small') + ' btn-danger';
+        e.style.color = '';
+      }
       return e;
     }
     function add(e, c) {
@@ -785,7 +849,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     document.addEventListener('visibilitychange', function () { if (!document.hidden && token && D) loadData(true); });
 
     // ---------------- views ----------------
-    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'accounts', 'content', 'announce', 'questions', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'export', 'params'];
+    var VIEWS = ['loading', 'out', 'reset', 'who', 'home', 'accounts', 'content', 'announce', 'questions', 'teams', 'contacts', 'team', 'trip', 'shirts', 'alert', 'observers', 'finance', 'invoice', 'docs', 'notify', 'backend', 'export', 'params'];
     function showView(name) {
       VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('active', v === name); });
       window.scrollTo(0, 0);
@@ -801,6 +865,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       currentTeam = current === 'team' && m[2] ? decodeURIComponent(m[2]) : '';
       if (current === 'team' && !currentTeam) current = 'teams';
       if (current !== 'shirts') shirtFilter = '';
+      if (current !== 'notify') notifyDraft = null;
       closeModal();
       showView(current);
       renderCurrent();
@@ -809,7 +874,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     window.addEventListener('hashchange', route);
     function renderCurrent() {
       if (!D) return;
-      var r = { home: renderHome, accounts: renderAccounts, announce: renderAnnounce, questions: renderQuestions, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, export: renderExport, params: renderParams, content: renderContent }[current];
+      var r = { home: renderHome, accounts: renderAccounts, announce: renderAnnounce, questions: renderQuestions, teams: renderTeams, contacts: renderContacts, team: renderTeam, trip: renderTrip, shirts: renderShirts, alert: renderAlert, observers: renderObservers, finance: renderFinance, invoice: renderInvoices, docs: renderDocs, notify: renderNotify, backend: renderBackend, export: renderExport, params: renderParams, content: renderContent }[current];
       if (r) r();
     }
 
@@ -1031,150 +1096,222 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       return D.people.filter(function (p) { return alertFood(p) || isSomething(p.allergy) || isSomething(p.disease) || isSomething(p.special); });
     }
 
-    // ---------------- notifications ----------------
+    // ---------------- notifications (v8.0: from the notification settings) ----------------
+    // Every match of a notification rule ("+ notification") appears here; Done moves it to History.
+    var notifRule = '';
+    function ruleNames(n) { return (n.rules || []).map(function (r) { return r.name || 'Notification'; }); }
     function notifItems() {
-      var items = [];
-      D.people.forEach(function (p) {
-        var key = p.position === 'delegate' ? 'ifmsaCert' : p.position === 'observer' ? 'enrollment' : null;
-        if (!key) return;
-        if (key === 'ifmsaCert' && p.paymentStatus === 'verified' && !justDone['doc:' + p.email + ':' + key]) return; // paid: the certificate no longer matters
-        var d = p.docs[key], k = 'doc:' + p.email + ':' + key;
-        if (!d.url || (d.check === 'verified' && !justDone[k])) return;
-        items.push({ k: k, kind: 'doc', p: p, key: key, d: d, time: d.uploadedAt || p.updatedAt });
-      });
-      D.payments.forEach(function (pay) {
-        var k = 'pay:' + pay.id;
-        if ((pay.status === 'pending' || pay.status === 'notVerified') || justDone[k]) items.push({ k: k, kind: 'pay', pay: pay, time: pay.lastSlipAt || pay.submittedAt });
-      });
-      // "Request invoice edit" from a payer (2026-11-01)
-      invoiceRequests().forEach(function (r) {
-        var k = 'invedit:' + r.key;
-        if (r.confirmedAt && r.editRequestedAt) items.push({ k: k, kind: 'invedit', r: r, time: r.editRequestedAt });
-      });
-      items.sort(function (a, b) { return String(a.time).localeCompare(String(b.time)); });
-      return items;
+      return (D.notifications || []).filter(function (n) { return (!n.doneAt || justDone['n:' + n.id]) && (!notifRule || ruleNames(n).indexOf(notifRule) !== -1); })
+        .sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
     }
     function historyItems() {
-      var items = [];
-      D.people.forEach(function (p) {
-        Object.keys(DOC_LABEL).forEach(function (key) {
-          var d = p.docs[key];
-          if (d.url && d.check === 'verified') items.push({ k: 'doc:' + p.email + ':' + key, kind: 'doc', p: p, key: key, d: d, time: d.checkedAt });
-        });
-      });
-      D.payments.forEach(function (pay) { if (pay.status === 'verified' || pay.status === 'cancelled') items.push({ k: 'pay:' + pay.id, kind: 'pay', pay: pay, time: pay.statusAt }); });
-      items.sort(function (a, b) { return String(b.time).localeCompare(String(a.time)); });
-      return items;
+      return (D.notifications || []).filter(function (n) { return n.doneAt && !justDone['n:' + n.id]; }).sort(function (a, b) { return String(b.doneAt).localeCompare(String(a.doneAt)); });
     }
     function personBlock(p, fallbackName) {
       if (!p) return h('div', { cls: 'who' }, h('b', { text: fallbackName || '(account deleted)' }));
       return h('div', { cls: 'who' },
-        h('b', null, h('button', { cls: 'btn-link', style: 'text-decoration:none;color:inherit;text-align:left;', text: nameOf(p), onclick: function () { openPerson(p.email); } })),
+        h('b', null, h('button', { cls: 'btn-link name-link', text: nameOf(p), onclick: function () { openPerson(p.email); } })),
         h('div', { cls: 'muted', text: positionText(p) }),
         h('div', { cls: 'small', text: 'from ' + teamUni(p) }));
     }
-    function itemEl(it, inHistory) {
+    function markNotif(n, done, after) {
+      return api('POST', '/api/admin/notifications/done', { id: n.id, done: done }).then(function (res) {
+        if (!res.success) { toast(res.message, true); return; }
+        n.doneAt = done ? new Date().toISOString() : ''; n.doneBy = done ? D.me.who : '';
+        if (after) after();
+        loadData(true);
+      }, function (err) { toast(err.message, true); });
+    }
+    function itemEl(n, inHistory) {
       var el = h('div', { cls: 'item' });
-      var done = justDone[it.k];
+      var done = justDone['n:' + n.id];
+      var p = byEmail[n.email];
+      add(el, personBlock(p, n.name + ' (' + n.email + ')'));
+      var body = h('div', null, h('div', { cls: 'rule-tags' }, ruleNames(n).map(function (r) { return pill(r, 'rule'); })));
+      (n.changes || []).forEach(function (c) {
+        var line = h('div', { cls: 'chg' }, h('b', { text: c.label + ': ' }), c.value || '(blank)');
+        if (c.url) add(line, [' ', h('a', { href: c.url, target: '_blank', rel: 'noopener', text: 'Open file ↗' })]);
+        add(body, line);
+        var docKey = c.key.indexOf('doc:') === 0 ? c.key.slice(4) : '';
+        if (docKey && p && p.docs[docKey] && p.docs[docKey].url) {
+          var d = p.docs[docKey];
+          var ctl = h('div', { cls: 'checks' }, checkPill(d.check), d.url !== c.url ? h('span', { cls: 'muted small', text: ' (a newer file was uploaded since)' }) : null);
+          if (canEdit()) add(ctl, [
+            h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: d.check === 'verified', onclick: function (e) { e.target.disabled = true; checkDoc(p, docKey, 'verified', function () { renderNotifs(); }); } }),
+            h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: d.check === 'notVerified', onclick: function (e) { e.target.disabled = true; checkDoc(p, docKey, 'notVerified', function () { renderNotifs(); }); } })
+          ]);
+          add(body, ctl);
+        }
+        var pay = c.paymentId ? D.payments.filter(function (x) { return x.id === c.paymentId; })[0] : null;
+        if (pay) {
+          var pc = h('div', { cls: 'checks' }, payPill(pay.status), ' ', h('b', { text: thb(pay.total) }), ' ', pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: 'Slip ' + (i + 1) + ' ↗' }); }));
+          if (canEdit() && pay.status !== 'cancelled') add(pc, [
+            h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: pay.status === 'verified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'verified', renderNotifs); } }),
+            h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: pay.status === 'notVerified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'notVerified', renderNotifs); } })
+          ]);
+          add(body, pc);
+        }
+      });
+      add(el, body);
       var actions = h('div', { cls: 'actions' });
-      var stateText = '';
-      var markDone = function (text, leaves) {
-        if (!leaves) return;
-        justDone[it.k] = { text: text, until: Date.now() + LEAVE_MS };
-        setTimeout(function () { delete justDone[it.k]; if (current === 'home') renderNotifs(); }, LEAVE_MS + 50);
-      };
-      if (it.kind === 'invedit') {
-        var r = it.r, payerP = byEmail[r.payerEmail];
-        add(el, personBlock(payerP, r.payerEmail));
-        add(el, h('div', null,
-          h('div', null, h('b', { text: 'Invoice edit requested' }), ' ', pill('Waiting', 'wait'), ' ', h('b', { text: thb(r.total) })),
-          h('div', { cls: 'small', text: (r.kind === 'combined' ? 'Combined invoice for ' : 'Invoice for ') + r.ids.join(', ') + ' · confirmed by ' + (r.confirmedBy || 'an organizer') + ', ' + when(r.confirmedAt) }),
-          r.editRequestNote ? h('div', { cls: 'small', style: 'margin-top:4px;' }, h('span', { cls: 'muted', text: 'Their message: ' }), r.editRequestNote) : h('div', { cls: 'small muted', text: 'No message.' }),
-          h('div', { cls: 'small muted', text: 'Accept unlocks the invoice so they can change it (or combine their payments)' + (D.invoiceClosed ? ' — also after the InvoiceEditDeadline; confirm it again once they have changed it' : '') + '. Decline keeps it as it is.' })));
-        if (canEdit()) {
-          add(actions, [
-            h('button', { cls: 'btn-primary btn-small', text: 'Accept (unlock)', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, false); } }),
-            h('button', { cls: 'btn-secondary btn-small', text: 'Decline', onclick: function (e) {
-              e.target.disabled = true;
-              var body = r.kind === 'payment' ? { paymentId: r.ids[0] } : { email: r.payerEmail };
-              api('POST', '/api/admin/invoices/dismiss-edit-request', body).then(function (res) {
-                if (!res.success) { toast(res.message, true); e.target.disabled = false; return; }
-                toast('Request declined — the invoice stays confirmed.'); loadData(true);
-              }, function (err) { toast(err.message, true); e.target.disabled = false; });
-            } })
-          ]);
-        }
-        stateText = 'Requested ' + when(r.editRequestedAt);
-      } else if (it.kind === 'doc') {
-        var p = it.p, d = it.d;
-        add(el, personBlock(p));
-        add(el, h('div', null,
-          h('div', null, h('b', { text: docLabel(it.key) }), ' ', checkPill(d.check)),
-          h('div', null, h('a', { href: d.url, target: '_blank', rel: 'noopener', text: 'Open file in Google Drive ↗' })),
-          p.position === 'observer' ? h('div', { cls: 'small muted', text: 'Study level chosen: ' + (p.observerLevel || 'not chosen') }) : null));
-        if (canEdit()) {
-          add(actions, [
-            h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: d.check === 'verified' || !!done, onclick: function (e) { e.target.disabled = true; checkDoc(p, it.key, 'verified', function () { markDone('✓ Verified by ' + D.me.who, !inHistory); renderNotifs(); }); } }),
-            h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: d.check === 'notVerified' || !!done, onclick: function (e) { e.target.disabled = true; checkDoc(p, it.key, 'notVerified', function () { renderNotifs(); if (inHistory) openHistory(); }); } })
-          ]);
-        }
-        if (d.check === 'notVerified') { el.classList.add('rejected'); stateText = 'Not verified' + (d.checkedBy ? ' by ' + d.checkedBy : '') + ' — waiting for a new file'; }
-        else if (d.check === 'verified') stateText = 'Approved by ' + (d.checkedBy || 'an organizer') + (d.checkedAt ? ', ' + when(d.checkedAt) : '');
-        else stateText = 'Uploaded ' + when(it.time);
-      } else {
-        var pay = it.pay, payer = byEmail[pay.payerEmail];
-        add(el, personBlock(payer, pay.payerName));
-        var paidFor = h('ul', null, pay.people.map(function (x) {
-          var q = byEmail[x.email];
-          return h('li', { text: (q ? nameOf(q) : x.name || x.email) + ' — ' + x.role + (x.team ? ', ' + x.team : '') + ': ' + thb(x.price) });
-        }));
-        var slips = h('div', { cls: 'row', style: 'gap:10px;' }, pay.slipUrls.map(function (u, i) { return h('a', { href: u, target: '_blank', rel: 'noopener', text: (pay.slipUrls.length > 1 ? 'Slip ' + (i + 1) : 'Payment slip') + ' ↗' }); }));
-        add(el, h('div', null,
-          h('div', null, h('b', { text: payLabel(pay) + ' ' + pay.id }), ' ', payPill(pay.status), pay.late ? [' ', pill('Late', 'bad')] : null, ' ', h('b', { text: thb(pay.total) })),
-          slips,
-          h('div', { cls: 'small', style: 'margin-top:4px;' }, 'Paid for:', paidFor),
-          pay.invoice.needed ? h('div', { cls: 'small muted', text: 'Invoice requested: ' + [pay.invoice.billTo, pay.invoice.address, pay.invoice.taxId ? 'Tax ID ' + pay.invoice.taxId : ''].filter(Boolean).join(' · ') + (pay.invoice.templateUrl ? ' (custom template)' : '') }) : null,
-          pay.organizerNote ? h('div', { cls: 'small muted', text: 'Note: ' + pay.organizerNote }) : null));
-        if (canEdit()) {
-          add(actions, [
-            h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: pay.status === 'verified' || !!done, onclick: function (e) { e.target.disabled = true; setPayment(pay, 'verified', function () { markDone('✓ Verified by ' + D.me.who, !inHistory); renderNotifs(); }); } }),
-            h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: pay.status === 'notVerified' || !!done, onclick: function (e) { e.target.disabled = true; setPayment(pay, 'notVerified', function () { renderNotifs(); if (inHistory) openHistory(); }); } }),
-            h('button', { cls: pay.status === 'cancelled' ? 'btn-link small' : 'btn-box red', text: pay.status === 'cancelled' ? 'Restore payment' : 'Cancel payment', disabled: !!done, onclick: function () {
-              if (pay.status === 'cancelled') { setPayment(pay, 'pending', function () { renderNotifs(); if (inHistory) openHistory(); }); return; }
-              confirmBox('Cancel payment ' + pay.id + '?', h('p', { text: 'Everyone in this payment is released and can pay again (for example after a team change). The slip stays in Drive. You can restore it later from History.' }),
-                'Cancel payment', function () { setPayment(pay, 'cancelled', function () { renderNotifs(); if (inHistory) openHistory(); }); });
-            } })
-          ]);
-        }
-        if (pay.status === 'notVerified') { el.classList.add('rejected'); stateText = 'Not verified' + (pay.statusBy ? ' by ' + pay.statusBy : '') + ' — waiting for a new slip'; }
-        else if (pay.status === 'verified') stateText = 'Approved by ' + (pay.statusBy || 'an organizer') + (pay.statusAt ? ', ' + when(pay.statusAt) : '');
-        else if (pay.status === 'cancelled') stateText = 'Cancelled by ' + (pay.statusBy || 'an organizer') + (pay.statusAt ? ', ' + when(pay.statusAt) : '');
-        else stateText = 'Submitted ' + when(it.time);
+      if (canEdit()) {
+        if (!inHistory) add(actions, h('button', { cls: 'btn-primary btn-small', text: 'Done', disabled: !!done, onclick: function (e) {
+          e.target.disabled = true;
+          markNotif(n, true, function () {
+            justDone['n:' + n.id] = { text: '✓ Done — ' + D.me.who, until: Date.now() + LEAVE_MS };
+            setTimeout(function () { delete justDone['n:' + n.id]; if (current === 'home') renderNotifs(); }, LEAVE_MS + 50);
+            renderNotifs();
+          });
+        } }));
+        else add(actions, h('button', { cls: 'btn-secondary btn-small', text: 'Back to the Notification center', onclick: function () { markNotif(n, false, openHistory); } }));
       }
       add(el, actions);
+      var stateText = 'Sent ' + when(n.at) + (n.doneAt && !done ? ' · done by ' + (n.doneBy || 'an organizer') + ', ' + when(n.doneAt) : '');
       if (done) { el.classList.add('done'); stateText = done.text + ' — moving to History'; if (done.until - Date.now() < 1200) el.classList.add('leaving'); }
       add(el, h('div', { cls: 'state', text: stateText }));
       return el;
     }
     function renderNotifs() {
       if (!D) return;
-      var list = notifItems();
-      var waiting = list.filter(function (it) { return !justDone[it.k]; }).length;
+      var waiting = (D.notifications || []).filter(function (n) { return !n.doneAt; }).length;
       $('notif-count').textContent = waiting;
       $('notif-count').className = 'count' + (waiting ? '' : ' zero');
+      var names = [];
+      (D.notifyRules || []).forEach(function (r) { var nm = r.name || 'Notification'; if (names.indexOf(nm) === -1) names.push(nm); });
+      var chips = clear($('notif-chips'));
+      if (names.length > 1) {
+        add(chips, h('button', { cls: 'chip' + (!notifRule ? ' on' : ''), text: 'All', onclick: function () { notifRule = ''; renderNotifs(); } }));
+        names.forEach(function (nm) { add(chips, h('button', { cls: 'chip' + (notifRule === nm ? ' on' : ''), text: nm, onclick: function () { notifRule = nm; renderNotifs(); } })); });
+      }
+      var list = notifItems();
       var box = clear($('notifs'));
-      if (!list.length) { add(box, h('div', { cls: 'empty', text: 'Nothing waiting for a check. New uploads and payment slips appear here.' })); return; }
-      list.forEach(function (it) { add(box, itemEl(it, false)); });
+      if (!list.length) {
+        add(box, h('div', { cls: 'empty', text: (D.notifyRules || []).length ? 'Nothing waiting. What your notifications watch appears here when it happens.' : 'No notifications set up yet. Click "+ notification" to choose what appears here (and who gets an email).' }));
+        return;
+      }
+      list.forEach(function (n) { add(box, itemEl(n, false)); });
     }
     function openHistory() {
       openModal('History', function (body) {
         var list = historyItems();
-        add(body, h('p', { cls: 'muted small', style: 'margin-top:0;', text: 'Verified documents and payments, and cancelled payments — newest first. You can still change a decision here.' }));
-        if (!list.length) { add(body, h('div', { cls: 'empty', text: 'Nothing verified yet.' })); return; }
-        add(body, h('div', { cls: 'items' }, list.map(function (it) { return itemEl(it, true); })));
+        add(body, h('p', { cls: 'muted small', style: 'margin-top:0;', text: 'Notifications marked Done — newest first.' }));
+        if (!list.length) { add(body, h('div', { cls: 'empty', text: 'Nothing here yet.' })); return; }
+        add(body, h('div', { cls: 'items' }, list.map(function (n) { return itemEl(n, true); })));
       });
     }
     $('history-open').addEventListener('click', openHistory);
+    $('notify-open').addEventListener('click', function () { go('notify'); });
+
+    // ---------------- notification settings (v8.0) ----------------
+    var notifyDraft = null;
+    function renderNotify() {
+      if (!notifyDraft) notifyDraft = JSON.parse(JSON.stringify(D.notifyRules || []));
+      var box = clear($('notify-rules'));
+      var items = D.notifyItems || [];
+      if (!notifyDraft.length) add(box, h('div', { cls: 'empty', text: 'No notifications yet.' }));
+      notifyDraft.forEach(function (r, i) {
+        var card = h('div', { cls: 'card notify-rule' });
+        var name = h('input', { type: 'text', id: 'nr-name-' + i, value: r.name || '', placeholder: 'e.g. Observer study level', maxlength: '80' });
+        name.addEventListener('input', function () { r.name = name.value; });
+        var role = h('select', { id: 'nr-role-' + i }, ['', 'delegate', 'advisor', 'observer'].map(function (x) { return h('option', { value: x, text: x ? cap(x) + 's' : 'Choose a position' }); }));
+        role.value = r.role || '';
+        role.addEventListener('change', function () { r.role = role.value; r.items = (r.items || []).filter(function (k) { return items.some(function (it) { return it.key === k && it.roles.indexOf(r.role) !== -1; }); }); renderNotify(); });
+        var emails = h('input', { type: 'text', id: 'nr-emails-' + i, value: (r.emails || []).join ? (r.emails || []).join(', ') : r.emails || '', placeholder: 'email1@kku.ac.th, email2@kku.ac.th' });
+        emails.addEventListener('input', function () { r.emails = emails.value; });
+        var on = h('input', { type: 'checkbox', id: 'nr-on-' + i }); on.checked = r.on !== false;
+        on.addEventListener('change', function () { r.on = on.checked; });
+        var groups = h('div', { cls: 'nr-items' });
+        [['info', 'Registration information'], ['upload', 'Uploads'], ['event', 'Payments and invoices']].forEach(function (g) {
+          var list = items.filter(function (it) { return it.group === g[0] && (!r.role || it.roles.indexOf(r.role) !== -1); });
+          if (!list.length) return;
+          add(groups, h('div', { cls: 'nr-group' }, h('b', { text: g[1] }), list.map(function (it) {
+            var cb = h('input', { type: 'checkbox', id: 'nr-' + i + '-' + it.key.replace(/\W/g, '-') });
+            cb.checked = (r.items || []).indexOf(it.key) !== -1;
+            cb.disabled = !r.role || !canEdit();
+            cb.addEventListener('change', function () { r.items = (r.items || []).filter(function (k) { return k !== it.key; }); if (cb.checked) r.items.push(it.key); });
+            return h('label', { for: cb.id }, cb, it.label);
+          })));
+        });
+        [name, role, emails, on].forEach(function (x) { x.disabled = !canEdit(); });
+        add(card, [
+          h('div', { cls: 'nr-head' }, h('b', { text: 'Notification ' + (i + 1) }), canEdit() ? h('button', { cls: 'btn-danger btn-small', text: 'Remove', onclick: function () { notifyDraft.splice(i, 1); renderNotify(); } }) : null),
+          h('div', { cls: 'grid2' }, h('div', null, h('label', { cls: 'f', for: name.id, text: 'Name (shown in the Notification center and the email subject)' }), name),
+            h('div', null, h('label', { cls: 'f', for: role.id, text: 'Position' }), role)),
+          h('label', { cls: 'f', text: r.role ? 'Watch (tick any): when a ' + r.role + ' changes or sends one of these' : 'Choose a position first' }), groups,
+          h('label', { cls: 'f', for: emails.id, text: 'Email to (separate with commas)' }), emails,
+          h('label', { cls: 'inline', for: on.id }, on, ' On')
+        ]);
+        add(box, card);
+      });
+      $('notify-add').classList.toggle('hidden', !canEdit());
+      $('notify-save').classList.toggle('hidden', !canEdit());
+    }
+    $('notify-add').addEventListener('click', function () { notifyDraft.push({ name: '', role: '', items: [], emails: '', on: true }); renderNotify(); var n = $('nr-name-' + (notifyDraft.length - 1)); if (n) n.focus(); });
+    $('notify-save').addEventListener('click', function () {
+      setMsg('notify-msg', '');
+      $('notify-save').disabled = true;
+      api('PUT', '/api/admin/notify-rules', { rules: notifyDraft }).then(function (res) {
+        $('notify-save').disabled = false;
+        if (!res.success) { setMsg('notify-msg', res.message, true); return; }
+        D.notifyRules = res.rules; notifyDraft = null;
+        renderNotify();
+        setMsg('notify-msg', 'Saved: ' + res.rules.length + ' notification' + (res.rules.length === 1 ? '' : 's') + '.', false);
+        toast('Notification settings saved.');
+      }, function (err) { $('notify-save').disabled = false; setMsg('notify-msg', err.message, true); });
+    });
+
+    // ---------------- document view (v8.0) ----------------
+    var docFilter = 'all';
+    function docKeys() { return ['passport', 'enrollment'].concat(certificateOn() ? ['ifmsaCert'] : []); }
+    function docPeople() {
+      return D.people.filter(function (p) {
+        if (docFilter === 'waiting') return docKeys().some(function (k) { return p.docs[k].url && !p.docs[k].check; });
+        return docFilter === 'all' || p.position === docFilter;
+      });
+    }
+    function docTable() {
+      var keys = docKeys();
+      var headers = ['Name', 'Position', 'Team', 'University', 'Email'];
+      keys.forEach(function (k) { headers.push(docLabel(k) + ' file', docLabel(k) + ' check'); });
+      return { headers: headers, rows: docPeople().map(function (p) {
+        var r = [nameOf(p), positionText(p), p.position === 'observer' ? '' : teamsOfPerson(p).join(', '), p.university, p.email];
+        keys.forEach(function (k) { var d = p.docs[k]; r.push(d.url || '', d.url ? (CHECK_LABEL[d.check] || 'Not checked yet') : ''); });
+        return r;
+      }) };
+    }
+    function renderDocs() {
+      var chips = clear($('doc-chips'));
+      var waiting = D.people.filter(function (p) { return docKeys().some(function (k) { return p.docs[k].url && !p.docs[k].check; }); }).length;
+      [['all', 'Everyone', D.people.length], ['delegate', 'Delegates'], ['advisor', 'Advisors'], ['observer', 'Observers'], ['waiting', 'Waiting for a check', waiting]].forEach(function (c) {
+        var n = c[2] !== undefined ? c[2] : D.people.filter(function (p) { return p.position === c[0]; }).length;
+        add(chips, h('button', { cls: 'chip' + (docFilter === c[0] ? ' on' : ''), text: c[1] + ' (' + n + ')', onclick: function () { docFilter = c[0]; renderDocs(); } }));
+      });
+      exportButtons($('doc-export'), function () { return 'Documents ' + docFilter; }, docTable);
+      var keys = docKeys();
+      var head = clear($('doc-head'));
+      add(head, h('tr', null, ['Name', 'Position', 'Team', 'University'].concat(keys.map(docLabel)).map(function (x) { return h('th', { text: x }); })));
+      var tb = clear($('doc-rows'));
+      var list = docPeople();
+      if (!list.length) add(tb, h('tr', null, h('td', { colspan: 4 + keys.length, cls: 'muted', text: 'Nobody here.' })));
+      list.forEach(function (p) {
+        add(tb, h('tr', null,
+          h('td', null, h('button', { cls: 'btn-link name-link', text: nameOf(p), onclick: function () { openPerson(p.email); } })),
+          h('td', { text: positionText(p) }), h('td', { text: p.position === 'observer' ? '—' : teamsOfPerson(p).join(', ') || '—' }), h('td', { text: p.university || '—' }),
+          keys.map(function (k) {
+            var d = p.docs[k];
+            if (k === 'ifmsaCert' && p.position !== 'delegate') return h('td', { cls: 'muted', text: '—' });
+            if (k === 'enrollment' && p.position === 'advisor' && !d.url) return h('td', { cls: 'muted', text: '—' });
+            if (!d.url) return h('td', null, pill('No file', 'none'));
+            var cell = h('td', { cls: 'doc-cell' }, h('div', null, checkPill(d.check), ' ', h('a', { href: d.url, target: '_blank', rel: 'noopener', text: 'Open ↗' })));
+            if (d.check && d.checkedBy) add(cell, h('div', { cls: 'muted small', text: 'by ' + d.checkedBy }));
+            if (canEdit()) add(cell, h('div', { cls: 'checks' },
+              h('button', { cls: 'btn-primary btn-small', text: 'Verified', disabled: d.check === 'verified', onclick: function (e) { e.target.disabled = true; checkDoc(p, k, 'verified', renderDocs); } }),
+              h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', disabled: d.check === 'notVerified', onclick: function (e) { e.target.disabled = true; checkDoc(p, k, 'notVerified', renderDocs); } })));
+            return cell;
+          })));
+      });
+      $('doc-sub').textContent = canEdit() ? 'Everyone\'s uploaded documents. Verify them here; the registrant is emailed about a proof of enrolment or certificate decision.' : 'Everyone\'s uploaded documents. This account can only view; full and master accounts verify.';
+    }
 
     // ---------------- home ----------------
     function renderHome() {
@@ -1183,8 +1320,10 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       var unpaid = teams.filter(function (t) { return !t.paymentComplete; }).length;
       var shirts = people.filter(function (p) { return p.shirtSize; }).length;
       var alerts = highAlert().length;
-      var lockText = D.locks.infoLocked ? 'Payment + info deadline passed (' + D.locks.infoLockAt + ')' : D.locks.infoLockAt ? 'Payment + info deadline: ' + D.locks.infoLockAt : 'No payment / info deadline set';
-      var editReqs = invoiceRequests().filter(function (r) { return r.confirmedAt && r.editRequestedAt; }).length;
+      var lockText = (D.locks.infoLocked ? 'Payment + info deadline passed (' + D.locks.infoLockAt + ')' : D.locks.infoLockAt ? 'Payment + info deadline: ' + D.locks.infoLockAt : 'No payment / info deadline set') +
+        ((D.settings || []).some(function (s) { return s.warn; }) ? ' · ⚠ check the date order' : '');
+      var editReqs = invoiceRequests().filter(function (r) { return r.editRequestedAt; }).length;
+      var docWaiting = D.people.filter(function (p) { return docKeys().some(function (k) { return p.docs[k].url && !p.docs[k].check; }); }).length;
       var plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
       $('home-sub').textContent = plural(people.length, 'registrant', 'registrants') + ' · ' + plural(teams.length, 'team', 'teams') + ' · ' + plural(obs.length, 'observer', 'observers') + ' · updated ' + when(D.serverNow);
       show('view-only-banner', !canEdit());
@@ -1198,17 +1337,19 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         tile('Trip view', 'A ' + D.trip.counts.A + ' · B ' + D.trip.counts.B + ' · C ' + D.trip.counts.C + ' of ' + D.trip.seats + ' seats each', 'trip'),
         tile('High alert section', alerts + (alerts === 1 ? ' person' : ' people') + ' with food, allergy, health or special needs', 'alert', alerts ? 'alert' : ''),
         tile('Financial view', plural(unpaidPeople().length, 'person', 'people') + ' not paid · ' + D.payments.filter(function (x) { return x.status === 'pending'; }).length + ' waiting for a check', 'finance', unpaidPeople().length ? 'alert' : ''),
-        tile('Invoice view', invoiceRequests().filter(function (r) { return !r.confirmedAt; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.confirmedAt; }).length + ' confirmed' + (editReqs ? ' · ' + editReqs + ' edit request' + (editReqs === 1 ? '' : 's') : ''), 'invoice', editReqs ? 'alert' : ''),
-        // 2026-11-05: All status export, Parameters and Organizer accounts are always the last three
+        tile('Invoice view', invoiceRequests().filter(function (r) { return r.status === 'requested'; }).length + ' waiting · ' + invoiceRequests().filter(function (r) { return r.status === 'confirmed'; }).length + ' confirmed · ' + invoiceRequests().filter(function (r) { return r.status === 'completed'; }).length + ' completed' + (editReqs ? ' · ' + editReqs + ' edit request' + (editReqs === 1 ? '' : 's') : ''), 'invoice', editReqs ? 'alert' : ''),
+        tile('Document view', docWaiting + (docWaiting === 1 ? ' person has' : ' people have') + ' a document waiting for a check', 'docs', docWaiting ? 'alert' : ''),
         questionsOn() ? tile('Questions', waitingQuestions() + (waitingQuestions() === 1 ? ' question' : ' questions') + ' waiting for an answer', 'questions', waitingQuestions() ? 'alert' : '') : null,
         tile('Announcements', annSummary(), 'announce'),
+        // v8.0 order: All status export, Page content, Parameters, Organizer accounts, Backend setting (always last)
         tile('All status export', 'Choose the columns and who to include', 'export'),
+        tile('Page content', 'Prices, payment details, terms of service, trips, form choices' + (canEdit() ? '' : ' (view only)'), 'content'),
         tile('Parameters', lockText, 'params'),
-        isMaster() ? tile('Page content', 'Prices, payment details, terms of service, trips, form choices, Drive folders', 'content') : null,
-        D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null
+        D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null,
+        isMaster() ? tile('Backend setting', 'Drive folders, emails and limits, TestEmails, automatic clean-up', 'backend') : null
       ]);
       show('cleanup-banner', !!D.locks.cleanupAt);
-      $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (Thailand time): every registrant account, payment, file, announcement, question and the history will be deleted. Organizer accounts, Parameters and Page content stay. Export what you need before then. A master account can change it in Parameters.' : '';
+      $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (GMT+7, Thailand time): every registrant account, payment, invoice request, file, announcement, question, notification and the history will be deleted. Organizer accounts, Parameters, Page content and the notification settings stay. Export what you need before then. A master account can change it in Backend setting.' : '';
       renderNotifs();
       if ($('search-q').value.trim()) runSearch();
     }
@@ -1306,7 +1447,6 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       setTimeout(function () { input.focus(); }, 50);
     });
 
-    function showCleanupPw() { var w = $('cleanup-pw-wrap'); if (w) w.classList.remove('hidden'); }
 
     // ---------------- announcements (2026-11-04; edit and schedule 2026-11-05) ----------------
     var annBuilt = false, annPicker = null;
@@ -1318,7 +1458,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     function fromLocal(v) { return v ? v.replace('T', ' ') : ''; }
     function toLocal(isoText) {
       if (!isoText) return '';
-      var d = new Date(new Date(isoText).getTime() + 7 * 3600 * 1000); // Thailand time
+      var d = new Date(new Date(isoText).getTime() + 7 * 3600 * 1000); // GMT+7, Thailand time
       return d.toISOString().slice(0, 16);
     }
     function updateAnnCount() {
@@ -1402,12 +1542,12 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       if (!body.title || !body.body) { setMsg('ann-msg', 'Please write a title and the message.', true); return; }
       if (!body.email && !body.page) { setMsg('ann-msg', 'Choose "Show on their registration page", "Send by email", or both.', true); return; }
       var how = [body.page ? 'shown on their page' + (body.endAt ? ' until ' + body.endAt : '') : '', body.email ? 'emailed' : ''].filter(Boolean).join(' and ');
-      confirmBox(later ? 'Schedule this announcement?' : 'Send this announcement?', h('p', { text: '"' + body.title + '" will be ' + how + (later ? ' on ' + body.sendAt + ' (Thailand time) to the people in "' + $('ann-aud').selectedOptions[0].text.replace('…', '') + '" at that time (' + $('ann-count').textContent.replace(' right now', ' now') + ').' : ' to ' + $('ann-count').textContent.replace(' right now', '') + '. Emails cannot be taken back.') }), later ? 'Schedule' : 'Send', function () {
+      confirmBox(later ? 'Schedule this announcement?' : 'Send this announcement?', h('p', { text: '"' + body.title + '" will be ' + how + (later ? ' on ' + body.sendAt + ' (GMT+7, Thailand time) to the people in "' + $('ann-aud').selectedOptions[0].text.replace('…', '') + '" at that time (' + $('ann-count').textContent.replace(' right now', ' now') + ').' : ' to ' + $('ann-count').textContent.replace(' right now', '') + '. Emails cannot be taken back.') }), later ? 'Schedule' : 'Send', function () {
         $('ann-send').disabled = true;
         api('POST', '/api/admin/announcements', body).then(function (res) {
           $('ann-send').disabled = false;
           if (!res.success) { setMsg('ann-msg', res.message, true); return; }
-          if (res.scheduled) { setMsg('ann-msg', 'Scheduled for ' + res.sendAt + ' (Thailand time). You can still edit or cancel it below.', false); $('ann-title').value = ''; $('ann-body').value = ''; loadData(true); return; }
+          if (res.scheduled) { setMsg('ann-msg', 'Scheduled for ' + res.sendAt + ' (GMT+7, Thailand time). You can still edit or cancel it below.', false); $('ann-title').value = ''; $('ann-body').value = ''; loadData(true); return; }
           setMsg('ann-msg', 'Sent to ' + res.recipients + ' people' + (body.email ? ' (' + res.emailed + ' emails' + (res.failed.length ? ', failed: ' + res.failed.join(', ') : '') + ')' : '') + '.', !!res.failed.length);
           $('ann-title').value = ''; $('ann-body').value = ''; $('ann-end').value = '';
           loadData(true);
@@ -1443,9 +1583,9 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
           h('label', { cls: 'f', for: 'ea-title', text: 'Title' }), title,
           h('label', { cls: 'f', for: 'ea-body', text: 'Message' }), msg,
           (a.page || scheduled) ? h('div', null, h('label', { cls: 'f', text: 'Banner colour on their page' }), picker.el,
-            h('label', { cls: 'f', for: 'ea-end', text: 'Stop showing on (optional, Thailand time)' }), end) : null,
+            h('label', { cls: 'f', for: 'ea-end', text: 'Stop showing on (optional, GMT+7, Thailand time)' }), end) : null,
           scheduled ? [h('label', { cls: 'chk', for: 'ea-page' }, page, ' Show on their registration page'), h('label', { cls: 'chk', for: 'ea-email' }, email, ' Send by email'),
-            h('label', { cls: 'f', for: 'ea-at', text: 'Send on (Thailand time) — to: ' + a.audienceLabel }), at]
+            h('label', { cls: 'f', for: 'ea-at', text: 'Send on (GMT+7, Thailand time) — to: ' + a.audienceLabel }), at]
             : [h('p', { cls: 'muted small', text: 'Their registration page shows the new version straight away.' + (a.page ? '' : ' (This one was email only.)') }),
               h('label', { cls: 'chk', for: 'ea-resend' }, resend, ' Also email the new version to the same ' + a.recipients + ' people (subject marked "updated")')],
           h('div', { cls: 'row', style: 'margin-top:14px;' }, save), out));
@@ -1880,10 +2020,10 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         if (canEdit()) {
           if (pay.status !== 'verified' && pay.status !== 'cancelled') add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Verified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'verified', renderFinance); } }));
           if (pay.status === 'pending') add(acts, h('button', { cls: 'btn-secondary btn-small', text: 'Not verified', onclick: function (e) { e.target.disabled = true; setPayment(pay, 'notVerified', renderFinance); } }));
-          if (pay.status !== 'cancelled') add(acts, h('button', { cls: 'btn-link small', text: 'Cancel', onclick: function () {
+          if (pay.status !== 'cancelled') add(acts, h('button', { cls: 'btn-danger btn-small', text: 'Cancel', onclick: function () {
             confirmBox('Cancel payment ' + pay.id + '?', h('p', { text: 'Everyone in this payment is released and can pay again. The slip stays in Drive.' }), 'Cancel payment', function () { setPayment(pay, 'cancelled', renderFinance); });
           } }));
-          else add(acts, h('button', { cls: 'btn-link small', text: 'Restore', onclick: function () { setPayment(pay, 'pending', renderFinance); } }));
+          else add(acts, h('button', { cls: 'btn-gold btn-small', text: 'Restore', onclick: function () { setPayment(pay, 'pending', renderFinance); } }));
         }
         add(tb, h('tr', null,
           h('td', null, h('b', { text: pay.id }), h('div', { cls: 'muted small', text: payLabel(pay) + ' · ' + when(pay.submittedAt) })),
@@ -1907,78 +2047,82 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       });
     }
 
-    // ---------------- invoice view (2026-10-31) ----------------
+    // ---------------- invoice view (v8.0: invoice requests with their own code) ----------------
     var invFilter = 'waiting';
+    var INV_STATUS = { requested: 'Waiting', confirmed: 'Confirmed', completed: 'Completed' };
     function invoiceRequests() {
-      var out = [];
-      D.payments.forEach(function (pay) {
-        if (!pay.invoice.needed || pay.status === 'cancelled') return;
-        out.push(Object.assign({ kind: 'payment', key: 'pay:' + pay.id, payerEmail: pay.payerEmail, ids: [pay.id], total: pay.total, statuses: [pay.status] }, pay.invoice));
+      return (D.invoices || []).slice().sort(function (a, b) {
+        var rank = { requested: 0, confirmed: 1, completed: 2 };
+        return (rank[a.status] - rank[b.status]) || String(a.updatedAt || a.createdAt).localeCompare(String(b.updatedAt || b.createdAt));
       });
-      D.people.forEach(function (p) {
-        var c = p.combinedInvoice;
-        if (!c) return;
-        out.push(Object.assign({ kind: 'combined', key: 'comb:' + p.email, payerEmail: p.email, ids: c.payments, total: c.total, later: c.later || [],
-          statuses: c.payments.map(function (id) { var x = D.payments.filter(function (q) { return q.id === id; })[0]; return x ? x.status : ''; }) }, c));
-      });
-      out.sort(function (a, b) { return (a.confirmedAt ? 1 : 0) - (b.confirmedAt ? 1 : 0) || String(a.updatedAt).localeCompare(String(b.updatedAt)); });
-      return out;
     }
+    function invNames(r) { return r.people.map(function (x) { return x.name + ' (' + cap(x.role) + (x.team ? ', ' + x.team : '') + '): ' + thb(x.amount); }); }
     function invTable() {
-      var list = invoiceRequests().filter(function (r) { return invFilter === 'all' || (invFilter === 'waiting' ? !r.confirmedAt : !!r.confirmedAt); });
-      return { list: list, headers: ['Requested by', 'Email', 'Telephone', 'Kind', 'Payments', 'Amount', 'Bill to', 'Address', 'Tax ID', 'Names on the invoice', 'Invoice telephone', 'Template', 'Other information', 'Status'],
+      var list = invoiceRequests().filter(function (r) { return invFilter === 'all' || (invFilter === 'waiting' ? r.status === 'requested' : r.status === invFilter); });
+      return { list: list, headers: ['Invoice code', 'Requested by', 'Email', 'Telephone', 'Names on the invoice', 'Amount', 'Bill to', 'Address', 'Tax ID', 'Invoice telephone', 'Template', 'Other information', 'Status', 'Requested', 'Confirmed', 'Completed'],
         rows: list.map(function (r) {
-          var p = byEmail[r.payerEmail];
-          return [p ? nameOf(p) : r.payerEmail, r.payerEmail, p ? p.phone : '', r.kind === 'combined' ? 'Combined (all payments)' : 'One payment', r.ids.join(', '), thb(r.total),
-            r.billTo, r.address, r.taxId, namesText(r), r.phone, r.option === 'custom' ? 'Custom: ' + r.templateUrl : 'Default (KKU)', r.note, (r.confirmedAt ? 'Confirmed ' + when(r.confirmedAt) + ' by ' + r.confirmedBy : 'Waiting') + (r.confirmedAt && r.editRequestedAt ? ' — edit requested: ' + (r.editRequestNote || '(no message)') : '')];
+          var p = byEmail[r.requesterEmail];
+          return [r.code, p ? nameOf(p) : r.requesterName || r.requesterEmail, r.requesterEmail, p ? p.phone : '', invNames(r).join('\n'), thb(r.total),
+            r.billTo, r.address, r.taxId, r.phone, r.option === 'custom' ? 'Custom: ' + r.templateUrl : 'Default (KKU)', r.note,
+            INV_STATUS[r.status] + (r.reopenedAt ? ' (unlocked)' : '') + (r.editRequestedAt ? ' — edit requested: ' + (r.editRequestNote || '(no message)') : ''),
+            when(r.createdAt), r.confirmedAt ? when(r.confirmedAt) + ' by ' + r.confirmedBy : '', r.completedAt ? when(r.completedAt) + ' by ' + r.completedBy : ''];
         }) };
     }
-    function namesText(r) { return (r.names || []).map(function (x) { return x.name + ' (' + cap(x.position) + ')'; }).join(', '); }
-    function confirmInvoice(r, yes) {
-      var body = r.kind === 'payment' ? { paymentId: r.ids[0], confirm: yes, updatedAt: r.updatedAt } : { email: r.payerEmail, confirm: yes, updatedAt: r.updatedAt };
-      return api('POST', '/api/admin/invoices/confirm', body).then(function (res) {
+    function invAction(path, body, okText) {
+      return api('POST', path, body).then(function (res) {
         if (!res.success) { toast(res.message, true); if (res.changed) loadData(true); return; }
-        toast(yes ? 'Invoice confirmed — it is now locked for the registrant.' : 'Unlocked — the registrant can edit it again' + (D.invoiceClosed ? ' (confirm it again when they are done).' : '.'));
+        toast(okText);
         loadData(true);
       }, function (err) { toast(err.message, true); });
+    }
+    function confirmInvoice(r, yes) {
+      return invAction('/api/admin/invoices/confirm', { code: r.code, confirm: yes, updatedAt: yes ? r.updatedAt : undefined },
+        yes ? 'Invoice ' + r.code + ' confirmed — it is now locked for the registrant.' : 'Invoice ' + r.code + ' unlocked — the registrant can change it again' + (D.invoiceClosed ? ' (confirm it again when they are done).' : '.'));
     }
     function renderInvoices() {
       var all = invoiceRequests();
       var chips = clear($('inv-chips'));
-      [['waiting', 'Waiting', all.filter(function (r) { return !r.confirmedAt; }).length], ['confirmed', 'Confirmed', all.filter(function (r) { return r.confirmedAt; }).length], ['all', 'All', all.length]].forEach(function (c) {
+      var count = function (st) { return all.filter(function (r) { return r.status === st; }).length; };
+      [['waiting', 'Waiting', count('requested')], ['confirmed', 'Confirmed', count('confirmed')], ['completed', 'Completed', count('completed')], ['all', 'All', all.length]].forEach(function (c) {
         add(chips, h('button', { cls: 'chip' + (invFilter === c[0] ? ' on' : ''), text: c[1] + ' (' + c[2] + ')', onclick: function () { invFilter = c[0]; renderInvoices(); } }));
       });
+      $('inv-window').textContent = (D.invoiceOpensAt ? 'Invoice requests open ' + (D.invoiceOpen ? 'since ' : 'on ') + D.invoiceOpensAt : 'Invoice requests are open') +
+        (D.invoiceCloseAt ? (D.invoiceClosed ? ' and closed on ' : ' until ') + D.invoiceCloseAt : '') + ' (GMT+7, Thailand time).';
       exportButtons($('inv-export'), function () { return 'Invoices ' + invFilter; }, invTable);
       var t = invTable(), tb = clear($('inv-rows'));
       if (!t.list.length) add(tb, h('tr', null, h('td', { colspan: 8, cls: 'muted', text: invFilter === 'waiting' ? 'No invoice requests waiting.' : 'Nothing here.' })));
       t.list.forEach(function (r) {
-        var p = byEmail[r.payerEmail];
+        var p = byEmail[r.requesterEmail];
         var acts = h('div', { cls: 'acts' });
         if (canEdit()) {
-          if (!r.confirmedAt) add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Confirm', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, true); } }));
-          else add(acts, h('button', { cls: 'btn-link small', text: r.editRequestedAt ? 'Accept edit (unlock)' : 'Undo confirm', onclick: function () {
-            confirmBox('Undo the confirmation?', h('p', { text: 'The registrant will be able to change this invoice request again. Use this when they asked for a correction.' }), 'Undo confirm', function () { confirmInvoice(r, false); });
-          } }));
+          if (r.status === 'requested') add(acts, h('button', { cls: 'btn-primary btn-small', text: 'Confirm', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, true); } }));
+          if (r.status === 'confirmed') add(acts, h('button', { cls: 'btn-green btn-small', text: 'Complete', onclick: function (e) { e.target.disabled = true; invAction('/api/admin/invoices/complete', { code: r.code }, 'Invoice ' + r.code + ' marked complete.'); } }));
+          if (r.status === 'completed') add(acts, h('button', { cls: 'btn-secondary btn-small', text: 'Not complete', onclick: function (e) { e.target.disabled = true; invAction('/api/admin/invoices/complete', { code: r.code, complete: false }, 'Invoice ' + r.code + ' is back to "Confirmed".'); } }));
+          if (r.status !== 'requested') {
+            if (r.editRequestedAt) {
+              add(acts, [h('button', { cls: 'btn-primary btn-small', text: 'Accept edit (unlock)', onclick: function (e) { e.target.disabled = true; confirmInvoice(r, false); } }),
+                h('button', { cls: 'btn-secondary btn-small', text: 'Decline', onclick: function (e) { e.target.disabled = true; invAction('/api/admin/invoices/dismiss-edit-request', { code: r.code }, 'Request declined — the invoice stays as it is.'); } })]);
+            } else {
+              add(acts, h('button', { cls: 'btn-undo btn-small', text: 'Undo confirm', onclick: function () {
+                confirmBox('Undo the confirmation of ' + r.code + '?', h('p', { text: 'The registrant will be able to change this invoice again (and other advisors of their university may move names from it to their own invoice). Use this when they asked for a correction.' }), 'Undo confirm', function () { confirmInvoice(r, false); });
+              } }));
+            }
+          }
         }
         add(tb, h('tr', null,
-          h('td', null, p ? h('button', { cls: 'btn-link', style: 'text-align:left;', text: nameOf(p), onclick: function () { openPerson(p.email); } }) : r.payerEmail,
-            h('div', { cls: 'inv-meta', text: [r.payerEmail, p && p.phone].filter(Boolean).join(' · ') }),
-            r.updatedAt ? h('div', { cls: 'inv-meta', text: 'last changed ' + when(r.updatedAt) }) : null),
-          h('td', null, h('b', { text: r.kind === 'combined' ? 'Combined invoice' : 'One payment' }), h('div', { cls: 'small', text: r.ids.join(', ') }),
-            r.later && r.later.length ? h('div', { cls: 'inv-warn', text: r.later.join(', ') + ' paid after this was confirmed — not in this invoice' }) : null,
-            r.kind === 'combined' ? (function () {
-              var own = D.payments.filter(function (q) { return r.ids.indexOf(q.id) !== -1 && q.payerEmail !== r.payerEmail; });
-              return own.length ? h('div', { cls: 'inv-meta', text: 'Includes ' + own.map(function (q) { return q.id + ' (' + (q.payerName || q.payerEmail) + ', paid individually)'; }).join(', ') }) : null;
-            })() : null),
+          h('td', null, h('b', { cls: 'inv-code', text: r.code }), h('div', { cls: 'inv-meta', text: 'requested ' + when(r.createdAt) }), r.updatedAt && r.updatedAt !== r.createdAt ? h('div', { cls: 'inv-meta', text: 'changed ' + when(r.updatedAt) }) : null),
+          h('td', null, p ? h('button', { cls: 'btn-link name-link', text: nameOf(p), onclick: function () { openPerson(p.email); } }) : r.requesterName || r.requesterEmail,
+            h('div', { cls: 'inv-meta', text: [p ? positionText(p) : '', r.requesterEmail, p && p.phone].filter(Boolean).join(' · ') })),
+          h('td', null, h('ul', { cls: 'people' }, invNames(r).map(function (x) { return h('li', { text: x }); }))),
           h('td', { cls: 'num', text: thb(r.total) }),
           h('td', null, h('div', null, h('b', { text: r.billTo || '—' })), h('div', { cls: 'inv-meta', text: r.address || '' }),
             r.taxId ? h('div', { cls: 'inv-meta', text: 'Tax ID ' + r.taxId }) : null, r.phone ? h('div', { cls: 'inv-meta', text: 'Tel. ' + r.phone }) : null,
-            h('div', { cls: 'small', style: 'margin-top:4px;' }, h('span', { cls: 'inv-meta', text: 'Names: ' }), namesText(r) || '—')),
-          h('td', null, r.option === 'custom' ? (r.templateUrl ? h('a', { href: r.templateUrl, target: '_blank', rel: 'noopener', text: 'Their template ↗' }) : 'Custom (no file)') : 'Default (KKU)'),
-          h('td', { cls: 'note', text: r.note || '—' }),
-          h('td', null, r.confirmedAt ? pill('Invoice confirmed', 'ok') : pill('Waiting', 'wait'),
-            r.confirmedAt ? h('div', { cls: 'inv-meta', text: 'by ' + r.confirmedBy + ', ' + when(r.confirmedAt) }) : null,
-            r.confirmedAt && r.editRequestedAt ? h('div', { cls: 'inv-warn', text: 'Edit requested ' + when(r.editRequestedAt) + (r.editRequestNote ? ': ' + r.editRequestNote : '') }) : null),
+            h('div', { cls: 'small', style: 'margin-top:4px;' }, r.option === 'custom' ? (r.templateUrl ? h('a', { href: r.templateUrl, target: '_blank', rel: 'noopener', text: 'Their template ↗' }) : 'Custom (no file)') : 'Default (KKU) template'),
+            r.note ? h('div', { cls: 'note small', style: 'margin-top:4px;', text: 'Note: ' + r.note }) : null),
+          h('td', null, r.status === 'completed' ? pill('Completed', 'ok') : r.status === 'confirmed' ? pill('Confirmed', 'ok') : pill(r.reopenedAt ? 'Unlocked' : 'Waiting', 'wait'),
+            r.confirmedAt ? h('div', { cls: 'inv-meta', text: 'confirmed by ' + r.confirmedBy + ', ' + when(r.confirmedAt) }) : null,
+            r.completedAt ? h('div', { cls: 'inv-meta', text: 'completed by ' + r.completedBy + ', ' + when(r.completedAt) }) : null,
+            r.editRequestedAt ? h('div', { cls: 'inv-warn', text: 'Edit requested ' + when(r.editRequestedAt) + (r.editRequestNote ? ': ' + r.editRequestNote : '') }) : null),
           h('td', null, acts)));
       });
     }
@@ -2003,8 +2147,7 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         ['Paid by', function (p) { var pay = payOf(p); var q = pay && byEmail[pay.payerEmail]; return pay ? (q ? nameOf(q) : pay.payerName) : ''; }],
         ['Registration fee', function (p) { var pay = payOf(p); var x = pay && pay.people.filter(function (y) { return y.email === p.email; })[0]; return x ? x.price : ''; }],
         ['Paid late', function (p) { var pay = payOf(p); return pay && pay.late ? 'Late' : ''; }],
-        ['Invoice', function (p) { var pay = payOf(p); var c = pay && pay.payerEmail === p.email ? (byEmail[p.email].combinedInvoice || (pay.invoice.needed ? pay.invoice : null)) : null;
-          return c ? (c.confirmedAt ? 'Confirmed' : 'Requested') : ''; }]]],
+        ['Invoice', function (p) { return (p.invoiceCodes || []).join(', '); }]]],
       ['Account', [['Registered', function (p) { return when(p.createdAt); }], ['Last updated', function (p) { return when(p.updatedAt); }]]]
     ];
     function payOf(p) { return p.paymentId ? D.payments.filter(function (x) { return x.id === p.paymentId; })[0] : null; }
@@ -2070,22 +2213,90 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       add(box, table(t.headers, t.rows.slice(0, 8), { empty: 'Nobody matches these choices.' }));
     }
 
-    // ---------------- page content (2026-11-06, master accounts only) ----------------
-    var contentDirty = false, contentChecks = {};
-    function renderContent(fromSave) {
-      if (!isMaster()) { go('home'); return; }
-      if (contentDirty && !fromSave) return; // don't wipe what is being typed
-      if (fromSave) { contentChecks = {}; fromSave.forEach(function (s) { s.fields.forEach(function (f) { contentChecks[f.key] = f.check; }); }); }
-      var sections = fromSave || D.content || [];
-      var box = clear($('content-sections'));
-      sections.forEach(function (sec) {
-        var card = h('div', { cls: 'card content-sec' }, h('h2', { text: sec.name }), sec.help ? h('p', { cls: 'sub', text: sec.help }) : null);
-        sec.fields.forEach(function (f) { add(card, contentField(f)); });
-        add(box, card);
-      });
-      $('content-save').disabled = false;
+    // ---------------- autosave (v8.0: Parameters, Page content, Backend setting) ----------------
+    // Each field saves by itself about a second after typing stops (or when it
+    // loses focus); its "Server check" cell shows Saving… / Saved / the problem.
+    var pending = { content: {}, params: {} };   // key -> timer
+    var inFlight = { content: 0, params: 0 };
+    var lastCheck = { content: {}, params: {} }; // key -> the last answer of the server (kept when the screen is redrawn)
+    function busy(kind) { return inFlight[kind] > 0 || Object.keys(pending[kind]).length > 0; }
+    function setCheckCell(cell, text, kind) {
+      if (!cell) return;
+      cell.textContent = text;
+      cell.className = (cell.getAttribute('data-base') || '') + ' ' + (kind === 'ok' ? 'check-ok' : kind === 'wait' ? 'check-wait' : 'check-bad');
     }
-    function contentField(f) {
+    function queueSave(kind, key, read, cell, delay) {
+      if (pending[kind][key]) clearTimeout(pending[kind][key]);
+      setCheckCell(cell, 'Not saved yet…', 'wait');
+      pending[kind][key] = setTimeout(function () { delete pending[kind][key]; sendSave(kind, key, read(), cell); }, delay === undefined ? 1000 : delay);
+    }
+    function flushSave(kind, key, read, cell) {
+      if (!pending[kind][key]) return;
+      clearTimeout(pending[kind][key]); delete pending[kind][key];
+      sendSave(kind, key, read(), cell);
+    }
+    function sendSave(kind, key, value, cell) {
+      var values = {}; values[key] = value;
+      inFlight[kind]++;
+      setCheckCell(cell, 'Saving…', 'wait');
+      var req = kind === 'content' ? api('PUT', '/api/admin/content', { values: values }) : api('PUT', '/api/admin/settings', { values: values });
+      return req.then(function (res) {
+        inFlight[kind]--;
+        if (kind === 'content') {
+          if (!res.content) { setCheckCell(cell, '⚠ ' + (res.message || 'Could not save.'), 'bad'); return; }
+          var f = null; res.content.forEach(function (sec) { sec.fields.forEach(function (x) { if (x.key === key) f = x; }); });
+          var check = f ? f.check : 'OK';
+          lastCheck.content[key] = check === 'OK' ? (res.changed && res.changed.length ? 'Saved ✓' : 'OK') : check;
+          setCheckCell(cell, lastCheck.content[key], check === 'OK' ? 'ok' : 'bad');
+          if (!busy('content')) { D.content = mergeBackend(res.content); }
+        } else {
+          if (!res.settings) { setCheckCell(cell, '⚠ ' + (res.message || 'Could not save.'), 'bad'); return; }
+          var check2 = (res.checks && res.checks[key]) || 'OK';
+          lastCheck.params[key] = check2 === 'OK' ? (res.changed && res.changed.length ? 'Saved ✓' : 'OK') : check2;
+          setCheckCell(cell, lastCheck.params[key], check2 === 'OK' || check2.indexOf('⚠ Saved') === 0 ? 'ok' : 'bad');
+          D.settings = mergeSettings(res.settings); D.locks = res.locks;
+          if (res.requiredInfo && D.requiredInfo) D.requiredInfo.current = res.requiredInfo;
+          showWarnings();
+        }
+        if (!busy(kind)) loadData(true);
+      }, function (err) { inFlight[kind]--; setCheckCell(cell, '⚠ ' + err.message, 'bad'); });
+    }
+    /** Content saved from Page content keeps the Backend setting sections we already had (and the reverse). */
+    function mergeBackend(sections) {
+      var byName = {}; sections.forEach(function (s) { byName[s.name] = s; });
+      return (D.content || []).map(function (s) { return byName[s.name] || s; }).concat(sections.filter(function (s) { return !(D.content || []).some(function (x) { return x.name === s.name; }); }));
+    }
+    function mergeSettings(rows) {
+      var byKey = {}; rows.forEach(function (r) { byKey[r.key] = r; });
+      return (D.settings || []).map(function (r) { return byKey[r.key] || r; });
+    }
+    function showWarnings() {
+      (D.settings || []).forEach(function (s) {
+        var w = $('warn-' + s.key);
+        if (!w) return;
+        w.textContent = s.warn || '';
+        w.classList.toggle('hidden', !s.warn);
+      });
+    }
+    window.addEventListener('beforeunload', function (e) {
+      if (busy('content') || busy('params')) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // ---------------- page content (v8.0: every account sees it; full and master edit) ----------------
+    function renderContent() {
+      if (busy('content')) return; // don't wipe what is being typed
+      var box = clear($('content-sections'));
+      (D.content || []).filter(function (s) { return !s.backend; }).forEach(function (sec) { add(box, contentCard(sec)); });
+      $('content-sub').textContent = canEdit()
+        ? 'What the registration page and the emails say: prices, payment details, terms of service, trips and the choices on the form. Every change saves by itself.'
+        : 'What the registration page and the emails say. This account can only view; full and master accounts change it.';
+    }
+    function contentCard(sec) {
+      var card = h('div', { cls: 'card content-sec' }, h('h2', { text: sec.name }), sec.help ? h('p', { cls: 'sub', text: sec.help }) : null);
+      sec.fields.forEach(function (f) { add(card, contentField(f, sec.backend)); });
+      return card;
+    }
+    function contentField(f, backend) {
       var id = 'cf-' + f.key.replace(/\W/g, '-');
       var input;
       if (f.type === 'switch') {
@@ -2102,16 +2313,22 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       } else {
         input = h('input', { type: 'text', id: id, 'data-key': f.key, value: f.value || '' });
       }
-      var check = contentChecks[f.key] || f.check || 'OK';
+      input.disabled = !canEdit() || (backend && !isMaster());
+      var check = lastCheck.content[f.key] || f.check || 'OK';
+      var okish = check === 'OK' || check === 'Saved ✓';
+      var checkCell = h('div', { cls: 'ccheck ' + (okish ? 'check-ok' : 'check-bad'), 'data-base': 'ccheck', text: check });
       var preview = h('div');
       var redraw = function () { clear(preview); var pv = contentPreview(f.key, input.value); if (pv) add(preview, pv); };
-      input.addEventListener('input', function () { contentDirty = true; redraw(); });
-      input.addEventListener('change', function () { contentDirty = true; redraw(); });
+      var read = function () { return input.value; };
+      var long = f.type === 'rows' || f.type === 'long';
+      input.addEventListener('input', function () { redraw(); queueSave('content', f.key, read, checkCell, long ? 1500 : 1000); });
+      input.addEventListener('change', function () { redraw(); if (input.tagName === 'SELECT') queueSave('content', f.key, read, checkCell, 0); else flushSave('content', f.key, read, checkCell); });
+      input.addEventListener('blur', function () { flushSave('content', f.key, read, checkCell); });
       redraw();
       return h('div', { cls: 'cfield' },
         h('div', { cls: 'clabel' }, f.label, f.help ? h('div', { cls: 'chelp', text: f.help }) : null),
         h('div', null, input, preview),
-        h('div', { cls: 'ccheck ' + (check === 'OK' ? 'check-ok' : 'check-bad'), text: check }));
+        checkCell);
     }
     /** What the registrants will see, drawn from what is being typed. */
     function contentPreview(key, value) {
@@ -2131,86 +2348,103 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       }
       return null;
     }
-    $('content-save').addEventListener('click', function () {
-      var values = {};
-      Array.prototype.forEach.call(document.querySelectorAll('#content-sections [data-key]'), function (i) { values[i.getAttribute('data-key')] = i.value; });
-      $('content-save').disabled = true;
-      setMsg('content-msg', '');
-      api('PUT', '/api/admin/content', { values: values }).then(function (res) {
-        $('content-save').disabled = false;
-        if (!res.content) { setMsg('content-msg', res.message || 'Could not save.', true); return; }
-        contentDirty = false;
-        D.content = res.content;
-        renderContent(res.content);
-        setMsg('content-msg', res.message + (res.changed && res.changed.length ? ' Changed: ' + res.changed.join(', ') : ''), !res.success);
-        if (res.success) toast('Page content saved.');
-        loadData(true);
-      }, function (err) { $('content-save').disabled = false; setMsg('content-msg', err.message, true); });
-    });
 
-    // ---------------- parameters ----------------
+    // ---------------- parameters (v8.0: autosave, date order, required information) ----------------
     function toLocalInput(v) { return v ? v.replace(' ', 'T') : ''; }
-    function renderParams(notesFromSave) {
-      if (paramsDirty && !notesFromSave) return; // don't wipe what is being typed
-      var tb = clear($('param-rows'));
-      if (notesFromSave) { paramChecks = {}; notesFromSave.forEach(function (s) { paramChecks[s.key] = s.check; }); }
-      var rows = notesFromSave || D.settings;
-      rows.forEach(function (s) {
-        var check = paramChecks[s.key] || s.check;
-        var input;
-        if (s.key === 'ReminderEmails' || s.key === 'QuestionTickets') {
-          input = h('select', { id: 'param-' + s.key, 'data-key': s.key }, h('option', { value: 'On', text: 'On' }), h('option', { value: 'Off', text: 'Off' }));
-          input.value = s.value === 'Off' ? 'Off' : 'On';
-          input.addEventListener('change', function () { paramsDirty = true; });
-        } else if (s.date) input = h('input', { type: 'datetime-local', id: 'param-' + s.key, value: toLocalInput(s.value), 'data-key': s.key, 'data-was': toLocalInput(s.value) });
-        else if (s.key === 'TripSeatsPerOption') input = h('input', { type: 'number', min: '0', step: '1', id: 'param-' + s.key, value: s.value, 'data-key': s.key });
-        else input = h('input', { type: 'text', id: 'param-' + s.key, value: s.value, 'data-key': s.key });
-        var isCleanup = s.key === 'DataCleanupDate';
-        input.disabled = !canEdit() || (isCleanup && !isMaster());
-        input.addEventListener('input', function () { paramsDirty = true; if (isCleanup) showCleanupPw(); });
-        var cell = h('td', null, input);
-        if (s.date && s.key !== 'EarlyBirdDeadline' && canEdit() && (!isCleanup || isMaster())) add(cell, h('button', { cls: 'btn-link small', style: 'margin-top:4px;', text: 'Clear', onclick: function () { input.value = ''; paramsDirty = true; if (isCleanup) showCleanupPw(); } }));
-        if (isCleanup) add(cell, h('div', { id: 'cleanup-pw-wrap', cls: 'hidden', style: 'margin-top:8px;' },
+    var KEY_SUB = { InfoEditDeadline: 'Payment + second-deposit + info edit deadline; invoice requests open', InvoiceEditDeadline: 'Invoice requests close; waiting ones are confirmed',
+      InitialDeposit: 'Pre-ICEM exam · THB per delegate · blank = off', SecondDepositOpens: 'Exam results out', PreIcemWinners: 'Team names, commas', RegistrationCloses: 'Registration end date',
+      DataCleanupDate: 'Automatic clean-up — deletes everything', TestEmails: 'May register before RegistrationOpens' };
+    function paramRow(s) {
+      var input;
+      var isCleanup = s.key === 'DataCleanupDate';
+      if (s.date) input = h('input', { type: 'datetime-local', id: 'param-' + s.key, value: toLocalInput(s.value), 'data-key': s.key, 'data-was': toLocalInput(s.value) });
+      else if (s.key === 'TripSeatsPerOption' || s.key === 'InitialDeposit') input = h('input', { type: 'number', min: '0', step: '1', id: 'param-' + s.key, value: s.value, 'data-key': s.key });
+      else input = h('input', { type: 'text', id: 'param-' + s.key, value: s.value, 'data-key': s.key });
+      input.disabled = !canEdit() || ((s.backend || isCleanup) && !isMaster());
+      var shown = lastCheck.params[s.key] || s.check;
+      var checkCell = h('td', { cls: shown === 'OK' || shown === 'Saved ✓' || shown.indexOf('⚠ Saved') === 0 ? 'check-ok' : 'check-bad', text: shown });
+      var read = function () { var v = input.value.trim(); return input.type === 'datetime-local' ? v.replace('T', ' ') : v; };
+      var cell = h('td', null, input);
+      if (!isCleanup) {
+        input.addEventListener('input', function () { if (input.type !== 'datetime-local') queueSave('params', s.key, read, checkCell); });
+        input.addEventListener('change', function () { queueSave('params', s.key, read, checkCell, input.type === 'datetime-local' ? 300 : 0); });
+        input.addEventListener('blur', function () { flushSave('params', s.key, read, checkCell); });
+      } else input.addEventListener('input', showCleanupPw);
+      if (s.date && s.key !== 'EarlyBirdDeadline' && !input.disabled) add(cell, h('button', { cls: 'btn-secondary btn-small', style: 'margin-top:4px;', text: 'Clear date', onclick: function () {
+        input.value = ''; if (isCleanup) showCleanupPw(); else queueSave('params', s.key, read, checkCell, 0);
+      } }));
+      if (isCleanup) {
+        add(cell, h('div', { id: 'cleanup-pw-wrap', cls: 'hidden', style: 'margin-top:8px;' },
           h('label', { cls: 'f', for: 'cleanup-pw', style: 'margin-top:0;', text: 'Password of ICEMmasteraccount — needed to set, change or clear the clean-up date' }),
-          h('input', { type: 'password', id: 'cleanup-pw', autocomplete: 'current-password' })));
-        if (isCleanup && !isMaster()) add(cell, h('div', { cls: 'muted small', style: 'margin-top:4px;', text: 'Only a master account can change it.' }));
-        var keyCell = h('td', { cls: 'key', text: s.key });
-        if (s.key === 'DataCleanupDate') add(keyCell, h('span', { cls: 'key-sub', text: 'Automatic clean-up — deletes everything' }));
-        if (s.key === 'InfoEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Payment deadline + info edit deadline' }));
-        if (s.key === 'InvoiceEditDeadline') add(keyCell, h('span', { cls: 'key-sub', text: 'Invoices locked + confirmed' }));
-        if (s.key === 'InitialDeposit') add(keyCell, h('span', { cls: 'key-sub', text: 'Pre-ICEM exam · THB per delegate · blank = off' }));
-        if (s.key === 'SecondDepositOpens') add(keyCell, h('span', { cls: 'key-sub', text: 'Exam results out' }));
-        if (s.key === 'PreIcemWinners') add(keyCell, h('span', { cls: 'key-sub', text: 'Team names, commas' }));
-        if (s.key === 'RegistrationCloses') add(keyCell, h('span', { cls: 'key-sub', text: 'Registration end date' }));
-        add(tb, h('tr', null, keyCell, cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?Thailand time, yyyy-MM-dd HH:mm\./, ' Thailand time.') : s.note }),
-          h('td', { cls: check === 'OK' ? 'check-ok' : 'check-bad', text: check })));
-      });
-      $('params-save').disabled = !canEdit();
-    }
-    $('params-save').addEventListener('click', function () {
-      var values = {};
-      Array.prototype.forEach.call(document.querySelectorAll('#param-rows input[data-key], #param-rows select[data-key]'), function (i) {
-        var v = i.value.trim();
-        values[i.getAttribute('data-key')] = i.type === 'datetime-local' ? v.replace('T', ' ') : v;
-      });
-      var cp = $('cleanup-pw');
-      var cleanupInput = $('param-DataCleanupDate');
-      if (cleanupInput && cleanupInput.value !== (cleanupInput.getAttribute('data-was') || '')) {
-        if (!cp || !cp.value) { setMsg('params-msg', 'Type the ICEMmasteraccount password under DataCleanupDate to set, change or clear the automatic clean-up date.', true); return; }
-        if (cleanupInput.value && !confirm('Automatic clean-up on ' + cleanupInput.value.replace('T', ' ') + ': EVERYTHING of this year\'s registration will be deleted then. Continue?')) return;
+          h('input', { type: 'password', id: 'cleanup-pw', autocomplete: 'current-password' }),
+          h('button', { cls: 'btn-danger btn-small', id: 'cleanup-save', style: 'margin-top:8px;', text: 'Save the clean-up date', onclick: function () { saveCleanup(input, checkCell); } })));
       }
-      $('params-save').disabled = true;
-      api('PUT', '/api/admin/settings', { values: values, myPassword: cp ? cp.value : '' }).then(function (res) {
-        if (cp) cp.value = '';
-        $('params-save').disabled = false;
-        if (!res.settings) { setMsg('params-msg', res.message, true); return; }
-        paramsDirty = false;
-        D.settings = res.settings; D.locks = res.locks;
-        renderParams(res.settings);
-        setMsg('params-msg', res.message, !res.success);
+      add(cell, h('div', { id: 'warn-' + s.key, cls: 'param-warn' + (s.warn ? '' : ' hidden'), text: s.warn || '' }));
+      var keyCell = h('td', { cls: 'key', text: s.key });
+      if (KEY_SUB[s.key]) add(keyCell, h('span', { cls: 'key-sub', text: KEY_SUB[s.key] }));
+      return h('tr', null, keyCell, cell, h('td', { cls: 'note', text: s.date ? s.note.replace(/ ?GMT\+7, Thailand time, yyyy-MM-dd HH:mm\./, ' GMT+7, Thailand time.') : s.note }), checkCell);
+    }
+    function renderParams() {
+      if (busy('params')) return; // don't wipe what is being typed
+      var tb = clear($('param-rows'));
+      (D.settings || []).filter(function (s) { return !s.backend; }).forEach(function (s) { add(tb, paramRow(s)); });
+      renderRequired();
+    }
+    /** Parameters → Required information: what each position must fill in before paying. */
+    function renderRequired() {
+      var R = D.requiredInfo;
+      var box = clear($('req-grid'));
+      if (!R) return;
+      var roles = ['delegate', 'advisor', 'observer'];
+      var tb = h('tbody');
+      var msg = $('req-msg');
+      R.items.forEach(function (it) {
+        add(tb, h('tr', null, h('td', { text: cap(it.label) }), roles.map(function (role) {
+          if (it.roles.indexOf(role) === -1) return h('td', { cls: 'num muted', text: '—' });
+          var cb = h('input', { type: 'checkbox', id: 'req-' + role + '-' + it.key, 'data-role': role, 'data-key': it.key });
+          cb.checked = (R.current[role] || []).indexOf(it.key) !== -1;
+          cb.disabled = !canEdit();
+          cb.addEventListener('change', function () {
+            var v = {};
+            roles.forEach(function (r) { v[r] = Array.prototype.slice.call(document.querySelectorAll('#req-grid input[data-role="' + r + '"]:checked')).map(function (x) { return x.getAttribute('data-key'); }); });
+            setMsg('req-msg', 'Saving…');
+            sendSave('params', 'RequiredInfo', v, null).then(function () { setMsg('req-msg', 'Saved ✓ — used for payments, the checklist and the "required" marks on the form.'); });
+          });
+          return h('td', { cls: 'num' }, cb);
+        })));
+      });
+      add(box, h('div', { cls: 'table-wrap' }, h('table', null, h('thead', null, h('tr', null, h('th', { text: 'Information' }), roles.map(function (r) { return h('th', { cls: 'num', text: cap(r) + 's' }); }))), tb)));
+      void msg;
+    }
+    function showCleanupPw() { var w = $('cleanup-pw-wrap'); if (w) w.classList.remove('hidden'); }
+    function saveCleanup(input, checkCell) {
+      var cp = $('cleanup-pw');
+      var v = input.value.trim().replace('T', ' ');
+      if (!cp || !cp.value) { setMsg('backend-msg', 'Type the ICEMmasteraccount password to set, change or clear the automatic clean-up date.', true); return; }
+      if (v && !confirm('Automatic clean-up on ' + v + ': EVERYTHING of this year\'s registration will be deleted then. Continue?')) return;
+      $('cleanup-save').disabled = true;
+      api('PUT', '/api/admin/settings', { values: { DataCleanupDate: v }, myPassword: cp.value }).then(function (res) {
+        cp.value = '';
+        $('cleanup-save').disabled = false;
+        if (!res.settings) { setMsg('backend-msg', res.message, true); return; }
+        var c = (res.checks && res.checks.DataCleanupDate) || 'OK';
+        lastCheck.params.DataCleanupDate = c === 'OK' ? 'Saved ✓' : c;
+        setCheckCell(checkCell, lastCheck.params.DataCleanupDate, c === 'OK' ? 'ok' : 'bad');
+        D.settings = mergeSettings(res.settings); D.locks = res.locks;
+        setMsg('backend-msg', c === 'OK' ? 'Saved.' : c, c !== 'OK');
         loadData(true);
-      }, function (err) { $('params-save').disabled = false; setMsg('params-msg', err.message, true); });
-    });
+      }, function (err) { $('cleanup-save').disabled = false; setMsg('backend-msg', err.message, true); });
+    }
+
+    // ---------------- backend setting (v8.0, master accounts only) ----------------
+    function renderBackend() {
+      if (!isMaster()) { go('home'); return; }
+      if (busy('content') || busy('params')) return;
+      var tb = clear($('backend-rows'));
+      (D.settings || []).filter(function (s) { return s.backend; }).forEach(function (s) { add(tb, paramRow(s)); });
+      var box = clear($('backend-sections'));
+      (D.content || []).filter(function (s) { return s.backend; }).forEach(function (sec) { add(box, contentCard(sec)); });
+    }
 
     // ---------------- who's in, password, logout ----------------
     $('who-save').addEventListener('click', function () {
