@@ -116,6 +116,15 @@
     .btn-link { background: none; border: none; color: var(--accent); padding: 0; font-weight: 600; text-decoration: underline; cursor: pointer; }
     .btn-small { padding: 6px 12px; font-size: 12px; }
     .btn-row { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+    /* v8.3 maintenance mode */
+    .maint-card { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 36px 24px 30px; margin: 24px auto 0; max-width: 560px; }
+    .maint-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .maint-card h1 { margin-bottom: 10px; }
+    .maint-msg { font-size: 15px; white-space: pre-line; margin: 0 auto; max-width: 460px; }
+    .maint-back { margin: 16px auto 0; display: inline-block; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; }
+    .maint-org { text-align: center; margin-top: 28px; }
+    .maint-org .btn-link { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .maint-tester { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius); padding: 8px 14px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
     .landing-buttons { display: flex; flex-direction: column; gap: 12px; max-width: 280px; margin: 40px auto 0; }
     .landing-buttons button { padding: 14px; font-size: 15px; }
     .msg { font-size: 13px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; display: none; }
@@ -412,6 +421,7 @@
   </div>
 
   <div class="wrap">
+    <div class="maint-tester hidden" id="maint-tester">Maintenance mode is on: registrants see the maintenance screen. You are using a test account.</div>
 
     <!-- LANDING -->
     <div class="view active" id="view-landing">
@@ -422,6 +432,36 @@
       <div class="landing-buttons">
         <button class="btn-primary" id="landing-register-btn" onclick="showView('view-register')">Register</button>
         <button class="btn-secondary" id="landing-login-btn" onclick="showView('view-login')">Login</button>
+      </div>
+    </div>
+
+    <!-- MAINTENANCE MODE (v8.3): set in the organizer page, Backend setting -->
+    <div class="view" id="view-maintenance">
+      <div class="maint-card">
+        <div class="maint-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <h1>We'll be back soon</h1>
+        <p class="maint-msg" id="maint-msg">The registration site is closed for maintenance. Please come back later.</p>
+        <div><span class="maint-back hidden" id="maint-back"></span></div>
+      </div>
+      <div class="maint-org"><button class="btn-link" id="maint-org-btn" onclick="openOrgLogin()">Organizer login</button></div>
+    </div>
+    <div class="view" id="view-orglogin">
+      <h1>Organizer login</h1>
+      <p class="sub">The registration site is in maintenance mode. Only organizer accounts (and test accounts) can log in.</p>
+      <div class="card">
+        <label for="org-user">Organizer username</label>
+        <input type="text" id="org-user" autocomplete="username" placeholder="e.g. ICEMfinanceteam">
+        <label for="org-password">Password</label>
+        <input type="password" id="org-password" autocomplete="current-password">
+        <div class="btn-row">
+          <button class="btn-primary" id="org-submit-btn" onclick="doOrgLogin()">Log in</button>
+          <button class="btn-secondary" onclick="showView('view-maintenance')">Back</button>
+        </div>
+        <div class="msg" id="org-msg"></div>
+        <div style="margin-top:14px;display:flex;gap:18px;flex-wrap:wrap;">
+          <button class="btn-link" onclick="doOrgForgot()">I forgot the password</button>
+          <button class="btn-link" onclick="showView('view-register')">Register a test account</button>
+        </div>
       </div>
     </div>
 
@@ -934,6 +974,8 @@
     var uploadMax = function () { return Math.round(MAX_UPLOAD_BYTES / 1024 / 1024 * 10) / 10 + ' MB'; };
 
     function showView(id) {
+      // v8.3: during maintenance mode the welcome and login screens are the maintenance screen
+      if (typeof maintenance !== 'undefined' && maintenance.on && !currentUser && (id === 'view-landing' || id === 'view-login' || id === 'view-forgot')) id = 'view-maintenance';
       if (id !== 'view-info' && autosaveTimer) autoSaveNow(); // leaving the form: save what is waiting
       document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
       document.getElementById(id).classList.add('active');
@@ -1126,6 +1168,8 @@
         // The login token stopped working (expired after 6 h, password
         // changed/reset, account removed): back to the login page.
         if (res && res.sessionExpired) { handleSessionExpired(res.message); return; }
+        // v8.3: the site went into maintenance mode (Backend setting, or MAINTENANCE=1 during a deploy)
+        if (res && res.maintenance === true && !opts.allowMaintenance) { showMaintenance(res); return; }
         opts.onSuccess(res);
       }, function (err) {
         finish();
@@ -1328,6 +1372,7 @@
       updateTeamNav();
       clearMsg('landing-msg');
       startLive();
+      if (typeof maintenance !== 'undefined' && maintenance.on) showTesterNote(); // v8.3: a test account during maintenance mode
     }
 
     // "View team" buttons: delegates, and advisors once they have a team
@@ -1347,6 +1392,7 @@
 
     function resetClientState() {
       currentLocks = {};
+      document.getElementById('maint-tester').classList.add('hidden');
       ['announcements', 'ticket-list', 'checklist'].forEach(function (id) { var x = document.getElementById(id); if (x) x.textContent = ''; });
       ['tickets-card', 'checklist-card'].forEach(function (id) { var x = document.getElementById(id); if (x) x.classList.add('hidden'); });
       forgetToken();
@@ -3481,10 +3527,12 @@
             currentLocks = res.locks || {};
             enterSession();
             routeToInfoForm();
+            if (maintenance.pending) showTesterNote(maintenance.pending);
             return;
           }
           sessionToken = null;
           if (!(res && res.maintenance)) forgetToken();
+          if (maintenance.pending) { showMaintenance(maintenance.pending); return; }
           showView('view-landing');
           if (res && res.message) setMsg('landing-msg', res.message, true);
         },
@@ -3789,12 +3837,90 @@
         : 'Register a new account or log in to continue your submission.';
     }
 
+    // ---------------- MAINTENANCE MODE (v8.3) ----------------
+    // Switched on in the organizer page (Backend setting). Registrants see a
+    // maintenance screen with the organizers' message; a small "Organizer
+    // login" button opens a login form for organizer accounts (a username,
+    // no "@") and test accounts. A registrant's stored login is kept, so
+    // they are logged in again once the site opens. The screen checks every
+    // minute and reloads itself when maintenance mode is turned off.
+    var maintenance = { on: false, pending: null, poll: null };
+    function showMaintenance(m, fromConfig) {
+      m = m || {};
+      maintenance.on = true; maintenance.pending = null;
+      if (sessionToken || currentUser) {
+        var t = storedToken(), local = false;
+        try { local = !!t && localStorage.getItem(SESSION_KEY) === t; } catch (e) { /* ignore */ }
+        resetClientState();
+        if (t) storeToken(t, local); // kept for when the site opens again
+      }
+      document.getElementById('maint-msg').textContent = m.message || 'The registration site is closed for maintenance. Please come back later.';
+      var back = document.getElementById('maint-back');
+      back.textContent = m.backAt ? 'We expect to be back on ' + m.backAt + ' (GMT+7, Thailand time).' : '';
+      back.classList.toggle('hidden', !m.backAt);
+      if (!fromConfig || !document.getElementById('view-orglogin').classList.contains('active') && !document.getElementById('view-register').classList.contains('active') && !document.getElementById('view-verify').classList.contains('active')) showView('view-maintenance');
+      if (!maintenance.poll) maintenance.poll = setInterval(checkMaintenanceOver, 60000);
+    }
+    function checkMaintenanceOver() {
+      if (document.hidden) return;
+      callServer('getPublicConfig', [], { quiet: true, onSuccess: function (res) {
+        if (res && res.success && !(res.maintenance && res.maintenance.on) && !currentUser) location.reload();
+      }, onFailure: function () {} });
+    }
+    function showTesterNote() { document.getElementById('maint-tester').classList.remove('hidden'); }
+    function openOrgLogin() {
+      clearMsg('org-msg');
+      showView('view-orglogin');
+      document.getElementById('org-user').focus();
+    }
+    function doOrgLogin() {
+      clearMsg('org-msg');
+      var user = document.getElementById('org-user').value.trim(), pw = document.getElementById('org-password').value;
+      if (!user || !pw) { setMsg('org-msg', 'Please enter the username and the password.', true); return; }
+      callServer('loginUser', [user, pw, false], {
+        buttonIds: ['org-submit-btn'], msgElId: 'org-msg', allowMaintenance: true,
+        onSuccess: function (res) {
+          if (!checkRes(res, 'org-msg')) return;
+          if (res.maintenance === true) {
+            setMsg('org-msg', user.indexOf('@') !== -1 ? 'The registration site is closed for maintenance, so registrant accounts can\'t log in right now. Organizer accounts use their username (no "@").' : res.message, true);
+            return;
+          }
+          if (!res.success) { setMsg('org-msg', res.message, true); return; }
+          document.getElementById('org-password').value = '';
+          if (res.organizer) { openOrganizerPage(res.token); return; }
+          // a test account (TestEmails): into the registration page as usual
+          sessionGen++;
+          currentUser = res.user; sessionToken = res.token; storeToken(res.token, false);
+          currentPersonalInfo = res.personalInfo; currentLocks = res.locks || {};
+          if (res.required) window.lastRequired = res.required;
+          enterSession(); routeToInfoForm(); showTesterNote();
+        }
+      });
+    }
+    function doOrgForgot() {
+      clearMsg('org-msg');
+      var user = document.getElementById('org-user').value.trim();
+      if (!user || user.indexOf('@') !== -1) { setMsg('org-msg', 'Type the organizer username first (no "@"), then click "I forgot the password".', true); return; }
+      callServer('requestPasswordReset', [user], {
+        msgElId: 'org-msg', allowMaintenance: true,
+        onSuccess: function (res) {
+          if (!checkRes(res, 'org-msg')) return;
+          setMsg('org-msg', res.message || (res.success ? 'Done.' : 'Could not send it.'), !res.success);
+        }
+      });
+    }
+
     function loadPublicConfig() {
       callServer('getPublicConfig', [], {
         onSuccess: function (res) {
           var el = document.getElementById('reg-closed-banner');
           if (!res || !res.success) return;
           if (res.content) applySiteContent(res.content);
+          if (res.maintenance && res.maintenance.on) {
+            if (currentUser) showTesterNote(res.maintenance);
+            else if (!document.getElementById('view-restoring').classList.contains('active')) showMaintenance(res.maintenance, true);
+            else maintenance.pending = res.maintenance; // a login is being restored: a test account may still get in
+          }
           var text = '';
           // After RegistrationCloses (2026-11-07): no Register button, and the welcome text only asks people to log in.
           applyRegistrationClosed(!!res.registrationClosed, res.closesAt);

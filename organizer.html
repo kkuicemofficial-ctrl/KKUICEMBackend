@@ -256,6 +256,12 @@
     .status-text.bad { color: var(--danger); }
     .status-text.ok { color: var(--ok); }
     .status-text::before { content: '\25CF'; margin-right: 5px; font-size: 10px; vertical-align: 1px; }
+    .maint-banner { background: #fbf0d6; border: 1px solid #e5b663; color: #6b4c0e; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin: 0 0 14px; }
+    .maint-banner b { font-weight: 700; }
+    .maint-card { border: 2px solid #e5b663; }
+    .maint-card.is-on { background: #fffaf0; }
+    .maint-state { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-left: 8px; vertical-align: 3px; }
+    .maint-state.on { background: #ad4d4d; color: #fff; } .maint-state.off { background: #e7efe2; color: #3f6b37; }
     .deadline-alert { background: #fdecea; border: 1px solid #eba59e; color: #b3261e; font-weight: 700; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin: 0 0 14px; }
     .who-fixed { font-size: 12.5px; color: var(--muted); margin: 5px 0 0; }
     .key-sub { display: block; font-size: 12px; font-weight: 600; color: var(--danger); margin-top: 2px; }
@@ -386,6 +392,7 @@
           <p class="sub" id="home-sub"></p>
           <div class="banner hidden" id="view-only-banner">This account can only view. Verifying, deleting and changing parameters need a full organizer account.</div>
         </div>
+        <div class="maint-banner hidden" id="maint-banner"></div>
         <div class="deadline-alert hidden" id="cleanup-banner"></div>
         <div class="tiles" id="tiles"></div>
         <div class="card">
@@ -637,6 +644,7 @@
       <button class="btn-secondary back" data-go="home">← Back to the menu</button>
       <h1>Backend setting</h1>
       <p class="sub">Master accounts only. Click Save (at the side of the screen) to keep your changes; the clean-up date has its own button and needs the ICEMmasteraccount password.</p>
+      <div id="backend-maint"></div>
       <div class="table-wrap params"><table><thead><tr><th>Key</th><th>Value</th><th>Notes</th><th>Server check</th></tr></thead><tbody id="backend-rows"></tbody></table></div>
       <div class="msg" id="backend-msg"></div>
       <div id="backend-sections" style="margin-top:16px;"></div>
@@ -1425,8 +1433,15 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         tile('Page content', 'Prices, payment details, terms of service, trips, form choices' + (canEdit() ? '' : ' (view only)'), 'content'),
         tile('Parameters', lockText, 'params'),
         D.me.owner ? tile('Organizer accounts', 'Create accounts, set passwords, remove', 'accounts') : null,
-        isMaster() ? tile('Backend setting', 'Drive folders, emails and limits, TestEmails, automatic clean-up', 'backend') : null
+        isMaster() ? tile('Backend setting', (D.maintenance && D.maintenance.on ? 'MAINTENANCE MODE ON · ' : 'Maintenance mode, ') + 'Drive folders, emails and limits, TestEmails, automatic clean-up', 'backend', D.maintenance && D.maintenance.on ? 'alert' : '') : null
       ]);
+      // v8.3: maintenance mode banner for every organizer account
+      var MT = D.maintenance || {};
+      show('maint-banner', !!MT.on);
+      if (MT.on) add(clear($('maint-banner')), [h('b', { text: 'Maintenance mode is on. ' }),
+        'Registrants see the maintenance screen and can\'t register or log in (TestEmails still can). ' +
+        (MT.held ? MT.held + (MT.held === 1 ? ' email to a registrant is' : ' emails to registrants are') + ' held' : 'Emails to registrants are held') +
+        ' and sent when it is turned off; reminders and scheduled announcements wait. ' + (isMaster() ? 'Turn it off in Backend setting.' : 'A master account turns it off in Backend setting.')]);
       show('cleanup-banner', !!D.locks.cleanupAt);
       $('cleanup-banner').textContent = D.locks.cleanupAt ? 'Automatic clean-up is set for ' + D.locks.cleanupAt + ' (GMT+7, Thailand time): every registrant account, payment, invoice request, file, announcement, question, notification and the history will be deleted. Organizer accounts, Parameters, Page content and the notification settings stay. Export what you need before then. A master account can change it in Backend setting.' : '';
       renderNotifs();
@@ -2339,6 +2354,11 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
     function saveDraft(page) {
       var keys = dirtyKeys(page);
       if (!keys.length || saving[page]) return Promise.resolve();
+      var mt = drafts[page]['maintenance.on'];
+      if (mt && mt.read() === 'On' && !(D.maintenance && D.maintenance.on) &&
+        !confirm('Turn maintenance mode on? Registrants will see the maintenance screen and can\'t register or log in until you turn it off. Organizer accounts keep working.')) return Promise.resolve();
+      if (mt && mt.read() === 'Off' && D.maintenance && D.maintenance.on &&
+        !confirm('Turn maintenance mode off? The registration site opens again for everyone' + (D.maintenance.held ? ', and the ' + D.maintenance.held + ' held emails are sent' : '') + '.')) return Promise.resolve();
       var vals = { params: {}, content: {} };
       keys.forEach(function (k) { var d = drafts[page][k]; vals[d.kind][k] = d.read(); });
       saving[page] = true; showSaveState(page);
@@ -2441,6 +2461,8 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
         input.value = f.value || '';
       } else if (f.type === 'num') {
         input = h('input', { type: 'number', step: '1', min: '0', id: id, 'data-key': f.key, value: f.value });
+      } else if (f.type === 'datetime') {
+        input = h('input', { type: 'datetime-local', id: id, 'data-key': f.key, value: toLocalInput(f.value || '') });
       } else {
         input = h('input', { type: 'text', id: id, 'data-key': f.key, value: f.value || '' });
       }
@@ -2450,14 +2472,15 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       var checkCell = h('div', { cls: 'ccheck ' + (okish ? 'check-ok' : 'check-bad'), 'data-base': 'ccheck', text: check });
       var preview = h('div');
       var redraw = function () { clear(preview); var pv = contentPreview(f.key, input.value); if (pv) add(preview, pv); };
-      var read = function () { return input.value; };
+      var read = function () { return f.type === 'datetime' ? input.value.replace('T', ' ') : input.value; };
       var mark = function () { redraw(); markDirty(page, 'content', f.key, read, checkCell); };
       input.addEventListener('input', mark);
       input.addEventListener('change', mark);
       redraw();
+      var clearBtn = f.type === 'datetime' && !input.disabled ? h('button', { cls: 'btn-secondary btn-small', style: 'margin-top:4px;', text: 'Clear date', onclick: function () { input.value = ''; mark(); } }) : null;
       return h('div', { cls: 'cfield' },
         h('div', { cls: 'clabel' }, f.label, f.help ? h('div', { cls: 'chelp', text: f.help }) : null),
-        h('div', null, input, preview),
+        h('div', null, input, clearBtn, preview),
         checkCell);
     }
     /** What the registrants will see, drawn from what is being typed. */
@@ -2577,7 +2600,19 @@ var DOC_LABEL = { passport: 'Passport / Thai ID card', enrollment: 'Proof of enr
       var tb = clear($('backend-rows'));
       (D.settings || []).filter(function (s) { return s.backend; }).forEach(function (s) { add(tb, paramRow(s, 'backend')); });
       var box = clear($('backend-sections'));
-      (D.content || []).filter(function (s) { return s.backend; }).forEach(function (sec) { add(box, contentCard(sec, 'backend')); });
+      (D.content || []).filter(function (s) { return s.backend && s.name !== 'Maintenance mode'; }).forEach(function (sec) { add(box, contentCard(sec, 'backend')); });
+      // v8.3: maintenance mode first
+      var mbox = clear($('backend-maint'));
+      var msec = (D.content || []).filter(function (s) { return s.name === 'Maintenance mode'; })[0];
+      if (msec) {
+        var isOn = !!(D.maintenance && D.maintenance.on);
+        var card = contentCard(msec, 'backend');
+        card.classList.add('maint-card'); card.classList.toggle('is-on', isOn);
+        var h2 = card.querySelector('h2');
+        if (h2) add(h2, h('span', { cls: 'maint-state ' + (isOn ? 'on' : 'off'), text: isOn ? 'ON' : 'OFF' }));
+        if (isOn && D.maintenance.held) add(card, h('p', { cls: 'sub', style: 'margin:10px 0 0;', text: D.maintenance.held + (D.maintenance.held === 1 ? ' email is' : ' emails are') + ' held; they go out (at most 80 every 5 minutes) once you turn it off and click Save.' }));
+        add(mbox, card);
+      }
     }
 
     // ---------------- who's in, password, logout ----------------
